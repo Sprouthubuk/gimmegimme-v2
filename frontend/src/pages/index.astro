@@ -37,7 +37,7 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
       <div class="stack g16 hero-txt">
         <div class="row g8 gg-rise gg-d2"><span class="gg-ping" style="width:8px;height:8px;border-radius:999px;background:#FF2DAA;box-shadow:0 0 10px #FF2DAA"></span><span class="eyebrow" style="color:#FF5CC0">Featured{prizesTotal ? ` · ${formatCount(prizesTotal)} instant wins` : ""}</span></div>
         <h1 class="h1 hero-title gg-rise gg-d2"><span class="np gg-flicker">{featured.title}</span></h1>
-        <p class="p gg-rise gg-d3">{featured.subtitle ?? featured.description.slice(0, 120)}{featured.topPrizePence ? <> Top prize <b class="ny">{formatPence(featured.topPrizePence, { short: false })}</b>.</> : null}</p>
+        <p class="p gg-rise gg-d3">{featured.subtitle ?? featured.description.slice(0, 120)}{featured.topPrizePence ? <> · Top prize <b class="ny">{formatPence(featured.topPrizePence, { short: false })}</b>.</> : null}</p>
         <Countdown until={featured.closesAt} size="xl" class="gg-rise gg-d3" />
         <div class="row g8 gg-rise gg-d5"><a class="btn btn-y btn-lg gg-cta" style="flex:1" href={`/competitions/${featured.slug}`}>Play From {formatPence(featured.pricePence)} <Icon name="arrow" size={18} stroke={3} /></a></div>
         <p class="hint gg-rise gg-d6" style="margin:0">18+ UK only · <a href="/free-entry">Free postal entry</a> · <a href="/legal/terms">T&amp;Cs</a></p>

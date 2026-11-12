@@ -112,6 +112,12 @@ final class CashflowsGateway implements PaymentGateway
         return null;
     }
 
+    /** A notification's Hash header, when Cashflows sends one, must be SHA-512(apiKey + body). */
+    public function signatureValid(string $rawBody, string $hash): bool
+    {
+        return hash_equals(hash('sha512', $this->apiKey.$rawBody), strtolower(trim($hash)));
+    }
+
     private function headers(string $body): array
     {
         return ['ConfigurationId' => $this->configurationId, 'Hash' => hash('sha512', $this->apiKey.$body), 'Accept' => 'application/json'];

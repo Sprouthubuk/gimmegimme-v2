@@ -130,7 +130,7 @@ select.inp{appearance:none}
 .li .ico{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);color:#D8D0E2;flex-shrink:0}
 .li .chev{margin-left:auto;color:#8E84A0}
 .av{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-family:'Lilita One',sans-serif;flex-shrink:0}
-.split{display:grid;gap:24px}
+.split{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
 .ft{background:#050308;border-top:1px solid rgba(255,45,170,.35);padding:36px 0 28px;color:#8E84A0;font-size:13px}
 .ft a{color:#D8D0E2;text-decoration:none;font-weight:700}
 .ft a:hover{color:#fff}
@@ -314,3 +314,10 @@ select.inp{appearance:none}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:60;max-width:92vw}
 @media (min-width:1024px){.toast{bottom:28px}}
 .rg-lock,.rg-lock body{overflow:hidden;overscroll-behavior:none}
+
+/* Smallest phones (320px): the menu has Log In, so the header keeps basket, Join and menu only. */
+@media (max-width:359px){.hd-r .btn-o{display:none}.hd-in{gap:8px}.hd-r{gap:6px}}
+/* Footer links: a comfortable thumb target on phones (they were 18px tall and tightly stacked). */
+@media (max-width:899px){.ft-cols a{display:inline-flex;align-items:center;min-height:36px;padding:0 6px}.ft-cols>div{gap:0!important}}
+/* Small links that stand alone get a full-height tap area. */
+.tap{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}

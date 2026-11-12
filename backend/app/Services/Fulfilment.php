@@ -6,6 +6,8 @@ use App\Models\Competition;
 use App\Models\Order;
 use App\Models\PrizeClaim;
 use App\Models\User;
+use App\Notifications\PrizeWon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Sprouthub\Verity\Engine\VerityException;
 use Sprouthub\Verity\Facades\Verity;
@@ -115,9 +117,18 @@ final class Fulfilment
         if (! $competition || ! User::query()->whereKey($userId)->exists()) {
             return;
         }
-        PrizeClaim::query()->firstOrCreate(['verity_winner_id' => $w->id], [
+        $claim = PrizeClaim::query()->firstOrCreate(['verity_winner_id' => $w->id], [
             'user_id' => $userId, 'competition_id' => $competition->id, 'prize_name' => $w->prize_name,
             'value_pence' => (int) $w->prize_value_pence, 'kind' => $kind,
         ]);
+        if ($claim->wasRecentlyCreated) {
+            DB::afterCommit(function () use ($claim) {
+                try {
+                    $claim->user->notify(new PrizeWon($claim));
+                } catch (\Throwable $e) {
+                    Log::warning('Prize email not sent', ['claim' => $claim->id]);
+                }
+            });
+        }
     }
 }

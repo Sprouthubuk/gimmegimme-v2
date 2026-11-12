@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mock-api": "node ./mock-api/server.mjs",
-    "test:fullstack": "vitest run --config vitest.fullstack.config.ts"
+    "test:fullstack": "vitest run --config vitest.fullstack.config.ts",
+    "test:visual": "vitest run --config vitest.visual.config.ts"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",
@@ -32,6 +33,7 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "jsdom": "^31.0.0",
+    "playwright-core": "^1.65.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   }

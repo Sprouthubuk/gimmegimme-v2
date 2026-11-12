@@ -6,7 +6,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Never commit or push to `main`. One branch per task; Liam reviews and merges.
 - Plan first for anything non-trivial. For a bug, write a failing test first.
 - Before every commit: `cd backend && php artisan test`, then
-  `cd frontend && npx astro check && npm run build && npm test && npm run test:fullstack`.
+  `cd frontend && npx astro check && npm run build && npm test && npm run test:fullstack && npm run test:visual`
+  (the last saves screenshots of every page at four sizes to /tmp/gg-shots — look at the ones you changed).
 - `docs/api.md` + `frontend/src/lib/types.ts` are the contract. Change both together, and the mock
   API (`frontend/mock-api/server.mjs`) and the Laravel tests with them.
 
@@ -42,6 +43,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 - `DemoSeeder` is for laptops and tests only and refuses production.
 
 ## Front end
+- Astro drops a space between `{expr}` and a following tag inside `<>…</>`: write `{expr}{" "}<span>`.
+- Standalone small links get `class="tap"` (40px tap height).
 - Title Case for every title. Mobile first (44px taps, 16px inputs, no sideways scroll at 320px).
 - Nothing third-party loads before a cookie choice.
 - Redirects after sign-in go through `safeNext` (`src/lib/safe.ts`).

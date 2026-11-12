@@ -6,10 +6,14 @@ use App\Exceptions\RefusedException;
 use App\Models\Order;
 use App\Models\PrizeClaim;
 use App\Models\Setting;
+use App\Notifications\OrderReceipt;
 use App\Services\Fulfilment;
 use App\Services\Orders;
 use App\Services\PlayCheck;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Sprouthub\Verity\Facades\Verity;
 use Sprouthub\Verity\Models\EntryGroup;
 use Tests\TestCase;
 
@@ -147,16 +151,21 @@ class OrdersTest extends TestCase
     public function test_a_paid_order_verity_refuses_is_flagged_never_refunded(): void
     {
         $u = $this->player();
-        $this->topUp($u, 2000);
-        $c = $this->competition('draw', ['max_per_person' => 100]);
-        $pending = $this->buy($u, $c, 60, 'card', false)['order'];   // not issued yet
-        $this->buy($u, $c, 60);                                      // wallet: issued now, holds 60
+        $other = $this->player();
+        $this->topUp($other, 100);
+        $c = $this->competition('draw', ['closes_at' => now()->addMinutes(30)]);
+        $this->buy($other, $c, 1);
+        $pending = $this->buy($u, $c, 20, 'card', false)['order'];
+        // The card payment only lands after the competition has closed and been frozen.
+        Carbon::setTestNow(now()->addMinutes(31));
+        Verity::close($c->verity_ref);
         $this->gateway()->settle($pending->gateway_ref, 'paid');
         $order = $this->orders()->syncWithGateway($pending);
 
         $this->assertSame('paid', $order->status);
         $this->assertTrue($order->needs_attention);
         $this->assertNull($order->lines()->first()->tickets);
+        $this->assertSame(0, $this->wallet()->total($u), 'no automatic refund');
         $this->assertSame('attention', $this->buy($u, $c, 1, 'wallet', true, $pending->request_id)['next']);
     }
 
@@ -283,5 +292,41 @@ class OrdersTest extends TestCase
         $this->gateway()->settle($o->gateway_ref, 'paid');
         $this->orders()->syncWithGateway($o);
         $this->assertSame(0, $this->wallet()->balances($c)['bonus'], 'same house');
+    }
+
+    public function test_card_payments_in_progress_hold_their_tickets(): void
+    {
+        $a = $this->player();
+        $b = $this->player();
+        $this->topUp($b, 1000);
+        $c = $this->competition('draw', ['max_tickets' => 10, 'max_per_person' => 10]);
+        $this->buy($a, $c, 8, 'card', false); // £2 by card, not paid yet
+        $this->expectExceptionMessage('You can buy 2 more tickets');
+        $this->buy($b, $c, 3);
+    }
+
+    public function test_a_players_own_pending_payment_counts_towards_their_limit(): void
+    {
+        $u = $this->player();
+        $c = $this->competition('draw', ['max_per_person' => 10]);
+        $this->buy($u, $c, 8, 'card', false);
+        $this->expectExceptionMessage('You can buy 2 more tickets');
+        $this->buy($u->refresh(), $c, 4, 'card', false);
+    }
+
+    public function test_a_paid_order_gets_one_receipt_email(): void
+    {
+        Notification::fake();
+        $u = $this->player();
+        $this->topUp($u, 1000);
+        $c = $this->competition('draw');
+        $o = $this->buy($u, $c, 4)['order'];
+        Notification::assertSentToTimes($u, OrderReceipt::class, 1);
+        $mail = (new OrderReceipt($o))->toMail($u);
+        $this->assertStringContainsString($o->number, $mail->subject);
+        $this->assertStringContainsString('#', implode(' ', $mail->introLines));
+        // Asking the gateway again doesn't send another.
+        app(Orders::class)->syncWithGateway($o);
+        Notification::assertSentToTimes($u, OrderReceipt::class, 1);
     }
 }

@@ -8,9 +8,13 @@ use App\Models\PrizeClaim;
 use App\Models\PromoCode;
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Notifications\PrizeWon;
+use App\Payments\CashflowsGateway;
+use App\Payments\PaymentGateway;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -304,5 +308,50 @@ class ApiTest extends TestCase
         $this->assertSame(4, $list['total']);
         $this->assertSame('L*** O.', $list['data'][0]['name']);
         $this->assertSame('drawn', $this->getJson('/api/me/tickets?tab=past')->json('data.0.competition.status'));
+    }
+
+    public function test_the_contact_form_bot_trap_saves_nothing(): void
+    {
+        $this->postJson('/api/contact', ['name' => 'Bot', 'email' => 'b@example.com', 'topic' => 'x', 'message' => 'Buy cheap things now', 'website' => 'spam.example'])->assertNoContent();
+        $this->assertSame(0, ContactMessage::query()->count());
+    }
+
+    public function test_a_webhook_with_a_wrong_signature_is_refused(): void
+    {
+        $this->app->instance(PaymentGateway::class, new CashflowsGateway('https://gateway-int.cashflows.com', 'C', 'secret'));
+        $body = json_encode(['paymentJobReference' => 'JOB-1']);
+        $this->call('POST', '/api/webhooks/cashflows', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_HASH' => 'nope'], $body)->assertStatus(401);
+        Http::fake();
+        $this->call('POST', '/api/webhooks/cashflows', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_HASH' => hash('sha512', 'secret'.$body)], $body)->assertOk();
+    }
+
+    public function test_draw_winners_are_emailed(): void
+    {
+        Notification::fake();
+        $u = $this->player();
+        $this->topUp($u, 1000);
+        $c = $this->competition('draw', ['closes_at' => now()->addMinutes(30)]);
+        $this->checkout($u, $c, 4)->assertCreated();
+        Carbon::setTestNow(now()->addMinutes(31));
+        Verity::close($c->verity_ref);
+        Carbon::setTestNow(now()->addMinutes(5));
+        Verity::draw($c->verity_ref);
+        Notification::assertSentTo($u, PrizeWon::class);
+    }
+
+    public function test_rate_limits_use_the_visitors_address_passed_on_by_astro(): void
+    {
+        $msg = ['name' => 'A', 'email' => 'a@example.com', 'topic' => 'Help', 'message' => 'Hello there, a question.'];
+        $from = fn (string $ip) => $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])->withHeader('X-Forwarded-For', $ip);
+        for ($i = 0; $i < 5; $i++) {
+            $from('203.0.113.7')->postJson('/api/contact', $msg)->assertNoContent();
+        }
+        $from('203.0.113.7')->postJson('/api/contact', $msg)->assertStatus(429);
+        $from('198.51.100.9')->postJson('/api/contact', $msg)->assertNoContent(); // another visitor isn't affected
+        // A made-up address added by the visitor doesn't get round it: the address nginx saw is used.
+        $from('1.1.1.1, 203.0.113.7')->postJson('/api/contact', $msg)->assertStatus(429);
+        // Only the local proxy is trusted: from anywhere else the header is ignored.
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.50'])->withHeader('X-Forwarded-For', '198.51.100.77')->postJson('/api/contact', $msg)->assertNoContent();
+        $this->assertSame(7, ContactMessage::query()->count());
     }
 }

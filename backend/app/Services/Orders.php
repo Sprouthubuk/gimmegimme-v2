@@ -6,6 +6,7 @@ use App\Exceptions\RefusedException;
 use App\Models\Order;
 use App\Models\PromoCode;
 use App\Models\User;
+use App\Notifications\OrderReceipt;
 use App\Payments\PaymentGateway;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -202,6 +203,14 @@ final class Orders
         if ($wasClosed) {
             $this->fulfilment->flag($order, 'Paid after the order had closed.');
         }
+        // The receipt goes once the payment is saved; a mail problem never undoes a payment.
+        DB::afterCommit(function () use ($order) {
+            try {
+                $order->user->notify(new OrderReceipt($order->fresh()));
+            } catch (\Throwable $e) {
+                Log::warning('Order receipt not sent', ['order' => $order->number]);
+            }
+        });
     }
 
     private function openPaymentPage(Order $order, User $user): void

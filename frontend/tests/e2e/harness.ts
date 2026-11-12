@@ -126,7 +126,12 @@ export class Browser {
   }
 }
 
-/** Visible text of a page: no scripts, styles, tags or comments; spaces collapsed; &amp; decoded. */
+/**
+ * Visible text of a page: no scripts, styles, tags or comments; spaces collapsed; &amp; decoded.
+ * Inline tags (span, b, a…) add no space, as in a browser, so "Hi<span>Liam</span>" reads "HiLiam"
+ * and a test catches the missing space. Block tags and React's <!-- --> markers count as breaks.
+ */
+const INLINE = /^<\/?(span|b|i|em|strong|a|small|code|sup|sub|mark|abbr|time|label)\b[^>]*>$/i;
 export const text = (html: string) =>
-  html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "").replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ");
+  html.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<style[\s\S]*?<\/style>/g, "").replace(/<!--\s*-->/g, "").replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<[^>]+>/g, (tag) => (INLINE.test(tag) ? "" : " ")).replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ");

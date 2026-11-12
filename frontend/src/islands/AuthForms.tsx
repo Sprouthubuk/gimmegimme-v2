@@ -100,7 +100,7 @@ export function LoginForm({ next }: { next: string | null }) {
   return (
     <form className="stack g12" onSubmit={submit} data-testid="login-form">
       <div className="field"><label htmlFor="em">Email</label><input className="inp" id="em" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-      <div className="field"><div className="row between"><label htmlFor="pw">Password</label><a href="/forgot-password" style={{ fontSize: 13, fontWeight: 800 }}>Forgot?</a></div><Password id="pw" value={password} onChange={setPassword} autoComplete="current-password" /></div>
+      <div className="field"><div className="row between"><label htmlFor="pw">Password</label><a href="/forgot-password" className="tap" style={{ fontSize: 13, fontWeight: 800, marginRight: -4 }}>Forgot?</a></div><Password id="pw" value={password} onChange={setPassword} autoComplete="current-password" /></div>
       <label className="row g12" style={{ padding: "6px 0", cursor: "pointer" }}><input type="checkbox" className="sw" checked={remember} onChange={(e) => setRemember(e.target.checked)} /><span style={{ fontWeight: 700, fontSize: 14 }}>Keep me logged in</span></label>
       {error && <div className="notice notice-p" role="alert"><Svg name="info" size={18} /><span>{error}</span></div>}
       <button type="submit" className="btn btn-y btn-lg btn-block gg-cta" disabled={busy}>{busy ? <span className="spin" /> : "Log In"}</button>

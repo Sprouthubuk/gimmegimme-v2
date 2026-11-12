@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -47,7 +48,11 @@ class AuthController extends Controller
             // Marketing is only ever added by a box the player ticked.
             'marketing_email' => ($d['marketingOptIn'] ?? false) === true, 'marketing_sms' => false,
         ])->save();
-        event(new Registered($u));
+        try {
+            event(new Registered($u)); // sends the confirmation email
+        } catch (\Throwable $e) {
+            Log::warning('Confirmation email not sent at sign-up', ['user' => $u->id]);
+        }
         Auth::login($u);
         if ($r->hasSession()) {
             $r->session()->regenerate();
@@ -83,7 +88,11 @@ class AuthController extends Controller
     public function forgot(Request $r): JsonResponse
     {
         $r->validate(['email' => ['required', 'email']]);
-        Password::sendResetLink(['email' => Str::lower(trim((string) $r->input('email')))]);
+        try {
+            Password::sendResetLink(['email' => Str::lower(trim((string) $r->input('email')))]);
+        } catch (\Throwable $e) {
+            Log::warning('Password reset email not sent');
+        }
 
         // Same answer whether or not the account exists.
         return response()->json(null, 204);

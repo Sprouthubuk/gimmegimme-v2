@@ -20,7 +20,11 @@ final class AccountPresenter
     public function me(User $u): array
     {
         $b = $this->wallet->balances($u);
-        $groups = $this->ticketGroups($u, 'active', 500);
+        // Counted in the database: /api/me runs on every page a signed-in player opens.
+        $active = OrderLine::query()->whereNotNull('tickets')
+            ->whereHas('order', fn ($q) => $q->where('user_id', $u->id)->where('status', 'paid'))
+            ->whereHas('competition', fn ($q) => $q->where('closes_at', '>', now())->whereNull('ended_at'))
+            ->get(['competition_id', 'quantity']);
 
         return [
             'id' => (string) $u->id,
@@ -39,8 +43,8 @@ final class AccountPresenter
             ],
             'gamesWaiting' => $this->gamesWaiting($u),
             'stats' => [
-                'activeTickets' => array_sum(array_map(fn ($g) => count($g['tickets']), $groups)),
-                'activeCompetitions' => count(array_unique(array_map(fn ($g) => $g['competition']['id'], $groups))),
+                'activeTickets' => (int) $active->sum('quantity'),
+                'activeCompetitions' => $active->pluck('competition_id')->unique()->count(),
                 'instantWins' => Winner::query()->where('owner_ref', $u->ownerRef())->where('type', 'instant')->count(),
                 'totalWonPence' => (int) LedgerEntry::query()->where('user_id', $u->id)->where('bucket', 'winnings')->where('direction', 'credit')->where('reference', 'like', 'verity-winner:%')->sum('amount_pence'),
                 'spentThisWeekPence' => $this->check->paidInSince($u, now()->subDays(7)),

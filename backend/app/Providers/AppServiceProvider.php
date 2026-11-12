@@ -38,6 +38,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Astro reaches Laravel on a private address (127.0.0.1:8080); links Laravel writes (emails, the
+        // payment page's return addresses) always use the public one.
+        if ($this->app->environment('production')) {
+            URL::forceRootUrl((string) config('app.url'));
+            URL::forceScheme('https');
+        }
+
         // Instant wins are paid in the order's own transaction; this catches any played elsewhere. Idempotent.
         Event::listen(InstantWinRevealed::class, fn (InstantWinRevealed $e) => app(Fulfilment::class)->awardInstantWin($e->winner));
         Event::listen(WinnerDrawn::class, fn (WinnerDrawn $e) => app(Fulfilment::class)->recordDrawWin($e->winner));

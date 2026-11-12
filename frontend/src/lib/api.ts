@@ -80,14 +80,18 @@ function readCookie(name: string): string | null {
 }
 
 let csrfReady: Promise<void> | null = null;
-async function ensureCsrf(): Promise<void> {
-  if (readCookie("XSRF-TOKEN")) return;
+async function ensureCsrf(force = false): Promise<void> {
+  if (force) csrfReady = null;
+  else if (readCookie("XSRF-TOKEN")) return;
   csrfReady ??= fetch("/sanctum/csrf-cookie", { credentials: "include" }).then(() => undefined);
   await csrfReady;
 }
 
-/** Browser-side API call. Throws ApiFailure with Laravel's message on error. */
-export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+/**
+ * Browser-side API call. Throws ApiFailure with Laravel's message on error. A write refused with 419
+ * (the security token expired, e.g. a tab left open overnight) fetches a fresh token and tries once more.
+ */
+export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}, retried = false): Promise<T> {
   const method = (init.method ?? (init.json !== undefined ? "POST" : "GET")).toUpperCase();
   if (method !== "GET") await ensureCsrf();
   const headers: Record<string, string> = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
@@ -107,6 +111,10 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
     body = text ? JSON.parse(text) : null;
   } catch {
     body = { message: "Something went wrong. Please try again." };
+  }
+  if (res.status === 419 && method !== "GET" && !retried) {
+    await ensureCsrf(true);
+    return api<T>(path, init, true);
   }
   if (!res.ok) throw new ApiFailure(res.status, body as ApiError);
   return body as T;

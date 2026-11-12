@@ -14,7 +14,8 @@ routes by path (`nginx.conf`). Same domain, so Sanctum cookies just work.
 4. **Environment**: paste `backend/.env.example` into Forge's environment editor and fill in
    the secrets (Cashflows, Resend, Verity keys). `SESSION_DOMAIN=gimmegimmeprizes.co.uk`,
    `SANCTUM_STATEFUL_DOMAINS=gimmegimmeprizes.co.uk`, `APP_URL=https://gimmegimmeprizes.co.uk`.
-5. **Nginx**: edit the site's config with `nginx.conf`.
+5. **Nginx**: edit the site's config with `nginx.conf` — both blocks: the main site and the private
+   listener on 127.0.0.1:8080 that Astro uses to reach Laravel.
 6. **Daemons**: Astro (`astro-daemon.conf`) and `php artisan queue:work --tries=3` for the backend.
 7. **Scheduler**: Forge → Scheduler → `php artisan schedule:run` every minute (expires unpaid
    orders, Verity schedules, bonus expiry, health email).

@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
 use App\Models\Order;
 use App\Models\User;
+use App\Payments\CashflowsGateway;
 use App\Payments\GatewayAnswer;
+use App\Payments\PaymentGateway;
 use App\Services\Orders;
 use App\Services\Pricing;
 use App\Services\Reveal;
@@ -72,8 +74,14 @@ class OrderController extends Controller
      * Cashflows' notification. Never trusted: the order is found only by the job reference stored at
      * checkout, and confirmed only after asking Cashflows about that job.
      */
-    public function webhook(Request $r, Orders $orders): JsonResponse
+    public function webhook(Request $r, Orders $orders, PaymentGateway $gateway): JsonResponse
     {
+        // Nothing here is trusted either way, but a signature that is sent must be right.
+        if ($r->hasHeader('Hash') && $gateway instanceof CashflowsGateway && ! $gateway->signatureValid($r->getContent(), (string) $r->header('Hash'))) {
+            Log::warning('Cashflows notification with a wrong signature');
+
+            return response()->json(['message' => 'Invalid signature'], 401);
+        }
         $ref = $r->input('paymentJobReference');
         if (! GatewayAnswer::isReference($ref)) {
             return response()->json(['message' => 'Invalid notification'], 400);

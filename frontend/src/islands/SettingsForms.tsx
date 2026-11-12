@@ -65,7 +65,7 @@ export default function SettingsForms({ me }: { me: Me }) {
           <div className="field"><label htmlFor="np">New password</label><input className="inp" id="np" type="password" autoComplete="new-password" value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} /></div>
           {security.note}
           <button type="submit" className="btn btn-o" disabled={security.busy || !pw.current || pw.password.length < 8}>Change Password</button>
-          <a href="/contact" className="hint" style={{ textAlign: "center" }}>Close my account</a>
+          <a href="/contact" className="hint tap" style={{ textAlign: "center" }}>Close my account</a>
         </form>
       </div>
     </div>

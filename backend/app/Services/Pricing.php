@@ -46,6 +46,7 @@ final class Pricing
                 $status === 'sold_out' => 'Sold out.',
                 $status !== 'live' => 'This competition is closed.',
                 $qty < 1 => 'Choose at least one ticket.',
+                $max === 0 && $this->state->left($c) - $this->state->reserved($c) <= 0 => 'The last tickets are being paid for right now. Try again in a few minutes.',
                 $max === 0 => "You've reached the ticket limit for this competition.",
                 $qty > $max => 'You can buy '.$max.' more '.($max === 1 ? 'ticket' : 'tickets').' for this competition.',
                 default => null,

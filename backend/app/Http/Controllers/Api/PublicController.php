@@ -14,6 +14,7 @@ use App\Services\Fulfilment;
 use App\Services\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Sprouthub\Verity\Models\Entry;
 use Sprouthub\Verity\Models\Winner;
@@ -154,6 +155,10 @@ class PublicController extends Controller
 
     public function contact(Request $r): JsonResponse
     {
+        // The form's hidden "website" field is only ever filled in by bots: answer as if sent, save nothing.
+        if (trim((string) $r->input('website')) !== '') {
+            return response()->json(null, 204);
+        }
         $d = $r->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email:rfc', 'max:255'],
@@ -163,8 +168,12 @@ class PublicController extends Controller
         $msg = ContactMessage::query()->create($d + ['ip' => $r->ip()]);
         if ($to = config('app.contact_inbox')) {
             // Plain text, to our own inbox only; the visitor's words are never sent back to them.
-            Mail::raw("Contact form message #{$msg->id}\nFrom: {$d['name']} <{$d['email']}>\nTopic: {$d['topic']}\n\n{$d['message']}",
-                fn ($m) => $m->to($to)->subject('Website message #'.$msg->id)->replyTo($d['email']));
+            try {
+                Mail::raw("Contact form message #{$msg->id}\nFrom: {$d['name']} <{$d['email']}>\nTopic: {$d['topic']}\n\n{$d['message']}",
+                    fn ($m) => $m->to($to)->subject('Website message #'.$msg->id)->replyTo($d['email']));
+            } catch (\Throwable $e) {
+                Log::warning('Contact message saved but not emailed', ['id' => $msg->id]); // it is in the admin
+            }
         }
 
         return response()->json(null, 204);

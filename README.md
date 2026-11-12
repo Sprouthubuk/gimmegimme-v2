@@ -38,6 +38,7 @@ cd backend && php artisan test         # wallet, orders, Cashflows, Verity, API,
 cd frontend && npx astro check         # types
 cd frontend && npm run build && npm test             # unit, islands, reveal-game integrity, journeys on the mock API
 cd frontend && npm run build && npm run test:fullstack  # the built site against the real Laravel + Verity
+cd frontend && npm run build && npm run test:visual     # every page at 4 sizes in Chrome; screenshots in /tmp/gg-shots
 ```
 
 The end-to-end tests start the built Astro server, an API (the mock, or real Laravel for

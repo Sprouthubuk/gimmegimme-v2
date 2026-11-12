@@ -58,3 +58,10 @@ jobs:
           COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
       - run: npm ci && npm run build && npm run test:fullstack
         working-directory: frontend
+      # Every page at 320/390/820/1440px: console errors, sideways scroll, broken pictures, words run together.
+      - run: npm run test:visual
+        working-directory: frontend
+        env: { CHROME_PATH: /usr/bin/google-chrome, SHOTS_DIR: "${{ runner.temp }}/shots" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: screenshots, path: "${{ runner.temp }}/shots", retention-days: 14 }
