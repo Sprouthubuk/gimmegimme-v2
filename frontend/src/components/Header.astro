@@ -1,0 +1,58 @@
+---
+import Icon from "./Icon.astro";
+import { formatMoney } from "../lib/money";
+interface Props { active?: string; variant?: "main" | "auth" | "secure" | "menu"; back?: string; title?: string }
+const { active = "", variant = "main", back = "/", title = "Secure checkout" } = Astro.props;
+const me = Astro.locals.me;
+const nav = [
+  ["Home", "/", "home"],
+  ["Competitions", "/competitions", "competitions"],
+  ["Instant Winners", "/instant-winners", "instant-winners"],
+  ["Winners", "/winners", "winners"],
+  ["Entry Lists", "/entry-lists", "entry-lists"],
+];
+---
+{variant === "main" && (
+  <>
+    <div class="ann"><b>18+</b><span>Free postal entry on every comp</span><span style="color:#FF2DAA">✦</span><span>Wins paid straight to your wallet</span><span style="color:#FF2DAA">✦</span><a href="/account/safer-play" style="color:#22E6FF;text-decoration:none">Play responsibly</a></div>
+    <header class="hd"><div class="wrap hd-in">
+      <a class="logo" href="/" aria-label="Gimme Gimme Prizes home"><img src="/logo.webp" alt="Gimme Gimme Prizes" width="84" height="56"></a>
+      <nav class="nav" aria-label="Main">{nav.map(([n, href, key]) => <a href={href} class={key === active ? "on" : ""} aria-current={key === active ? "page" : undefined}>{n}</a>)}</nav>
+      <div class="hd-r">
+        {me ? (
+          <>
+            <a class="wal" href="/account/wallet" aria-label={`Wallet balance ${formatMoney(me.wallet.totalPence)}`}><i>£</i><span data-wallet>{formatMoney(me.wallet.totalPence)}</span></a>
+            <a class="ib" href="/basket" aria-label="Basket"><Icon name="cart" /><span class="badge" data-basket-count hidden></span></a>
+            <a class="ib acc" href="/account" aria-label="Your account">{me.firstName.slice(0, 1).toUpperCase()}</a>
+          </>
+        ) : (
+          <>
+            <a class="ib" href="/basket" aria-label="Basket"><Icon name="cart" /><span class="badge" data-basket-count hidden></span></a>
+            <a class="btn btn-o btn-sm" href="/login">Log In</a>
+            <a class="btn btn-p btn-sm join" href="/join">Join</a>
+          </>
+        )}
+        <a class="ib burger" href="/menu" aria-label="Open menu"><Icon name="menu" /></a>
+      </div>
+    </div></header>
+  </>
+)}
+{variant === "auth" && (
+  <header class="auth-hd"><div class="wrap row g12" style="height:64px">
+    <a href="/" class="logo" aria-label="Home"><img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:42px" width="63" height="42"></a>
+    <a href={back} class="ib" aria-label="Close" style="margin-left:auto"><Icon name="close" size={18} /></a>
+  </div></header>
+)}
+{variant === "secure" && (
+  <header class="auth-hd"><div class="wrap row g12" style="height:60px">
+    <a href={back} class="ib" aria-label="Back"><Icon name="back" size={18} /></a>
+    <div class="row g8" style="flex:1;justify-content:center;font-weight:900"><Icon name="lock" size={16} />{title}</div>
+    <a href="/" class="logo" aria-label="Home"><img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:36px" width="54" height="36"></a>
+  </div></header>
+)}
+{variant === "menu" && (
+  <header class="auth-hd"><div class="wrap row g12" style="height:60px">
+    <a href="/" class="logo" aria-label="Home"><img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:40px" width="60" height="40"></a>
+    <a href={back} class="ib" aria-label="Close menu" style="margin-left:auto"><Icon name="close" size={18} /></a>
+  </div></header>
+)}

@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { LoginForm } from "../islands/AuthForms";
+import { safeNext } from "../lib/safe";
+const next = Astro.url.searchParams.get("next");
+if (Astro.locals.me) return Astro.redirect(safeNext(next, "/account"));
+---
+<Layout title="Log In" header="auth" bottomNav={false} footer={false} noindex>
+  <section class="sec" style="padding-top:28px"><div class="narrow stack g16" style="max-width:440px">
+    <div class="gg-rise"><h1 class="h1">Welcome <span class="nc gg-flicker">Back</span></h1><p class="p" style="margin-top:6px">Log in to play and check your wins.</p></div>
+    <div class="gg-rise gg-d2"><LoginForm client:load next={next} /></div>
+    <p class="p" style="text-align:center">New here? <a href={`/join${next ? `?next=${encodeURIComponent(next)}` : ""}`}><b>Create an account</b></a></p>
+    <p class="hint" style="text-align:center;margin:0">Moved from our old site? Log in with the same email and password.</p>
+  </div></section>
+</Layout>

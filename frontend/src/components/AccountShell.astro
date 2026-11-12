@@ -1,0 +1,27 @@
+---
+import Icon from "./Icon.astro";
+interface Props { active: string; title: string; eyebrow: string; glow?: string; back?: boolean }
+const { active, title, eyebrow, glow = "np", back = true } = Astro.props;
+const me = Astro.locals.me!;
+const links = [
+  ["Dashboard", "/account", "home", "account"],
+  ["My Tickets", "/account/tickets", "ticket", "tickets"],
+  ["Wallet", "/account/wallet", "wallet", "wallet"],
+  ["Safer Play", "/account/safer-play", "shield", "safer-play"],
+  ["Settings", "/account/settings", "settings", "settings"],
+  ["Help & FAQs", "/faq", "help", "faq"],
+];
+const [first, ...rest] = title.split(" ");
+---
+<section class="sec" style="padding-top:16px"><div class="wrap acct">
+  <aside class="side"><div class="card" style="overflow:hidden">
+    <div class="row g12" style="padding:16px;border-bottom:1px solid rgba(255,255,255,.08)"><span class="av" style="border:1px solid #FF2DAA;color:#FF5CC0;box-shadow:0 0 12px rgba(255,45,170,.4)">{me.firstName.slice(0, 1)}</span><div><div class="d" style="font-size:18px">{me.firstName} {me.lastName}</div><div class="hint">Member since {new Date(me.memberSince).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "Europe/London" })}</div></div></div>
+    {links.map(([n, href, icon, key]) => <a class="li" href={href} aria-current={key === active ? "page" : undefined} style={key === active ? "color:#fff;background:rgba(255,45,170,.08)" : "color:#B9AFC6"}><span class="ico" style={key === active ? "border-color:#FF2DAA;color:#FF5CC0" : ""}><Icon name={icon} size={18} /></span>{n}</a>)}
+    <form method="post" action="/logout"><button class="li" type="submit" style="color:#8E84A0;width:100%;background:none;border:0;cursor:pointer;font:inherit;font-weight:800"><span class="ico"><Icon name="logout" size={18} /></span>Log Out</button></form>
+  </div></aside>
+  <div class="stack g16" style="min-width:0">
+    {back && <a href="/account" class="row g8 mob" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />Account</a>}
+    <div class="gg-rise"><div class="eyebrow">{eyebrow}</div><h1 class="h1" style="font-size:40px">{rest.length ? <>{first} <span class={`${glow} gg-flicker`}>{rest.join(" ")}</span></> : <span class={`${glow} gg-flicker`}>{title}</span>}</h1></div>
+    <slot />
+  </div>
+</div></section>

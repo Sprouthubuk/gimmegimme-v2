@@ -1,0 +1,104 @@
+/* Christmas skin — shared look. Scoped under .rg-skin-christmas, which ArcadeReveal
+   puts on the reveal only while a Christmas board (or an all-Christmas results
+   screen) is showing. Brand colours stay; festive red, green and gold are added. */
+
+.rg-reveal.rg-skin-christmas {
+  --rg-xmas-red: #e0283a;
+  --rg-xmas-red-light: #ff7a86;
+  --rg-xmas-red-dark: #a3121f;
+  --rg-xmas-green: #1fae5b;
+  --rg-xmas-green-light: #86e8ae;
+  --rg-xmas-green-dark: #0b7339;
+  --rg-xmas-gold: #ffd23f;
+  --rg-xmas-gold-light: #fff1a8;
+  --rg-xmas-gold-dark: #d99a00;
+  --rg-xmas-night: #16285c;
+  --rg-xmas-night-2: #22408a;
+  --rg-xmas-snow: #f4f8ff;
+  background:
+    radial-gradient(120% 60% at 50% 110%, rgba(255, 255, 255, 0.22), transparent 60%),
+    linear-gradient(180deg, var(--rg-xmas-night) 0%, var(--rg-xmas-night-2) 55%, #2f5aa8 100%);
+}
+/* Words that sit straight on the night sky. Everything on a white card keeps its colours. */
+.rg-skin-christmas .rg-counter,
+.rg-skin-christmas .rg-comp-title { color: var(--rg-white); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.rg-skin-christmas .rg-board .rg-prompt-title.is-ink { color: var(--rg-white); }
+.rg-skin-christmas .rg-board .rg-prompt-sub,
+.rg-skin-christmas .rg-board .rg-note { color: #dfe7ff; }
+.rg-skin-christmas .rg-prompt-title.is-pink { color: var(--rg-xmas-gold); text-shadow: 0 2px 0 var(--rg-ink), 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink); }
+.rg-skin-christmas .rg-kicker { color: var(--rg-xmas-red); }
+.rg-skin-christmas .rg-no-win { color: var(--rg-xmas-green); }
+.rg-skin-christmas .rg-pip.is-current { background: var(--rg-xmas-red); }
+.rg-skin-christmas .rg-pip.is-won { background: var(--rg-xmas-gold); }
+.rg-skin-christmas .rg-mascot { overflow: visible; }
+
+/* ---------- snow ---------- */
+.rg-snow { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.rg-snow i {
+  position: absolute;
+  top: -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 45%, rgba(255, 255, 255, 0) 72%);
+  animation-name: rg-snow-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.rg-snow.is-still i { animation: none !important; }
+@keyframes rg-snow-fall {
+  from { transform: translate3d(0, -20px, 0); }
+  to { transform: translate3d(var(--rg-drift), 900px, 0); }
+}
+
+/* ---------- twinkle lights (a string of bulbs on a board) ---------- */
+.rg-xmas-lights { display: flex; justify-content: space-between; padding: 0 6px; }
+.rg-xmas-lights i {
+  width: 10px;
+  height: 14px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 50% 50% 45% 45%;
+  background: var(--rg-xmas-red);
+  animation: rg-twinkle 1.2s ease-in-out infinite;
+}
+.rg-xmas-lights i:nth-child(4n + 2) { background: var(--rg-xmas-green); animation-delay: 0.3s; }
+.rg-xmas-lights i:nth-child(4n + 3) { background: var(--rg-xmas-gold); animation-delay: 0.6s; }
+.rg-xmas-lights i:nth-child(4n + 4) { background: var(--rg-cyan); animation-delay: 0.9s; }
+@keyframes rg-twinkle { 50% { filter: brightness(0.55); } }
+
+/* ---------- sound button ---------- */
+.rg-xmas-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(10, 20, 50, 0.35);
+  color: var(--rg-white);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.rg-xmas-sound svg { width: 20px; height: 20px; }
+.rg-xmas-sound[aria-pressed="true"] { background: var(--rg-xmas-gold); color: var(--rg-ink); border-color: var(--rg-ink); }
+
+/* Festive buttons: gold for the main action. */
+.rg-btn-xmas {
+  min-width: 220px;
+  min-height: 64px;
+  font-size: 30px;
+  background: linear-gradient(180deg, var(--rg-xmas-gold-light) 0%, var(--rg-xmas-gold) 45%, var(--rg-xmas-gold-dark) 100%);
+  color: var(--rg-ink);
+}
+
+/* Glossy title lettering used on the boards. */
+.rg-xmas-title {
+  font-family: var(--rg-font-display);
+  font-size: clamp(24px, 8cqw, 34px);
+  line-height: 1.1;
+  color: var(--rg-white);
+  text-align: center;
+  text-shadow: 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink), 0 2px 0 var(--rg-ink), 0 -2px 0 var(--rg-ink), 2px 2px 0 var(--rg-ink), -2px 2px 0 var(--rg-ink), 2px -2px 0 var(--rg-ink), -2px -2px 0 var(--rg-ink), 0 4px 0 var(--rg-ink);
+}

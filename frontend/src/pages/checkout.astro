@@ -1,0 +1,14 @@
+---
+import Layout from "../layouts/Layout.astro";
+import CheckoutView from "../islands/CheckoutView";
+const { me, site } = Astro.locals;
+const buy = Astro.url.searchParams.get("buy");
+---
+<Layout title="Review & Pay" noindex header="secure" headerBack={buy ? "/competitions" : "/basket"} bottomNav={false} footer={false}>
+  <section class="sec" style="padding-top:16px"><div class="narrow stack g16" style="max-width:620px">
+    <div class="steps gg-rise" aria-label="Step 2 of 3"><span class="on"></span><span class="on"></span><span></span></div>
+    <h1 class="h2 gg-rise gg-d1">Review &amp; <span class="np gg-flicker">Pay</span></h1>
+    <CheckoutView client:load buy={buy} walletPence={me?.wallet.totalPence ?? 0} minCardPence={site.minCardPence} />
+    <div class="row g8 wrapx hint" style="justify-content:center">Card payments secured by Cashflows · 18+ UK only · <a href="/free-entry">Free postal entry</a></div>
+  </div></section>
+</Layout>

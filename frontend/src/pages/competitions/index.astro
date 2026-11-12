@@ -1,0 +1,56 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import CompCard from "../../components/CompCard.astro";
+import Icon from "../../components/Icon.astro";
+import type { CompetitionSummary } from "../../lib/types";
+
+const { api } = Astro.locals;
+const q = (Astro.url.searchParams.get("q") ?? "").trim().slice(0, 60);
+const type = Astro.url.searchParams.get("type") ?? "all";
+const sort = Astro.url.searchParams.get("sort") ?? "ending";
+const { data: all } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
+
+const TYPES: [string, string, (c: CompetitionSummary) => boolean][] = [
+  ["all", "All", () => true],
+  ["instant", "Instant Wins", (c) => c.type === "instant"],
+  ["draw", "Live Draws", (c) => c.type === "draw"],
+  ["under10", "Under 10p", (c) => c.pricePence < 10],
+  ["christmas", "Christmas", (c) => c.skin === "christmas"],
+];
+const t = TYPES.find((x) => x[0] === type) ?? TYPES[0];
+let list = all.filter(t[2]);
+if (q) list = list.filter((c) => `${c.title} ${c.gameLabel ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+const sorters: Record<string, (a: CompetitionSummary, b: CompetitionSummary) => number> = {
+  ending: (a, b) => a.closesAt.localeCompare(b.closesAt),
+  price: (a, b) => a.pricePence - b.pricePence,
+  prize: (a, b) => (b.topPrizePence ?? 0) - (a.topPrizePence ?? 0),
+  newest: (a, b) => b.closesAt.localeCompare(a.closesAt),
+};
+list = [...list].sort(sorters[sort] ?? sorters.ending);
+const link = (k: string) => {
+  const u = new URLSearchParams();
+  if (k !== "all") u.set("type", k);
+  if (q) u.set("q", q);
+  if (sort !== "ending") u.set("sort", sort);
+  const s = u.toString();
+  return `/competitions${s ? "?" + s : ""}`;
+};
+---
+<Layout title="All Competitions" active="competitions" description="Every live Gimme Gimme competition: instant win games and live draws.">
+  <section class="sec" style="padding-top:20px"><div class="wrap stack g16">
+    <div class="gg-rise"><div class="eyebrow">{all.length} Live Now · New Comps Every Week</div><h1 class="h1">All <span class="np gg-flicker">Competitions</span></h1></div>
+    <form class="row g8 gg-rise gg-d2" method="get" action="/competitions" role="search">
+      {type !== "all" && <input type="hidden" name="type" value={type}>}
+      <label style="position:relative;flex:1"><span style="position:absolute;left:14px;top:15px;color:#8E84A0"><Icon name="search" /></span><input class="inp" type="search" name="q" value={q} placeholder="Search prizes, games or cash" aria-label="Search competitions" style="padding-left:44px"></label>
+      <select class="inp" name="sort" aria-label="Sort" style="width:auto;min-width:130px" onchange="this.form.submit()">
+        <option value="ending" selected={sort === "ending"}>Ending soon</option>
+        <option value="price" selected={sort === "price"}>Price: low</option>
+        <option value="prize" selected={sort === "prize"}>Biggest prize</option>
+        <option value="newest" selected={sort === "newest"}>Newest</option>
+      </select>
+      <noscript><button class="btn btn-o" type="submit">Go</button></noscript>
+    </form>
+    <div class="scrollx gg-rise gg-d3" role="group" aria-label="Filter">{TYPES.map(([k, label, f]) => <a class={`chip ${k === t[0] ? "on" : ""}`} href={link(k)} aria-current={k === t[0] ? "true" : undefined}>{label} {all.filter(f).length}</a>)}</div>
+    {list.length ? <div class="grid-c gg-stagger">{list.map((c) => <CompCard c={c} />)}</div> : <div class="card empty">No competitions match that. <a href="/competitions">Show all</a></div>}
+  </div></section>
+</Layout>

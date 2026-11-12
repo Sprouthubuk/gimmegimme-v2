@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { VerifyEmail } from "../islands/AuthForms";
+const next = Astro.url.searchParams.get("next");
+const status = Astro.url.searchParams.get("status");
+const me = Astro.locals.me;
+---
+<Layout title="Confirm Your Email" header="auth" bottomNav={false} footer={false} noindex>
+  <section class="sec" style="padding-top:28px"><div class="narrow stack g16" style="max-width:480px">
+    <div class="gg-rise"><h1 class="h1">Check Your <span class="nc gg-flicker">Inbox</span></h1></div>
+    {status === "verified" || me?.emailVerified
+      ? <><div class="notice notice-c" role="status"><span>Email confirmed — you’re ready to play.</span></div><a class="btn btn-y btn-lg" href={next && next.startsWith("/") && !next.startsWith("//") ? next : "/competitions"}>Let’s Go</a></>
+      : <VerifyEmail client:load email={me?.email ?? null} next={next} />}
+  </div></section>
+</Layout>

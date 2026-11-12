@@ -1,0 +1,17 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import { JoinForm } from "../islands/AuthForms";
+import { safeNext } from "../lib/safe";
+const next = Astro.url.searchParams.get("next");
+if (Astro.locals.me) return Astro.redirect(safeNext(next, "/account"));
+const fromBuy = (next ?? "").startsWith("/checkout");
+---
+<Layout title="Join Gimme Gimme" header="auth" bottomNav={false} footer={false} noindex>
+  <section class="sec" style="padding-top:20px"><div class="narrow stack g16" style="max-width:480px">
+    {fromBuy && <div class="notice notice-c gg-rise"><Icon name="cart" size={18} /><span>Your tickets are saved. Create your account to pay.</span></div>}
+    <div class="gg-rise gg-d1"><h1 class="h1">Join <span class="np gg-flicker">Gimme Gimme</span></h1><p class="p" style="margin-top:6px">Takes about 30 seconds.</p></div>
+    <div class="gg-rise gg-d2"><JoinForm client:load next={next} /></div>
+    <p class="p" style="text-align:center">Already have an account? <a href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}><b>Log in</b></a></p>
+  </div></section>
+</Layout>

@@ -1,0 +1,122 @@
+.rg-bingo-tray {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: min(100%, 400px);
+  min-height: 80px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  border: var(--rg-outline);
+  border-radius: 20px;
+  background: var(--rg-white);
+  box-shadow: 0 5px 0 var(--rg-ink);
+}
+.rg-bingo-placeholder { width: 100%; text-align: center; font-weight: 900; color: var(--rg-muted); font-size: 16px; }
+.rg-bingo-balls { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rg-ball-new { animation: rg-ball-in 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.rg-bingo-left { display: flex; flex-direction: column; align-items: center; line-height: 1; font-weight: 900; }
+.rg-bingo-left small { font-size: 10px; letter-spacing: 0.04em; text-align: center; width: 40px; }
+.rg-bingo-left strong { font-family: var(--rg-font-display); font-weight: 400; font-size: 24px; }
+.rg-bingo-sticker {
+  position: absolute;
+  right: -8px;
+  bottom: -18px;
+  padding: 3px 10px;
+  border: var(--rg-outline);
+  border-radius: 8px;
+  background: var(--rg-pink);
+  color: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: 16px;
+  rotate: 6deg;
+  animation: rg-pop 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.rg-ball {
+  --rg-ball: var(--rg-pink);
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: var(--rg-outline);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.6), var(--rg-ball) 45%);
+  box-shadow: 0 3px 0 var(--rg-ink);
+}
+.rg-ball.is-big { width: 62px; height: 62px; }
+.rg-ball-pink { --rg-ball: var(--rg-pink); }
+.rg-ball-cyan { --rg-ball: var(--rg-cyan); }
+.rg-ball-yellow { --rg-ball: var(--rg-yellow); }
+.rg-ball-inner {
+  display: grid;
+  place-items: center;
+  width: 64%;
+  height: 64%;
+  border: 2px solid var(--rg-ink);
+  border-radius: 50%;
+  background: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: 13px;
+  line-height: 0.85;
+}
+.rg-ball-inner small { font-family: var(--rg-font-body); font-weight: 900; font-size: 7px; }
+.rg-ball.is-big .rg-ball-inner { font-size: 19px; }
+.rg-ball.is-big .rg-ball-inner small { font-size: 9px; }
+
+.rg-bingo-card {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+  width: min(100%, 400px);
+  padding: 12px;
+  border: var(--rg-outline);
+  border-radius: 24px;
+  background: var(--rg-white);
+  box-shadow: 0 6px 0 var(--rg-ink);
+}
+.rg-bingo-head {
+  display: grid;
+  place-items: center;
+  height: 42px;
+  border: var(--rg-outline);
+  border-radius: 10px;
+  background: var(--rg-ball);
+  color: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: 24px;
+  text-shadow: 0 2px 0 var(--rg-ink), 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink), 0 -2px 0 var(--rg-ink);
+}
+.rg-bingo-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1.15;
+  border: var(--rg-outline);
+  border-radius: 12px;
+  background: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: min(26px, 6.4cqw);
+  transition: background 0.25s;
+}
+.rg-bingo-cell.is-free { background: #fff7c9; }
+.rg-bingo-cell.is-free .rg-mascot { width: 70%; height: 70%; }
+.rg-bingo-cell.is-marked { background: #ffe0f0; }
+.rg-bingo-cell.is-marked span {
+  display: grid;
+  place-items: center;
+  width: 78%;
+  aspect-ratio: 1;
+  border: var(--rg-outline);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffc2e2, var(--rg-pink-light) 50%, var(--rg-pink));
+  color: var(--rg-white);
+  text-shadow: 0 2px 0 var(--rg-ink), 1px 0 0 var(--rg-ink), -1px 0 0 var(--rg-ink);
+}
+.rg-bingo-cell.is-new span { animation: rg-daub 0.4s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.rg-bingo-cell.is-win { background: var(--rg-yellow); animation: rg-glow 1s ease-in-out infinite; }
+.rg-bingo-controls { margin-top: 26px; display: flex; flex-direction: column; align-items: center; max-width: 360px; }
+
+@keyframes rg-ball-in { from { transform: translateX(-30px) scale(0.3); opacity: 0; } }
+@keyframes rg-daub { from { transform: scale(0.2); } }

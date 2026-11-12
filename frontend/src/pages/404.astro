@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+Astro.response.status = 404;
+---
+<Layout title="Page Not Found" noindex>
+  <section class="sec"><div class="narrow stack g16" style="text-align:center;align-items:center">
+    <div class="d np gg-flicker" style="font-size:96px;line-height:1">404</div>
+    <h1 class="h2">This Page Has <span class="nc">Vanished</span></h1>
+    <p class="p">It may have closed or moved. The good stuff is this way.</p>
+    <a class="btn btn-y btn-lg gg-cta" href="/competitions">Browse Competitions</a>
+  </div></section>
+</Layout>

@@ -1,0 +1,15 @@
+---
+import Icon from "./Icon.astro";
+interface Props { active?: string }
+const { active = "" } = Astro.props;
+const items = [
+  ["Home", "/", "home", "home"],
+  ["Comps", "/competitions", "grid", "competitions"],
+  ["Winners", "/instant-winners", "trophy", "instant-winners"],
+  ["Wallet", "/account/wallet", "wallet", "wallet"],
+  ["Account", "/account", "user", "account"],
+];
+---
+<nav class="bn" aria-label="Quick navigation">
+  {items.map(([n, href, icon, key]) => <a href={href} class={key === active ? "on" : ""} aria-current={key === active ? "page" : undefined}><Icon name={icon} size={22} />{n}</a>)}
+</nav>

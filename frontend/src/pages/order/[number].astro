@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import OrderView from "../../islands/OrderView";
+import type { OrderView as Order } from "../../lib/types";
+const number = Astro.params.number!;
+if (!/^[A-Z]{2}-[A-Z0-9-]{4,40}$/.test(number)) return Astro.rewrite("/404");
+const order = await Astro.locals.api.maybe<Order>(`/api/orders/${encodeURIComponent(number)}`);
+if (!order) return Astro.rewrite("/404");
+---
+<Layout title="Your Order" noindex active="">
+  <section class="sec" style="padding-top:20px"><div class="narrow stack g16" style="max-width:640px">
+    <div class="steps" aria-label="Step 3 of 3"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+    <OrderView client:load number={number} initial={order} />
+  </div></section>
+</Layout>

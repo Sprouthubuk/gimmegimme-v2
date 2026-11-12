@@ -1,0 +1,106 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import CompCard from "../../components/CompCard.astro";
+import Countdown from "../../components/Countdown.astro";
+import HeroImage from "../../components/HeroImage.astro";
+import Icon from "../../components/Icon.astro";
+import TicketPicker from "../../islands/TicketPicker";
+import type { CompetitionDetail, CompetitionSummary } from "../../lib/types";
+import { formatPence, formatCount } from "../../lib/money";
+import { ukDateTime, ukShortDay } from "../../lib/time";
+
+const { api, site, me } = Astro.locals;
+const slug = Astro.params.slug!;
+const c = await api.maybe<CompetitionDetail>(`/api/competitions/${encodeURIComponent(slug)}`);
+if (!c) return Astro.rewrite("/404");
+const { data: others } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
+const more = others.filter((o) => o.id !== c.id && o.type === c.type).slice(0, 3);
+const isDraw = c.type === "draw";
+const prizesLeft = c.prizes.reduce((n, p) => n + (p.quantity - p.won), 0);
+const prizesWon = c.prizes.reduce((n, p) => n + p.won, 0);
+const prizesTotal = prizesLeft + prizesWon;
+const open = c.status === "live";
+const ticketsLeft = Math.max(0, Math.round(c.maxTickets * (1 - c.soldPercent / 100)));
+const presets = isDraw ? [1, 5, 10, 25] : [5, 10, 25, 50];
+const glow = ["np", "nc", "ny"];
+const [first, ...rest] = c.title.split(" – ");
+---
+<Layout title={c.title} active="competitions" description={c.description.slice(0, 155)}>
+<div class="lft">
+  <section style="padding:12px 0 24px"><div class="wrap stack g16">
+    <a href="/competitions" class="row g8 mob" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />All Competitions</a>
+    <nav aria-label="Breadcrumb" class="dsk" style="font-size:13px;font-weight:800;color:#8E84A0"><a href="/" style="color:#8E84A0;text-decoration:none">Home</a> / <a href={`/competitions?type=${c.type}`} style="color:#8E84A0;text-decoration:none">{isDraw ? "Live Draws" : "Instant Wins"}</a> / <span style="color:#fff">{c.title}</span></nav>
+    <div class="split">
+      <div class="stack g16">
+        <HeroImage src={c.image} alt={c.title}>
+          {isDraw
+            ? <span class="tag tag-c" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><span class="gg-ping" style="width:7px;height:7px;border-radius:999px;background:#22E6FF"></span> Live Draw</span>
+            : <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {c.gameLabel}</span>}
+        </HeroImage>
+        {!isDraw && c.game && <a href={`/demo/${c.game}?skin=${c.skin}`} class="card card-cy card-p row g12 gg-card dsk" style="text-decoration:none;color:#fff;display:flex"><span style="width:48px;height:48px;border-radius:14px;border:1px solid #22E6FF;color:#22E6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><Icon name="claw" size={26} stroke={1.8} /></span><span style="flex:1"><b class="d" style="font-size:20px;display:block">Try The Game Free</b><span class="hint">Every ticket plays one go. Results are fixed when you buy.</span></span><Icon name="chev" /></a>}
+      </div>
+      <div class="stack g16 sticky">
+        <div class="gg-rise gg-d2">
+          <div class="eyebrow">{isDraw ? "Live draw" : `Instant win${prizesTotal ? ` · ${formatCount(prizesTotal)} prizes` : ""}`}</div>
+          <h1 class="h1" style="margin-top:6px"><span class="np gg-flicker">{first}</span>{rest.length > 0 && <><br>{rest.join(" – ")}</>}</h1>
+          <div class="row wrapx g8" style="margin-top:12px">
+            {c.topPrizePence && !isDraw && <span class="tag tag-y">Top prize {formatPence(c.topPrizePence, { short: false })}</span>}
+            {c.cashAlternativePence && <span class="tag tag-y">{formatPence(c.cashAlternativePence, { short: false })} cash alternative</span>}
+            {!isDraw && prizesTotal > 0 && <span class="tag tag-c">{formatCount(prizesLeft)} prizes left</span>}
+            {isDraw && c.drawAt && <span class="tag tag-c">Draw {ukDateTime(c.drawAt)}</span>}
+            <span class="tag tag-w">Closes {ukDateTime(c.closesAt)}</span>
+          </div>
+        </div>
+        <div class={`card card-p stack g12 gg-rise gg-d3 ${isDraw ? "card-cy" : ""}`}>
+          {isDraw && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
+          <Countdown until={isDraw && c.drawAt ? c.drawAt : c.closesAt} />
+          <div class={`bar ${isDraw ? "cy" : ""}`}><div class="gg-shine" style={`width:${c.soldPercent}%`}></div></div>
+          <div class="row between hint"><span>{c.soldPercent}% sold</span><span>{isDraw ? `${formatCount(c.maxTickets)} tickets` : "Results fixed when you buy"}</span></div>
+        </div>
+        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
+        <p class="hint" style="margin:0">No purchase necessary — <a href="/free-entry">enter free by post</a> with the same chance of winning. 18+ UK only · <a href="/legal/terms">T&amp;Cs</a></p>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="sec" style="padding-top:8px"><div class="wrap split">
+    {!isDraw && c.prizes.length > 0 ? (
+      <div class="stack g12">
+        <div class="row between g8 gg-reveal sh"><h2 class="h2">Instant <span class="np">Prizes</span></h2><span class="tag tag-p">{formatCount(prizesWon)} won</span></div>
+        <p class="p" style="font-size:14px">Every outcome is fixed before the first ticket is sold — the fingerprint below proves the list can't change.</p>
+        <div class="card gg-reveal" style="overflow:hidden">
+          {c.prizes.map((p, i) => (
+            <div class="row g12" style="padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)">
+              <span class={`d ${glow[i % 3]}`} style="font-size:20px;min-width:78px">{formatPence(p.valuePence)}</span>
+              <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{p.name}</div><div class="bar" style="height:4px;margin-top:6px"><div style={`width:${p.quantity ? Math.max((p.won / p.quantity) * 100, p.won ? 3 : 0) : 0}%;min-width:0`}></div></div></div>
+              <span class="hint" style="white-space:nowrap">{formatCount(p.quantity - p.won)}/{formatCount(p.quantity)} left</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <div class="stack g12">
+        <div class="gg-reveal"><div class="eyebrow">How draw night works</div><h2 class="h2">Drawn <span class="np">Live</span>, Totally Random</h2></div>
+        <div class="tl gg-stagger">
+          <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">01</span><div><div style="font-weight:900">Entries Close</div><div class="hint" style="font-size:13px">{ukDateTime(c.closesAt)}</div></div></div>
+          <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Entry List Published</div><div class="hint" style="font-size:13px">Every ticket number, public before the draw</div></div></div>
+          <div class="gg-card"><span class="d ny" style="font-size:26px;width:38px">03</span><div><div style="font-weight:900">Winner Picked Live</div><div class="hint" style="font-size:13px">A random draw anyone can verify, revealed here{c.drawAt ? ` at ${ukShortDay(c.drawAt)}` : ""}</div></div></div>
+          <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">04</span><div><div style="font-weight:900">Prize On Its Way</div><div class="hint" style="font-size:13px">We contact the winner{c.cashAlternativePence ? ` — or pay the ${formatPence(c.cashAlternativePence, { short: false })} cash alternative` : ""}</div></div></div>
+        </div>
+      </div>
+    )}
+    <div class="stack g12">
+      <h2 class="h2 gg-reveal">The <span class="nc">Details</span></h2>
+      <details class="acd" open><summary>About This Competition <Icon name="down" /></summary><div class="ab" set:html={c.description.replace(/</g, "&lt;").replace(/\n/g, "<br>")}></div></details>
+      {c.howToPlay && <details class="acd"><summary>How To Play <Icon name="down" /></summary><div class="ab">{c.howToPlay}</div></details>}
+      <details class="acd"><summary>Free Postal Entry <Icon name="down" /></summary><div class="ab">Same chance of winning. <a href="/free-entry">How to enter by post</a></div></details>
+      <details class="acd"><summary>Entry List <Icon name="down" /></summary><div class="ab">Every confirmed ticket with a masked name. <a href={`/entry-lists/${c.slug}`}>View the entry list</a></div></details>
+      {c.verityRef && <details class="acd"><summary>Fair Play Record <Icon name="down" /></summary><div class="ab stack g8"><span>Competition reference <b style="color:#fff">{c.verityRef}</b></span>{c.commitment && <span style="word-break:break-all">Seed fingerprint <code style="color:#22E6FF">{c.commitment}</code></span>}{c.verifyUrl && <a href={c.verifyUrl}>Verify this competition</a>}</div></details>}
+      <details class="acd"><summary>Terms <Icon name="down" /></summary><div class="ab">18+ UK residents only. Max {formatCount(c.maxPerPerson)} tickets per person. <a href="/legal/terms">Full T&amp;Cs</a></div></details>
+      {!isDraw && c.game && <a href={`/demo/${c.game}?skin=${c.skin}`} class="card card-cy card-p row g12 gg-card mob" style="text-decoration:none;color:#fff;display:flex"><span style="width:44px;height:44px;border-radius:14px;border:1px solid #22E6FF;color:#22E6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><Icon name="claw" size={24} stroke={1.8} /></span><span style="flex:1"><b class="d" style="font-size:19px;display:block">Try The Game Free</b><span class="hint">See how it works first</span></span><Icon name="chev" /></a>}
+    </div>
+  </div></section>
+
+  {more.length > 0 && <section class="sec"><div class="wrap stack g16"><h2 class="h2 gg-reveal">{isDraw ? <>More <span class="nc">Draws</span></> : <>You Might <span class="np">Also Like</span></>}</h2><div class="rail gg-stagger">{more.map((o) => <CompCard c={o} />)}</div></div></section>}
+</div>
+</Layout>

@@ -1,0 +1,9 @@
+---
+interface Props { src: string; alt: string; float?: boolean; class?: string }
+const { src, alt, float = false, class: cls = "" } = Astro.props;
+---
+<div class={`hero-img gg-rise gg-d1 ${float ? "gg-float" : ""} ${cls}`}>
+  <div class="ring" aria-hidden="true"><div class="gg-ringspin"></div></div>
+  <img src={src} alt={alt} width="640" height="640" fetchpriority="high">
+  <slot />
+</div>

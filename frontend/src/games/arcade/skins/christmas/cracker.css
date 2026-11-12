@@ -1,0 +1,177 @@
+.rg-cracker-box { width: min(100%, 380px); filter: drop-shadow(0 6px 0 var(--rg-ink)); }
+.rg-cracker-top {
+  border: var(--rg-outline);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(180deg, #ff5a68, var(--rg-xmas-red) 60%, var(--rg-xmas-red-dark));
+  padding: 8px 12px 6px;
+}
+.rg-cracker-top .rg-xmas-title { color: var(--rg-xmas-gold); margin-top: 4px; }
+
+/* ---------- the table ---------- */
+.rg-cracker-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 10px 8px;
+  border: var(--rg-outline);
+  border-bottom-width: 0;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.18) 0 3px, transparent 4px) 0 0 / 46px 40px,
+    linear-gradient(180deg, #11663a, var(--rg-xmas-green-dark));
+}
+.rg-cracker-place { position: relative; height: min(70px, 18cqw); }
+.rg-cracker {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  rotate: var(--tilt);
+  animation: rg-cracker-in 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.rg-cracker:disabled { cursor: default; }
+.rg-cracker:not(:disabled):active .rg-cracker-svg { scale: 0.96; }
+.rg-cracker-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.rg-cracker-left, .rg-cracker-right, .rg-cracker-ribbon { transform-box: fill-box; transform-origin: 50% 50%; }
+.rg-cracker.is-pulled .rg-cracker-svg { animation: rg-cracker-wobble 0.38s ease-in-out; }
+.rg-cracker.is-pulled .rg-cracker-left { animation: rg-cracker-left 0.6s 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+.rg-cracker.is-pulled .rg-cracker-right { animation: rg-cracker-right 0.6s 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) forwards; }
+.rg-cracker.is-pulled .rg-cracker-ribbon { animation: rg-fade-out 0.1s 0.38s forwards; }
+
+/* ---------- the snap ---------- */
+.rg-cracker-snap { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; pointer-events: none; }
+.rg-cracker-bang {
+  position: absolute;
+  width: 96px;
+  display: grid;
+  place-items: center;
+  animation: rg-cracker-bang 0.55s 0.36s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.rg-cracker-bang svg { width: 100%; display: block; }
+.rg-cracker-bang b { position: absolute; font-family: var(--rg-font-display); font-weight: 400; font-size: 21px; color: var(--rg-xmas-red); }
+.rg-cracker-bits { position: absolute; width: 0; height: 0; }
+.rg-cracker-bits i {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 2px;
+  opacity: 0;
+  animation: rg-cracker-bit 0.7s 0.38s ease-out forwards;
+}
+.rg-cracker-result { position: relative; animation: rg-pop 0.45s 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.rg-cracker-result em {
+  display: inline-block;
+  padding: 4px 14px;
+  border: var(--rg-outline);
+  border-radius: 999px;
+  background: var(--rg-white);
+  font-style: normal;
+  font-weight: 900;
+  font-size: 16px;
+}
+.rg-crown { position: relative; display: grid; place-items: center; width: 118px; }
+.rg-crown svg { width: 100%; display: block; }
+.rg-crown b {
+  position: absolute;
+  top: 46%;
+  font-family: var(--rg-font-display);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--rg-ink);
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rg-crown b.is-long { font-size: 14px; }
+
+/* ---------- the latest result ---------- */
+.rg-cracker-latest {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  padding: 8px 14px;
+  border: var(--rg-outline);
+  border-bottom-width: 0;
+  background: var(--rg-cream);
+  text-align: center;
+}
+.rg-cracker-latest-empty { font-weight: 900; color: var(--rg-muted); font-size: 14px; }
+.rg-cracker-latest-win { display: flex; align-items: center; gap: 12px; animation: rg-pop 0.35s ease both; }
+.rg-cracker-latest-win .rg-coin { --rg-coin-size: 48px; }
+.rg-cracker-latest-win strong { display: block; font-family: var(--rg-font-display); font-weight: 400; font-size: 26px; text-align: left; }
+.rg-cracker-latest-win small { display: block; font-size: 13px; color: var(--rg-muted); text-align: left; }
+.rg-cracker-latest-joke { animation: rg-fade-in 0.3s ease both; }
+.rg-cracker-latest-joke small { display: block; font-size: 12px; color: var(--rg-muted); font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+.rg-cracker-latest-joke p { margin: 4px 0 0; font-size: 15px; line-height: 1.3; }
+.rg-cracker-answer { color: var(--rg-xmas-red-dark); font-family: var(--rg-font-display); font-weight: 400; font-size: 18px !important; }
+
+/* ---------- panel ---------- */
+.rg-cracker-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: var(--rg-outline);
+  border-radius: 0 0 24px 24px;
+  background: var(--rg-white);
+}
+.rg-cracker-stats { flex: 1; min-width: 0; font-size: 14px; }
+.rg-cracker-stats strong { font-family: var(--rg-font-display); font-weight: 400; font-size: 20px; }
+.rg-cracker-tray { display: flex; align-items: center; gap: 4px; min-height: 36px; margin-top: 4px; }
+.rg-cracker-tray .rg-coin { --rg-coin-size: 32px; }
+.rg-cracker-tray-empty { font-size: 12px; color: var(--rg-muted); }
+.rg-cracker-total { margin-left: 4px; font-family: var(--rg-font-display); font-size: 18px; white-space: nowrap; }
+.rg-cracker-all {
+  flex: none;
+  min-height: 52px;
+  padding: 0 16px;
+  border: var(--rg-outline);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--rg-xmas-gold-light), var(--rg-xmas-gold) 50%, var(--rg-xmas-gold-dark));
+  box-shadow: 0 4px 0 var(--rg-ink);
+  font-family: var(--rg-font-display);
+  font-size: 20px;
+  cursor: pointer;
+}
+.rg-cracker-all:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--rg-ink); }
+.rg-cracker-all:disabled { cursor: default; background: #ececf0; color: #55555c; box-shadow: 0 2px 0 #9a9aa2; border-color: #9a9aa2; }
+
+@keyframes rg-cracker-in { from { transform: translateX(110%) rotate(8deg); opacity: 0; } }
+@keyframes rg-cracker-wobble { 25% { transform: rotate(-4deg) scale(1.03); } 50% { transform: rotate(3deg); } 75% { transform: rotate(-2deg) scale(1.02); } }
+@keyframes rg-cracker-left { to { transform: translateX(-34%) rotate(-16deg); opacity: 0; } }
+@keyframes rg-cracker-right { to { transform: translateX(34%) rotate(16deg); opacity: 0; } }
+@keyframes rg-fade-out { to { opacity: 0; } }
+@keyframes rg-cracker-bang { 0% { transform: scale(0.2); opacity: 0; } 30% { opacity: 1; } 75% { opacity: 1; } 100% { transform: scale(1.15); opacity: 0; } }
+@keyframes rg-cracker-bit {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--r)) rotate(220deg); opacity: 0; }
+}
+
+/* ---------- Chris Cracker's Cash Bang: red, green and gold, with a Christmas-market glow ---------- */
+.rg-reveal.rg-skin-christmas.rg-game-balloon_pop {
+  background:
+    radial-gradient(14% 9% at 18% 12%, rgba(255, 196, 92, 0.55), transparent 70%),
+    radial-gradient(10% 7% at 80% 8%, rgba(255, 120, 90, 0.45), transparent 70%),
+    radial-gradient(12% 8% at 70% 30%, rgba(255, 210, 63, 0.35), transparent 70%),
+    radial-gradient(16% 10% at 10% 55%, rgba(255, 170, 70, 0.3), transparent 70%),
+    radial-gradient(120% 60% at 50% 110%, rgba(255, 190, 80, 0.28), transparent 60%),
+    linear-gradient(180deg, #3a0b14 0%, #4b1019 45%, #0f3b24 100%);
+}
+.rg-cracker-top .rg-xmas-title { font-size: clamp(20px, 6.6cqw, 28px); }
+.rg-cracker-top .rg-xmas-lights i:nth-child(4n + 4) { background: var(--rg-xmas-gold); }
+.rg-cracker-table {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 214, 130, 0.5) 0 3px, rgba(255, 190, 90, 0.18) 4px, transparent 22px),
+    radial-gradient(circle at 86% 30%, rgba(255, 170, 90, 0.42) 0 3px, rgba(255, 150, 80, 0.15) 4px, transparent 26px),
+    radial-gradient(circle at 30% 78%, rgba(255, 230, 150, 0.4) 0 2px, rgba(255, 200, 110, 0.14) 3px, transparent 20px),
+    radial-gradient(circle at 68% 64%, rgba(255, 120, 90, 0.35) 0 2px, rgba(255, 110, 80, 0.12) 3px, transparent 24px),
+    radial-gradient(90% 70% at 50% 40%, rgba(255, 190, 80, 0.2), transparent 70%),
+    linear-gradient(180deg, #11663a, var(--rg-xmas-green-dark));
+  background-size: 150px 130px, 190px 170px, 170px 150px, 210px 190px, 100% 100%, 100% 100%;
+}
+.rg-cracker-latest { background: #fff4dc; }

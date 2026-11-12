@@ -1,0 +1,24 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AccountShell from "../../components/AccountShell.astro";
+import WalletActions from "../../islands/WalletActions";
+import type { WalletTransaction } from "../../lib/types";
+import { formatMoney } from "../../lib/money";
+import { ago } from "../../lib/time";
+const { api, me, site } = Astro.locals;
+const m = me!;
+const { data: tx } = await api.get<{ data: WalletTransaction[] }>("/api/me/wallet/transactions?limit=25");
+const deposit = Astro.url.searchParams.get("deposit");
+const BLOCK: Record<string, string> = { self_excluded: "Your account is self-excluded.", cool_off: "You're on a break.", on_hold: "Your account is on hold — please contact us.", staff: "Staff accounts can't top up.", email_unverified: "Confirm your email address first.", closed: "This account is closed.", under_18: "You must be 18 or over.", no_date_of_birth: "Add your date of birth in Settings first." };
+---
+<Layout title="Wallet" active="wallet" noindex>
+  <AccountShell active="wallet" title="Your Wallet" eyebrow="Wallet" glow="ny">
+    {deposit === "paid" && <div class="notice notice-c" role="status">Top up received — your balance is updated.</div>}
+    {(deposit === "failed" || deposit === "cancelled") && <div class="notice notice-p" role="status">That top up didn’t go through. No money was taken.</div>}
+    <div class="card card-ye card-p stack g8 gg-rise gg-d2"><span class="eyebrow">Balance</span><div class="d ny" style="font-size:56px;line-height:1">{formatMoney(m.wallet.totalPence)}</div><div class="hint">{formatMoney(m.wallet.winningsPence)} winnings · {formatMoney(m.wallet.depositPence)} deposits{m.wallet.bonusPence > 0 ? ` · ${formatMoney(m.wallet.bonusPence)} bonus` : ""}</div></div>
+    <WalletActions client:load minDepositPence={site.minDepositPence} maxTopUpPence={site.maxTopUpPence} minWithdrawalPence={site.minWithdrawalPence} withdrawablePence={m.wallet.withdrawablePence} blocked={m.playBlock ? BLOCK[m.playBlock] ?? "You can't top up right now." : null} />
+    <div class="stack g8"><div class="row between"><h2 class="h3">Activity</h2></div>
+      {tx.length ? <div class="card" style="overflow:hidden">{tx.map((t) => <div class="feed"><div style="flex:1;min-width:0"><div style="font-weight:800">{t.description}</div><div class="hint">{ago(t.at)} · {t.bucket}</div></div><b class={`d ${t.direction === "in" ? "nc" : ""}`} style="font-size:18px">{t.direction === "in" ? "+" : "−"}{formatMoney(t.amountPence)}</b></div>)}</div> : <div class="card empty">No activity yet.</div>}
+    </div>
+  </AccountShell>
+</Layout>

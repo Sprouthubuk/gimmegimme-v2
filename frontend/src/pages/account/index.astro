@@ -1,0 +1,38 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AccountShell from "../../components/AccountShell.astro";
+import Icon from "../../components/Icon.astro";
+import type { TicketGroup } from "../../lib/types";
+import { formatMoney, formatPence } from "../../lib/money";
+const { me, api, site } = Astro.locals;
+const m = me!;
+const { data: groups } = await api.get<{ data: TicketGroup[] }>("/api/me/tickets?tab=active&limit=3");
+const tag: Record<string, [string, string]> = { to_play: ["tag-y", "To play"], in_draw: ["tag-c", "In draw"], won: ["tag-p", "Won"], no_win: ["tag-w", "Played"], drawn: ["tag-w", "Drawn"] };
+const menu = [["My Tickets", "/account/tickets", "ticket"], ["Wallet", "/account/wallet", "wallet"], ["Safer Play", "/account/safer-play", "shield"], ["Settings", "/account/settings", "settings"], ["Help & FAQs", "/faq", "help"], ["Contact Us", "/contact", "mail"]];
+---
+<Layout title="My Account" active="account" noindex>
+  <AccountShell active="account" title={`Hi ${m.firstName}`} eyebrow="Your Account" back={false}>
+    {m.playBlock === "email_unverified" && <a href="/verify-email" class="notice notice-y" style="text-decoration:none"><Icon name="mail" size={18} /><span>Confirm your email address to start playing.</span></a>}
+    <div class="card card-ye card-p stack g12 gg-rise gg-d2">
+      <div class="row between"><span class="eyebrow">Wallet balance</span><a href="/account/wallet" style="font-size:13px;font-weight:800">History</a></div>
+      <div class="d ny" style="font-size:52px;line-height:1" data-testid="wallet-total">{formatMoney(m.wallet.totalPence)}</div>
+      <div class="r2"><a class="btn btn-y gg-cta" href="/account/wallet#top-up">Top Up</a><a class="btn btn-o" href="/account/wallet#withdraw">Withdraw</a></div>
+      <div class="hint">Top up from {formatPence(site.minDepositPence)} · withdraw winnings from {formatPence(site.minWithdrawalPence)}</div>
+    </div>
+    {m.gamesWaiting > 0 && <a href="/account/tickets?tab=to-play" class="notice notice-p gg-rise gg-d3" style="text-decoration:none;align-items:center"><Icon name="play" size={18} /><span style="flex:1"><b>{m.gamesWaiting} {m.gamesWaiting === 1 ? "game" : "games"} waiting</b> — play them now</span><Icon name="chev" size={18} /></a>}
+    <div class="kpi gg-stagger">
+      <div class="card card-p gg-card"><div class="eyebrow">Active tickets</div><div class="d np" style="font-size:34px">{m.stats.activeTickets}</div></div>
+      <div class="card card-p gg-card"><div class="eyebrow">Instant wins</div><div class="d nc" style="font-size:34px">{m.stats.instantWins}</div></div>
+      <div class="card card-p gg-card"><div class="eyebrow">Total won</div><div class="d ny" style="font-size:34px">{formatMoney(m.stats.totalWonPence)}</div></div>
+      <div class="card card-p gg-card"><div class="eyebrow">This week</div><div class="d" style="font-size:34px">{formatMoney(m.stats.spentThisWeekPence)}</div></div>
+    </div>
+    <div class="card mob gg-reveal" style="overflow:hidden">
+      {menu.map(([n, href, icon]) => <a class="li" href={href}><span class="ico"><Icon name={icon} size={18} /></span>{n}<span class="chev"><Icon name="chev" size={18} /></span></a>)}
+      <form method="post" action="/logout"><button class="li" type="submit" style="color:#8E84A0;width:100%;background:none;border:0;cursor:pointer;font:inherit;font-weight:800;text-align:left"><span class="ico"><Icon name="logout" size={18} /></span>Log Out</button></form>
+    </div>
+    <div class="stack g12">
+      <div class="row between"><h2 class="h3">Active Tickets</h2><a href="/account/tickets" style="font-weight:800;font-size:14px">See all</a></div>
+      {groups.length ? <div class="card" style="overflow:hidden">{groups.map((g) => <a class="li" href={g.toPlay && g.orderNumber ? `/order/${g.orderNumber}` : `/competitions/${g.competition.slug}`}><img src={g.competition.image} alt="" style="width:44px;height:44px;border-radius:12px;object-fit:cover" /><span style="flex:1;min-width:0"><span style="display:block">{g.competition.title}</span><span class="hint">{g.tickets.length} tickets</span></span><span class={`tag ${tag[g.status][0]}`}>{g.status === "won" ? `Won ${formatPence(g.wonPence)}` : g.status === "to_play" ? `${g.toPlay} to play` : tag[g.status][1]}</span></a>)}</div> : <div class="card empty">No active tickets yet. <a href="/competitions">Find a competition</a></div>}
+    </div>
+  </AccountShell>
+</Layout>

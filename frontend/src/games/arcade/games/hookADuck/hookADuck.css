@@ -1,0 +1,118 @@
+.rg-duck-stall {
+  position: relative;
+  width: min(100%, 400px);
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: var(--rg-outline);
+  border-radius: 24px 24px 26px 26px;
+  background: #fff;
+  box-shadow: 0 6px 0 var(--rg-ink);
+}
+.rg-awning { position: absolute; z-index: 5; inset: 0 0 auto 0; height: 19%; }
+.rg-awning svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.rg-duck-sign {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  translate: -50% 0;
+  rotate: -2deg;
+  padding: 4px 18px;
+  border: var(--rg-outline);
+  border-radius: 14px;
+  background: var(--rg-yellow);
+  box-shadow: 0 4px 0 var(--rg-ink);
+  font-family: var(--rg-font-display);
+  font-size: clamp(18px, 6.5cqw, 28px);
+  white-space: nowrap;
+}
+.rg-pole {
+  position: absolute;
+  z-index: 4;
+  top: 17%;
+  height: 22%;
+  width: 3.2%;
+  border: 2px solid var(--rg-ink);
+  background: repeating-linear-gradient(180deg, var(--rg-cyan) 0 10px, #fff 10px 20px);
+}
+.rg-pole.is-left { left: 3%; }
+.rg-pole.is-right { right: 3%; }
+.rg-duck-wall { position: absolute; inset: 38% 0 auto 0; height: 14%; background: #ffe3f1; border-top: var(--rg-outline); }
+.rg-water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 100%, var(--rg-cyan-light) 60%, var(--rg-ink) 61% 70%, transparent 71%) 0 0 / 40px 22px repeat-x,
+    linear-gradient(transparent 20px, var(--rg-cyan-light) 20px);
+}
+.rg-water-back { z-index: 2; top: 50%; height: 16%; }
+.rg-water-front {
+  z-index: 4;
+  top: 70%;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 50% 100%, #3fcff7 60%, var(--rg-ink) 61% 70%, transparent 71%) 20px 0 / 40px 22px repeat-x,
+    linear-gradient(transparent 20px, #3fcff7 20px, var(--rg-cyan) 60%, #10b4ea);
+}
+.rg-ripple { position: absolute; left: 10%; top: 45%; width: 18%; height: 5px; border-radius: 5px; background: rgba(255, 255, 255, 0.8); }
+.rg-ripple.is-2 { left: 62%; top: 70%; width: 22%; }
+
+.rg-duck {
+  position: absolute;
+  width: 26%;
+  padding: 0;
+  border: 0;
+  background: none;
+  translate: -50% -50%;
+  cursor: pointer;
+  transition: top 0.9s cubic-bezier(0.45, 0, 0.3, 1), left 0.4s ease;
+  animation: rg-bob 2.2s ease-in-out infinite;
+}
+.rg-duck:disabled { cursor: default; }
+.rg-duck:not(:disabled):hover { filter: brightness(1.06) drop-shadow(0 0 6px rgba(255, 255, 255, 0.9)); }
+.rg-duck-row0 { z-index: 1; }
+.rg-duck-row1 { z-index: 3; }
+.rg-duck.is-chosen { z-index: 6; }
+.rg-duck.is-lifted { animation: rg-swing 1.2s ease-in-out infinite; }
+.rg-duck-svg { display: block; width: 100%; height: auto; }
+.rg-duck-tag {
+  position: absolute;
+  left: 50%;
+  top: 88%;
+  translate: -50% 0;
+  padding: 4px 12px;
+  border: var(--rg-outline);
+  border-radius: 10px;
+  background: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: 18px;
+  white-space: nowrap;
+  rotate: -6deg;
+  box-shadow: 0 3px 0 var(--rg-ink);
+  animation: rg-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.rg-duck-tag.is-win { background: var(--rg-yellow); font-size: 26px; }
+.rg-hook {
+  position: absolute;
+  z-index: 7;
+  top: 19%;
+  width: 3px;
+  translate: -50% 0;
+  background: var(--rg-ink);
+  transition: left 0.45s ease, height 0.75s cubic-bezier(0.45, 0, 0.3, 1);
+}
+.rg-is-ready .rg-hook { animation: none; }
+.rg-hook-tip {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 14px;
+  height: 12px;
+  translate: -35% 0;
+  border: 3px solid var(--rg-ink);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+@keyframes rg-swing { 50% { transform: rotate(6deg); } 0%, 100% { transform: rotate(-6deg); } }

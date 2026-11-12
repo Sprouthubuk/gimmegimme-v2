@@ -1,0 +1,12 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import BasketView from "../islands/BasketView";
+---
+<Layout title="Your Basket" noindex bottomNav={false}>
+  <section class="sec" style="padding-top:16px"><div class="wrap stack g20">
+    <a href="/competitions" class="row g8 mob" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />Keep Browsing</a>
+    <div class="gg-rise"><h1 class="h1">Your <span class="np gg-flicker">Basket</span></h1></div>
+    <BasketView client:load signedIn={!!Astro.locals.me} />
+  </div></section>
+</Layout>

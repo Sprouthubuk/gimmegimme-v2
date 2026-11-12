@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import type { DrawWinnerRow, CompetitionSummary } from "../lib/types";
+import { ago, ukDateTime } from "../lib/time";
+const { api } = Astro.locals;
+const { data: winners } = await api.get<{ data: DrawWinnerRow[] }>("/api/winners/draws");
+const { data: comps } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
+const upcoming = comps.filter((c) => c.type === "draw");
+---
+<Layout title="Winners" active="winners" description="Every draw winner, the ticket that won it, and the draw to watch back.">
+  <section class="sec" style="padding-top:20px"><div class="mid stack g16">
+    <div class="gg-rise"><div class="eyebrow">Draw Winners</div><h1 class="h1">Our <span class="ny gg-flicker">Winners</span></h1><p class="p" style="margin-top:6px">Every draw winner, the ticket that won it, and the draw to watch back.</p></div>
+    <div class="row g8 gg-rise gg-d2"><a class="chip" href="/instant-winners">Instant Winners</a><a class="chip on" href="/winners" aria-current="true">Draw Winners</a></div>
+    {winners.length ? winners.map((w) => (
+      <div class="card card-ye card-p stack g12 gg-rise gg-d3">
+        <div class="row g12"><span class="av" style="width:56px;height:56px;background:#FF2DAA;font-size:24px;box-shadow:0 0 18px rgba(255,45,170,.6)">{w.name.slice(0, 1)}</span><div style="flex:1"><div class="d" style="font-size:22px">{w.name}</div><div class="hint">{ago(w.at)}</div></div><span class="tag tag-y">Winner</span></div>
+        <div class="d ny" style="font-size:26px">{w.prizeName}</div>
+        <div class="hint">{w.competitionTitle}{w.ticketNumber ? ` · winning ticket #${w.ticketNumber}` : ""}</div>
+        <div class="row wrapx g8">{w.videoUrl && <a class="btn btn-c btn-sm" href={w.videoUrl} rel="noopener" target="_blank"><Icon name="play" size={16} /> Watch The Draw</a>}{w.verifyUrl && <a class="btn btn-o btn-sm" href={w.verifyUrl}>Verify</a>}</div>
+      </div>
+    )) : <div class="card empty">Our first draw winners are coming soon.</div>}
+    {upcoming.length > 0 && <div class="stack g8"><h2 class="h3 gg-reveal">Next Up</h2><div class="card" style="overflow:hidden">{upcoming.map((d) => <a class="li" href={`/competitions/${d.slug}`}><img src={d.image} alt="" style="width:48px;height:48px;border-radius:12px;object-fit:cover" /><span style="flex:1;min-width:0"><span style="display:block">{d.title}</span><span class="hint">{d.drawAt ? ukDateTime(d.drawAt) : ""}</span></span><span class="tag tag-c">Upcoming</span></a>)}</div></div>}
+    <div class="notice notice-c"><Icon name="info" size={18} /><span>Instant-win winners appear in the <a href="/instant-winners" style="color:#22E6FF">live feed</a> as soon as they win.</span></div>
+  </div></section>
+</Layout>

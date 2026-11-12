@@ -1,0 +1,21 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+---
+<Layout title="Free Postal Entry">
+  <section class="sec" style="padding-top:20px"><div class="mid stack g16">
+    <div class="gg-rise"><div class="eyebrow">No Purchase Necessary</div><h1 class="h1">Free <span class="ny gg-flicker">Postal Entry</span></h1><p class="p" style="margin-top:6px">Every competition has a free route by post — with exactly the same chance of winning as a paid ticket.</p></div>
+    <div class="tl gg-stagger">
+      <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">01</span><div><div style="font-weight:900">Write Your Details</div><div class="hint" style="font-size:13px">Include the competition name and the details listed in the free entry terms.</div></div></div>
+      <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Post It To Us</div><div class="hint" style="font-size:13px">It must arrive before the competition closes.</div></div></div>
+      <div class="gg-card"><span class="d ny" style="font-size:26px;width:38px">03</span><div><div style="font-weight:900">You’re In</div><div class="hint" style="font-size:13px">Your entry is added and appears in the entry list.</div></div></div>
+    </div>
+    <div class="card card-ye card-p stack g8 gg-reveal"><span class="eyebrow">Send entries to</span><address class="d" style="font-size:24px;line-height:1.2;font-style:normal" id="addr">GIMMEGIMMEPRIZES LTD<br>57 Oakhanger Drive<br>Bristol<br>BS11 0RJ</address><button type="button" class="btn btn-o btn-sm" style="align-self:flex-start" data-copy="GIMMEGIMMEPRIZES LTD, 57 Oakhanger Drive, Bristol, BS11 0RJ">Copy Address</button></div>
+    <div class="notice notice-c"><Icon name="info" size={18} /><span>Full requirements are in the <a href="/legal/free-entry" style="color:#22E6FF">free entry terms</a>.</span></div>
+  </div></section>
+  <script>
+    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = "Copied"; } catch { b.textContent = "Select and copy above"; }
+    }));
+  </script>
+</Layout>

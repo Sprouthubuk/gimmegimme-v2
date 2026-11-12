@@ -1,0 +1,128 @@
+.rg-slots { position: relative; width: min(100%, 360px); padding-right: 22px; }
+.rg-slots-top {
+  position: relative;
+  border: var(--rg-outline);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(180deg, #ff6bb8, var(--rg-pink));
+  padding: 8px 12px 6px;
+  text-align: center;
+}
+.rg-slots-title {
+  font-family: var(--rg-font-display);
+  font-size: clamp(30px, 10cqw, 42px);
+  color: var(--rg-yellow);
+  line-height: 1.1;
+  text-shadow: 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink), 0 2px 0 var(--rg-ink), 0 -2px 0 var(--rg-ink), 2px 2px 0 var(--rg-ink), -2px 2px 0 var(--rg-ink), 0 4px 0 var(--rg-ink);
+}
+.rg-slots-body {
+  position: relative;
+  border: var(--rg-outline);
+  border-radius: 0 0 26px 26px;
+  background: linear-gradient(180deg, var(--rg-pink), #e3007a);
+  padding: 14px 14px 16px;
+  box-shadow: 0 6px 0 var(--rg-ink);
+}
+.rg-slots-window {
+  --cell: min(80px, 20cqw);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px;
+  border-radius: 18px;
+  background: var(--rg-ink);
+}
+.rg-reel {
+  height: calc(var(--cell) * 3);
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #c9c9d2, #fff 22%, #fff 78%, #c9c9d2);
+}
+.rg-reel.is-blur .rg-reel-strip { filter: blur(2px); }
+.rg-reel-strip { will-change: transform; }
+.rg-reel-cell { height: var(--cell); display: grid; place-items: center; }
+.rg-reel-cell.is-hit { background: rgba(255, 225, 26, 0.55); }
+.rg-slot-icon { width: 72%; height: 72%; }
+.rg-reel-cell .rg-slot-icon { width: calc(var(--cell) * 0.72); height: calc(var(--cell) * 0.72); }
+.rg-slot-glyph { font-family: var(--rg-font-display); font-size: 26px; fill: #141414; }
+.rg-slot-bar { font-family: var(--rg-font-display); font-size: 16px; fill: #ffe11a; letter-spacing: 1px; }
+.rg-payline {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 50%;
+  height: 3px;
+  translate: 0 -50%;
+  background: var(--rg-yellow);
+  box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.4);
+}
+.rg-payline::before, .rg-payline::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  border: 9px solid transparent;
+}
+.rg-payline::before { left: -4px; border-left-color: var(--rg-yellow); }
+.rg-payline::after { right: -4px; border-right-color: var(--rg-yellow); }
+.rg-slots.is-win .rg-payline { animation: rg-payline 0.4s steps(1) 5; }
+.rg-paytable {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  margin: 14px 12px 0;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: var(--rg-ink);
+  color: var(--rg-yellow);
+  font-family: var(--rg-font-display);
+  font-size: 17px;
+}
+.rg-paytable-row { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rg-paytable-row .rg-slot-icon { width: 20px; height: 20px; }
+.rg-lever {
+  position: absolute;
+  right: -24px;
+  top: 12%;
+  width: 26px;
+  height: 46%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.rg-lever:disabled { cursor: default; }
+.rg-lever-arm {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  bottom: 0;
+  width: 8px;
+  translate: -50% 0;
+  border: 2px solid var(--rg-ink);
+  border-radius: 4px;
+  background: #f0f0f4;
+  transform-origin: 50% 100%;
+  transition: transform 0.25s ease-in;
+}
+.rg-lever-knob {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  translate: -50% 0;
+  border: var(--rg-outline);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffc2e2, var(--rg-pink));
+  transition: transform 0.25s ease-in;
+}
+.rg-lever.is-pulled .rg-lever-knob { animation: rg-lever-knob 0.7s ease; }
+.rg-lever.is-pulled .rg-lever-arm { animation: rg-lever-arm 0.7s ease; }
+.rg-slots-controls { margin-top: 26px; display: flex; flex-direction: column; align-items: center; }
+
+@keyframes rg-payline { 50% { background: var(--rg-white); } }
+@keyframes rg-lever-knob { 40% { transform: translateY(150%); } }
+@keyframes rg-lever-arm { 40% { transform: scaleY(0.35); } }

@@ -1,0 +1,14 @@
+---
+// Server renders the current time left; a tiny script keeps every countdown on the page ticking.
+import { remaining } from "../lib/time";
+interface Props { until: string; size?: "md" | "xl"; class?: string }
+const { until, size = "md", class: cls = "" } = Astro.props;
+const r = remaining(until);
+const p = (n: number) => String(n).padStart(2, "0");
+---
+<div class={`cd ${size === "xl" ? "cd-xl" : ""} ${cls}`} data-countdown={until} role="timer" aria-label="Time left">
+  <div><b class="nc" data-u="d">{p(r.days)}</b><span>days</span></div>
+  <div><b class="nc" data-u="h">{p(r.hours)}</b><span>hrs</span></div>
+  <div><b class="nc" data-u="m">{p(r.mins)}</b><span>mins</span></div>
+  <div class="gg-tick"><b class="nc" data-u="s">{p(r.secs)}</b><span>secs</span></div>
+</div>

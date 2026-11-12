@@ -1,0 +1,23 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import { formatMoney } from "../lib/money";
+const me = Astro.locals.me;
+const main = [["Home", "/", "home"], ["All Competitions", "/competitions", "grid"], ["Instant Winners", "/instant-winners", "trophy"], ["Draw Winners", "/winners", "trophy"], ["Entry Lists", "/entry-lists", "list"]];
+const help = [["How It Works", "/how-it-works", "info"], ["FAQs", "/faq", "help"], ["Free Postal Entry", "/free-entry", "mail"], ["Contact Us", "/contact", "mail"], ["Safer Play", "/account/safer-play", "shield"]];
+const ref = Astro.request.headers.get("referer");
+const back = ref && new URL(ref).host === Astro.url.host ? new URL(ref).pathname : "/";
+---
+<Layout title="Menu" header="menu" headerBack={back} bottomNav={false} footer={false} noindex>
+  <section style="padding:16px 0 32px"><div class="wrap stack g16">
+    {me ? (
+      <>
+        <a href="/account" class="card card-ye card-p row g12 gg-rise" style="text-decoration:none;color:#fff"><span class="av" style="border:1px solid #FF2DAA;color:#FF5CC0">{me.firstName.slice(0, 1)}</span><span style="flex:1"><b class="d" style="font-size:18px;display:block">{me.firstName} {me.lastName}</b><span class="hint">View account</span></span><span class="d ny" style="font-size:24px">{formatMoney(me.wallet.totalPence)}</span></a>
+        <div class="r2 gg-rise gg-d1"><a class="btn btn-y gg-cta" href="/account/wallet#top-up">Top Up</a><a class="btn btn-o" href="/account/tickets">My Tickets</a></div>
+      </>
+    ) : <div class="r2 gg-rise"><a class="btn btn-y gg-cta" href="/join">Join</a><a class="btn btn-o" href="/login">Log In</a></div>}
+    <div class="eyebrow">Play</div><nav class="card gg-rise gg-d2" style="overflow:hidden" aria-label="Play">{main.map(([n, h, i]) => <a class="li" href={h}><span class="ico"><Icon name={i} size={18} /></span>{n}<span class="chev"><Icon name="chev" size={18} /></span></a>)}</nav>
+    <div class="eyebrow">Help</div><nav class="card gg-rise gg-d3" style="overflow:hidden" aria-label="Help">{help.map(([n, h, i]) => <a class="li" href={h}><span class="ico"><Icon name={i} size={18} /></span>{n}<span class="chev"><Icon name="chev" size={18} /></span></a>)}</nav>
+    {me && <form method="post" action="/logout" style="display:flex;justify-content:flex-end"><button class="btn btn-o btn-sm" type="submit"><Icon name="logout" size={16} /> Log Out</button></form>}
+  </div></section>
+</Layout>

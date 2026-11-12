@@ -1,0 +1,61 @@
+.rg-scratch-card {
+  position: relative;
+  width: min(100%, 380px);
+  padding: 14px 16px 12px;
+  border: var(--rg-outline);
+  border-radius: 26px;
+  background: linear-gradient(180deg, #ff6bb8 0%, var(--rg-pink) 40%, #e3007a 100%);
+  box-shadow: 0 6px 0 var(--rg-ink);
+  overflow: hidden;
+}
+.rg-scratch-sheen {
+  position: absolute;
+  left: 22px;
+  top: 10px;
+  width: 90px;
+  height: 9px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.45);
+}
+.rg-scratch-head { text-align: center; color: var(--rg-white); margin-bottom: 10px; }
+.rg-scratch-title {
+  font-family: var(--rg-font-display);
+  font-size: clamp(26px, 8.5cqw, 36px);
+  line-height: 1.1;
+  text-shadow: 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink), 0 2px 0 var(--rg-ink), 0 -2px 0 var(--rg-ink), 2px 2px 0 var(--rg-ink), -2px 2px 0 var(--rg-ink), 2px -2px 0 var(--rg-ink), -2px -2px 0 var(--rg-ink), 0 4px 0 var(--rg-ink);
+}
+.rg-scratch-sub { font-size: 13px; font-weight: 800; }
+.rg-scratch-play { position: relative; }
+.rg-scratch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.rg-scratch-cell {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: var(--rg-outline);
+  border-radius: 16px;
+  background: var(--rg-white);
+  box-shadow: inset 0 -5px 0 #e6e6ec;
+  transition: background 0.3s, opacity 0.3s, transform 0.3s;
+}
+.rg-scratch-cell .rg-coin { --rg-coin-size: min(78px, 19cqw); }
+.rg-scratch-cell.is-winning { background: var(--rg-yellow); animation: rg-glow 1s ease-in-out infinite; transform: scale(1.04); }
+.rg-scratch-cell.is-dim { opacity: 0.55; }
+.rg-scratch-foil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  transition: opacity 0.4s;
+}
+.rg-scratch-foil.is-gone { opacity: 0; pointer-events: none; }
+.rg-scratch-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.rg-scratch-ticket { background: var(--rg-ink); color: var(--rg-white); font-size: 13px; font-weight: 900; padding: 3px 10px; border-radius: 99px; }
+.rg-scratch-brand {
+  font-family: var(--rg-font-display);
+  font-size: 17px;
+  color: var(--rg-yellow);
+  text-shadow: 1px 1px 0 var(--rg-ink), -1px 1px 0 var(--rg-ink), 1px -1px 0 var(--rg-ink), -1px -1px 0 var(--rg-ink);
+}
+.rg-scratch-actions { display: flex; gap: 12px; margin-top: 14px; }

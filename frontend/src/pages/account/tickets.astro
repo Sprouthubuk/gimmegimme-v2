@@ -1,0 +1,30 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AccountShell from "../../components/AccountShell.astro";
+import Icon from "../../components/Icon.astro";
+import type { TicketGroup } from "../../lib/types";
+import { formatPence } from "../../lib/money";
+import { ukDateTime } from "../../lib/time";
+const { api, me } = Astro.locals;
+const TABS = [["active", "Active"], ["to-play", "To Play"], ["won", "Won"], ["past", "Past"]];
+const tab = TABS.find((t) => t[0] === Astro.url.searchParams.get("tab"))?.[0] ?? "active";
+const { data: groups } = await api.get<{ data: TicketGroup[] }>(`/api/me/tickets?tab=${tab}`);
+const tag: Record<string, [string, string]> = { to_play: ["tag-y", "To play"], in_draw: ["tag-c", "In draw"], won: ["tag-p", "Won"], no_win: ["tag-w", "Played"], drawn: ["tag-w", "Drawn"] };
+---
+<Layout title="My Tickets" active="account" noindex>
+  <AccountShell active="tickets" title="My Tickets" eyebrow={`${me!.stats.activeTickets} active tickets`}>
+    <div class="scrollx gg-rise gg-d2" role="group" aria-label="Show">{TABS.map(([k, n]) => <a class={`chip ${k === tab ? "on" : ""}`} href={`/account/tickets?tab=${k}`} aria-current={k === tab ? "true" : undefined}>{n}{k === "to-play" && me!.gamesWaiting ? ` · ${me!.gamesWaiting}` : ""}</a>)}</div>
+    {groups.length ? (
+      <div class="stack g12 gg-stagger">
+        {groups.map((g) => (
+          <div class="card card-p stack g12 gg-card" data-testid="ticket-group">
+            <div class="row g12"><img src={g.competition.image} alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover" /><div style="flex:1;min-width:0"><a href={`/competitions/${g.competition.slug}`} class="d" style="font-size:18px;color:#fff;text-decoration:none">{g.competition.title}</a><div class="hint">{g.tickets.length} tickets · {g.competition.type === "draw" && g.competition.drawAt ? `draw ${ukDateTime(g.competition.drawAt)}` : `closes ${ukDateTime(g.competition.closesAt)}`}</div></div><span class={`tag ${tag[g.status][0]}`}>{g.status === "won" ? `Won ${formatPence(g.wonPence)}` : g.status === "to_play" ? `${g.toPlay} to play` : tag[g.status][1]}</span></div>
+            <div class="row wrapx g8">{g.tickets.slice(0, 40).map((t) => <span class={`tn ${t.won ? "w" : ""}`} title={t.prizeName ?? undefined}>#{t.number}</span>)}{g.tickets.length > 40 && <span class="hint">+{g.tickets.length - 40} more</span>}</div>
+            {g.toPlay > 0 && g.orderNumber && <a class="btn btn-y gg-cta" href={`/order/${g.orderNumber}`}><Icon name="play" size={16} /> Play {g.toPlay} {g.toPlay === 1 ? "Game" : "Games"}</a>}
+          </div>
+        ))}
+      </div>
+    ) : <div class="card empty">Nothing here yet. <a href="/competitions">Find a competition</a></div>}
+    <p class="hint" style="margin:0">Gold tickets are winners. Every ticket also appears in the public <a href="/entry-lists">entry lists</a>.</p>
+  </AccountShell>
+</Layout>

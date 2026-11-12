@@ -1,0 +1,25 @@
+.rg-wheel { position: relative; width: min(100%, 360px); padding-top: 22px; }
+.rg-wheel-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 6px 0 var(--rg-ink)); }
+.rg-wheel-pointer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  width: 48px;
+  translate: -50% 0;
+  filter: drop-shadow(0 3px 0 rgba(20, 20, 20, 0.35));
+}
+.rg-wheel.is-landed .rg-wheel-pointer { animation: rg-wheel-tick 0.4s ease; }
+.rg-wheel-rotor { transform-origin: 0 0; will-change: transform; }
+.rg-wheel.is-spinning .rg-wheel-rotor { animation: rg-wheel-blur 4.6s ease-out; }
+.rg-wheel-text { font-family: var(--rg-font-display); font-size: 15px; }
+.rg-wheel-text.is-long { font-size: 10px; }
+.rg-wheel-text.is-none { font-size: 7.5px; font-family: var(--rg-font-body); font-weight: 900; }
+.rg-wheel-won { animation: rg-wheel-flash 0.5s ease-in-out 3; }
+.rg-wheel-bulb { animation: rg-bulb 0.7s steps(1) infinite; }
+.rg-wheel-controls { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.rg-wheel-controls .rg-prompt { margin-top: 0; }
+
+@keyframes rg-wheel-blur { 0%, 55% { filter: blur(1.4px); } 100% { filter: blur(0); } }
+@keyframes rg-wheel-flash { 50% { filter: brightness(1.35); } }
+@keyframes rg-wheel-tick { 40% { rotate: -14deg; } }

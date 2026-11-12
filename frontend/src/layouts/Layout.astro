@@ -1,0 +1,83 @@
+---
+import "../styles.css";
+import Header from "../components/Header.astro";
+import BottomNav from "../components/BottomNav.astro";
+import Footer from "../components/Footer.astro";
+interface Props {
+  title: string;
+  description?: string;
+  active?: string;
+  header?: "main" | "auth" | "secure" | "menu";
+  headerBack?: string;
+  headerTitle?: string;
+  bottomNav?: boolean;
+  footer?: boolean;
+  noindex?: boolean;
+}
+const { title, description = "Tiny tickets, ginormous prizes. Instant win games and live draws from 1p. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false } = Astro.props;
+const full = title === "Home" ? "Gimme Gimme Prizes | Tiny Tickets, Ginormous Prizes" : `${title} | Gimme Gimme Prizes`;
+const robots = noindex || import.meta.env.PUBLIC_SEARCH_INDEXING !== "on" ? "noindex, nofollow" : "index, follow";
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{full}</title>
+  <meta name="description" content={description}>
+  <meta name="robots" content={robots}>
+  <meta name="theme-color" content="#07050B">
+  <link rel="canonical" href={canonical}>
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/lilita-one-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <meta property="og:title" content={full}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type" content="website">
+  <meta property="og:image" content={new URL("/logo.png", Astro.site ?? Astro.url).toString()}>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class={`g ${bottomNav ? "has-bn" : ""}`}>
+    <Header active={active} variant={header} back={headerBack} title={headerTitle} />
+    <main id="main"><slot /></main>
+    {footer && <Footer />}
+    {bottomNav && <BottomNav active={active} />}
+  </div>
+  <script>
+    import { readBasket, onBasketChange } from "../lib/basket";
+    import { remaining, endsIn } from "../lib/time";
+    // Basket badge in the header.
+    const paint = () => {
+      const n = readBasket().length;
+      document.querySelectorAll<HTMLElement>("[data-basket-count]").forEach((el) => {
+        el.hidden = n === 0;
+        el.textContent = String(n);
+      });
+    };
+    paint();
+    onBasketChange(paint);
+    // Every countdown on the page.
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const tick = () => {
+      document.querySelectorAll<HTMLElement>("[data-countdown]").forEach((el) => {
+        const r = remaining(el.dataset.countdown!);
+        const set = (u: string, v: number) => {
+          const b = el.querySelector<HTMLElement>(`[data-u="${u}"]`);
+          if (b && b.textContent !== pad(v)) b.textContent = pad(v);
+        };
+        set("d", r.days); set("h", r.hours); set("m", r.mins); set("s", r.secs);
+      });
+      document.querySelectorAll<HTMLElement>("[data-ends]").forEach((el) => {
+        const txt = endsIn(el.dataset.ends!);
+        const node = el.lastChild;
+        if (node && node.nodeType === 3 && node.textContent !== txt) node.textContent = txt;
+      });
+    };
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>

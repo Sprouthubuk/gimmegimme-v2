@@ -1,0 +1,8 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import PaymentReturn from "../../islands/PaymentReturn";
+const number = (Astro.url.searchParams.get("order") ?? "").slice(0, 48);
+---
+<Layout title="Payment Cancelled" noindex>
+  <section class="sec"><div class="narrow"><PaymentReturn client:load number={number} leftAs="cancelled" /></div></section>
+</Layout>

@@ -1,0 +1,31 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Icon from "../../components/Icon.astro";
+import { ukDate } from "../../lib/time";
+const PAGES = [["terms", "Terms & Conditions"], ["free-entry", "Free Entry Terms"], ["privacy", "Privacy Policy"], ["cookies", "Cookie Policy"], ["complaints", "Complaints"]];
+const slug = Astro.params.page!;
+if (!PAGES.some(([s]) => s === slug)) return Astro.rewrite("/404");
+// The wording is edited in the admin. The backend stores it sanitised (no scripts, no styles, no event handlers).
+const page = await Astro.locals.api.maybe<{ title: string; updatedAt: string | null; version: string | null; html: string; headings: { id: string; text: string }[] }>(`/api/pages/${slug}`);
+const title = page?.title ?? PAGES.find(([s]) => s === slug)![1];
+const [first, ...rest] = title.split(" ");
+---
+<Layout title={title}>
+  <section class="sec" style="padding-top:20px"><div class="wrap acct">
+    <aside class="side"><nav class="card" style="overflow:hidden" aria-label="Legal pages">{PAGES.map(([s, n]) => <a class="li" href={`/legal/${s}`} aria-current={s === slug ? "page" : undefined} style={s === slug ? "color:#fff;background:rgba(255,45,170,.08)" : "color:#B9AFC6"}>{n}</a>)}</nav></aside>
+    <div class="stack g12" style="max-width:760px;min-width:0">
+      <div class="gg-rise"><div class="eyebrow">{page?.updatedAt ? `Last updated ${ukDate(page.updatedAt)}` : "Gimme Gimme Prizes"}{page?.version ? ` · version ${page.version}` : ""}</div><h1 class="h1">{first} <span class="np">{rest.join(" ")}</span></h1></div>
+      <div class="scrollx mob">{PAGES.map(([s, n]) => <a class={`chip ${s === slug ? "on" : ""}`} href={`/legal/${s}`}>{n}</a>)}</div>
+      {page && page.headings.length > 2 && <details class="acd mob"><summary>On This Page <Icon name="down" /></summary><div class="ab stack g8">{page.headings.map((h) => <a href={`#${h.id}`}>{h.text}</a>)}</div></details>}
+      {page ? <article class="legal" set:html={page.html} /> : <div class="card empty">This page is being updated. Please check back soon or <a href="/contact">contact us</a>.</div>}
+    </div>
+  </div></section>
+</Layout>
+<style is:global>
+  .legal { color: #D8D0E2; font-weight: 600; line-height: 1.7; }
+  .legal h2 { font-family: 'Lilita One', sans-serif; font-weight: 400; font-size: 22px; color: #fff; margin: 28px 0 8px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); }
+  .legal h3 { font-size: 17px; color: #fff; margin: 18px 0 6px; }
+  .legal a { color: #FF5CC0; }
+  .legal ul, .legal ol { padding-left: 22px; }
+  .legal table { width: 100%; border-collapse: collapse; } .legal td, .legal th { border-top: 1px solid rgba(255,255,255,.08); padding: 8px; text-align: left; }
+</style>

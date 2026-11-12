@@ -1,0 +1,70 @@
+.rg-coin-rail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 360px);
+  height: 60px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--rg-ink);
+  touch-action: none;
+}
+.rg-rail-arrow {
+  flex: none;
+  /* 44px: the minimum touch target. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--rg-white);
+  color: var(--rg-ink) !important;
+  cursor: pointer;
+}
+.rg-rail-arrow svg { width: 16px; height: 16px; }
+.rg-rail-arrow:disabled { opacity: 0.9; cursor: default; }
+.rg-rail-track { position: relative; flex: 1; margin: 0 22px; height: 100%; display: grid; place-items: center; }
+.rg-rail-coin {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
+  padding: 0;
+  border: 3px solid var(--rg-ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff59a, var(--rg-yellow) 55%, var(--rg-yellow-dark));
+  box-shadow: 0 0 0 2px var(--rg-yellow);
+  font-family: var(--rg-font-display);
+  font-size: 18px;
+  cursor: pointer;
+  transition: left 0.18s ease;
+  animation: rg-bob 1.2s ease-in-out infinite;
+}
+.rg-rail-label { font-family: var(--rg-font-display); color: var(--rg-yellow); font-size: 20px; letter-spacing: 0.04em; }
+.rg-coin-board {
+  width: min(100%, 360px);
+  margin-top: 12px;
+  border: var(--rg-outline);
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #e9f9ff, #c9efff);
+  box-shadow: 0 6px 0 var(--rg-ink);
+}
+.rg-coin-board.is-aim { cursor: pointer; }
+.rg-coin-board svg { display: block; width: 100%; height: auto; }
+.rg-bin { stroke: none; }
+.rg-bin-yellow { fill: var(--rg-yellow); }
+.rg-bin-cyan { fill: #6fd9fb; }
+.rg-bin-pink { fill: #ff8cc8; }
+.rg-bin-none { fill: var(--rg-white); }
+.rg-bin-label { font-family: var(--rg-font-display); fill: var(--rg-ink); }
+.rg-bin-label.rg-fit-l { font-size: 21px; }
+.rg-bin-label.rg-fit-m { font-size: 17px; }
+.rg-bin-label.rg-fit-s, .rg-bin-label.rg-fit-xs { font-size: 12px; }
+.rg-bin-hit .rg-bin { animation: rg-bin-flash 0.35s steps(1) 6; }
+.rg-coin-glyph { font-family: var(--rg-font-display); font-size: 13px; fill: var(--rg-ink); }
+
+@keyframes rg-bin-flash { 50% { fill: var(--rg-white); } }

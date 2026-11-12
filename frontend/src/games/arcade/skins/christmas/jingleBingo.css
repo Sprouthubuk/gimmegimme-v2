@@ -1,0 +1,119 @@
+.rg-jingle-tray { margin-bottom: 6px; }
+
+/* ---------- baubles ---------- */
+.rg-bauble {
+  --rg-bauble: var(--rg-xmas-red);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: 6px;
+  border: var(--rg-outline);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85) 0 9%, rgba(255, 255, 255, 0.35) 10% 22%, transparent 23%),
+    radial-gradient(circle at 50% 55%, var(--rg-bauble), color-mix(in srgb, var(--rg-bauble) 60%, #000) 100%);
+  box-shadow: 0 3px 0 var(--rg-ink);
+}
+.rg-bauble.is-big { width: 62px; height: 62px; }
+.rg-bauble-red { --rg-bauble: var(--rg-xmas-red); }
+.rg-bauble-green { --rg-bauble: var(--rg-xmas-green); }
+.rg-bauble-gold { --rg-bauble: var(--rg-xmas-gold); }
+.rg-bauble-pink { --rg-bauble: var(--rg-pink); }
+.rg-bauble-cyan { --rg-bauble: var(--rg-cyan); }
+.rg-bauble-cap {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 30%;
+  height: 9px;
+  translate: -50% 0;
+  border: 2px solid var(--rg-ink);
+  border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(90deg, var(--rg-xmas-gold-dark), var(--rg-xmas-gold-light), var(--rg-xmas-gold-dark));
+}
+.rg-bauble-inner {
+  display: grid;
+  place-items: center;
+  width: 62%;
+  height: 62%;
+  border: 2px solid var(--rg-ink);
+  border-radius: 50%;
+  background: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: 13px;
+  line-height: 0.85;
+}
+.rg-bauble-inner small { font-family: var(--rg-font-body); font-weight: 900; font-size: 7px; }
+.rg-bauble.is-big .rg-bauble-inner { font-size: 19px; }
+.rg-bauble.is-big .rg-bauble-inner small { font-size: 9px; }
+
+/* ---------- the caller ---------- */
+.rg-jingle-call {
+  min-height: 22px;
+  margin: 0 0 8px;
+  font-family: var(--rg-font-display);
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--rg-xmas-gold);
+  text-align: center;
+  text-shadow: 0 2px 0 var(--rg-ink);
+}
+
+/* ---------- the card, in a candy-stripe frame ---------- */
+.rg-jingle-frame {
+  width: min(100%, 400px);
+  padding: 7px;
+  border: var(--rg-outline);
+  border-radius: 30px;
+  background: repeating-linear-gradient(45deg, var(--rg-xmas-red) 0 10px, #fff 10px 20px, var(--rg-xmas-green) 20px 30px, #fff 30px 40px);
+  box-shadow: 0 6px 0 var(--rg-ink);
+}
+.rg-jingle-card { width: 100%; box-shadow: none; }
+.rg-jingle-head.is-red { background: var(--rg-xmas-red); }
+.rg-jingle-head.is-green { background: var(--rg-xmas-green); }
+.rg-jingle-head.is-gold { background: var(--rg-xmas-gold); }
+.rg-jingle-head.is-pink { background: var(--rg-pink); }
+.rg-jingle-head.is-cyan { background: var(--rg-cyan); }
+.rg-jingle-card .rg-bingo-cell.is-free { background: #fff1c2; }
+.rg-jingle-card .rg-bingo-cell.is-marked { background: #e5f8ec; }
+.rg-jingle-card .rg-bingo-cell.is-marked span { background: radial-gradient(circle at 35% 30%, #ff9aa4, var(--rg-xmas-red) 55%, var(--rg-xmas-red-dark)); }
+.rg-jingle-card .rg-bingo-cell.is-win { background: var(--rg-xmas-gold); }
+
+.rg-dauber {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 30%;
+  width: 34px;
+  margin-left: -17px;
+  pointer-events: none;
+  animation: rg-dauber-stamp 0.42s ease-out both;
+}
+@keyframes rg-dauber-stamp {
+  0% { transform: translateY(-26px) rotate(12deg); opacity: 0; }
+  45% { transform: translateY(4px) rotate(0); opacity: 1; }
+  70% { transform: translateY(-4px); opacity: 1; }
+  100% { transform: translateY(-30px) rotate(-8deg); opacity: 0; }
+}
+
+/* ---------- Jingle Bell Bingo Bonanza: candy-cane red and white, mint, gold ---------- */
+.rg-reveal.rg-skin-christmas.rg-game-bingo_card {
+  --rg-xmas-mint: #6fe0b8;
+  --rg-xmas-mint-dark: #2fa983;
+  background:
+    radial-gradient(80% 40% at 50% 0%, rgba(111, 224, 184, 0.22), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 18px, transparent 18px 36px),
+    linear-gradient(180deg, #5c0a16 0%, #7d1020 55%, #9a1528 100%);
+}
+.rg-jingle-title { font-size: clamp(18px, 5.8cqw, 26px); color: var(--rg-xmas-gold); margin-bottom: 8px; }
+.rg-bauble-mint { --rg-bauble: var(--rg-xmas-mint); }
+.rg-jingle-head.is-mint { background: var(--rg-xmas-mint-dark); }
+.rg-jingle-frame { background: repeating-linear-gradient(45deg, var(--rg-xmas-red) 0 10px, #fff 10px 20px); }
+.rg-jingle-card .rg-bingo-cell.is-marked { background: #e6fbf3; }
+.rg-jingle-card .rg-bingo-cell.is-free { background: #fff4d6; }
+.rg-jingle-call { color: #fff1a8; }
+.rg-skin-christmas.rg-game-bingo_card .rg-kicker { color: var(--rg-xmas-red-dark); }
+.rg-skin-christmas.rg-game-bingo_card .rg-no-win { color: var(--rg-xmas-mint-dark); }
+.rg-skin-christmas.rg-game-bingo_card .rg-bingo-sticker { background: var(--rg-xmas-gold); color: var(--rg-ink); }

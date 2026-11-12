@@ -1,0 +1,206 @@
+.rg-balloon-machine { width: min(100%, 380px); filter: drop-shadow(0 6px 0 var(--rg-ink)); }
+.rg-balloon-top {
+  border: var(--rg-outline);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(180deg, #ff6bb8, var(--rg-pink));
+  padding: 8px 12px 6px;
+  text-align: center;
+}
+.rg-balloon-title {
+  font-family: var(--rg-font-display);
+  font-size: clamp(26px, 8.5cqw, 36px);
+  color: var(--rg-yellow);
+  line-height: 1.1;
+  text-shadow: 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink), 0 2px 0 var(--rg-ink), 0 -2px 0 var(--rg-ink), 2px 2px 0 var(--rg-ink), -2px 2px 0 var(--rg-ink), 0 4px 0 var(--rg-ink);
+}
+
+/* ---------- the sky ---------- */
+.rg-balloon-sky {
+  position: relative;
+  height: 340px;
+  overflow: hidden;
+  border: var(--rg-outline);
+  border-bottom-width: 0;
+  background:
+    radial-gradient(circle at 84% 16%, rgba(255, 245, 154, 0.95) 0 26px, rgba(255, 245, 154, 0.35) 27px 44px, transparent 45px),
+    linear-gradient(180deg, #7fdcff 0%, #c8f0ff 55%, #f1fbff 100%);
+  touch-action: manipulation;
+}
+.rg-balloon-bunting { position: absolute; z-index: 1; inset: 0 0 auto 0; width: 100%; height: 34px; pointer-events: none; }
+.rg-balloon-cloud {
+  position: absolute;
+  z-index: 0;
+  width: 78px;
+  height: 24px;
+  border-radius: 24px;
+  background: #fff;
+  opacity: 0.9;
+  pointer-events: none;
+  animation: rg-cloud-drift 38s linear infinite;
+}
+.rg-balloon-cloud::before, .rg-balloon-cloud::after { content: ""; position: absolute; border-radius: 50%; background: #fff; }
+.rg-balloon-cloud::before { width: 32px; height: 32px; left: 12px; top: -15px; }
+.rg-balloon-cloud::after { width: 26px; height: 26px; left: 38px; top: -10px; }
+.rg-balloon-cloud.is-1 { top: 58px; left: -90px; }
+.rg-balloon-cloud.is-2 { top: 168px; left: -90px; scale: 0.7; opacity: 0.75; animation-duration: 52s; animation-delay: -24s; }
+
+/* ---------- balloons ---------- */
+.rg-balloon {
+  --w: 56px;
+  position: absolute;
+  z-index: 2;
+  left: var(--x);
+  top: 0;
+  width: var(--w);
+  margin-left: calc(var(--w) / -2);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  animation: rg-balloon-float var(--dur) linear var(--delay) infinite;
+  will-change: top;
+}
+.rg-balloon.is-s { --w: min(50px, 13.5cqw); }
+.rg-balloon.is-m { --w: min(58px, 15.5cqw); }
+.rg-balloon.is-l { --w: min(66px, 17.5cqw); z-index: 3; }
+.rg-balloon:disabled { cursor: default; }
+.rg-balloon-sway { display: block; animation: rg-balloon-sway 2.6s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.rg-balloon-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 0 rgba(20, 20, 20, 0.18)); }
+.rg-balloon:not(:disabled):active .rg-balloon-svg { scale: 0.94; }
+/* A dart is on its way: hold still so it lands where the player aimed. */
+.rg-balloon.is-hit, .rg-balloon.is-hit .rg-balloon-sway { animation-play-state: paused; }
+.rg-balloon.is-hit { pointer-events: none; }
+
+/* ---------- the pop ---------- */
+.rg-pop { position: absolute; z-index: 5; width: 0; height: 0; pointer-events: none; }
+.rg-dart {
+  position: absolute;
+  left: -8px;
+  top: -6px;
+  width: 16px;
+  animation: rg-dart-fly 130ms cubic-bezier(0.3, 0, 0.7, 1) both;
+}
+.rg-dart-svg { display: block; width: 100%; rotate: var(--angle); transform-origin: 50% 12%; }
+.rg-pop-ring {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--rg-ink);
+  animation: rg-pop-ring 0.4s var(--wait) ease-out both;
+}
+.rg-pop-shreds i {
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 11px;
+  height: 8px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 3px 6px 2px 5px;
+  animation: rg-pop-shred 0.6s var(--wait) cubic-bezier(0.15, 0.7, 0.3, 1) both;
+}
+.rg-pop-result {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  animation: rg-pop-result 1.25s calc(var(--wait) + 60ms) cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.rg-pop-result .rg-coin { --rg-coin-size: min(52px, 13cqw); }
+.rg-pop-result b {
+  font-family: var(--rg-font-display);
+  font-weight: 400;
+  font-size: 20px;
+  color: var(--rg-yellow);
+  text-shadow: 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink), 0 2px 0 var(--rg-ink), 0 -2px 0 var(--rg-ink), 0 3px 0 var(--rg-ink);
+}
+.rg-pop-result em {
+  padding: 2px 9px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 99px;
+  background: #fff;
+  font-style: normal;
+  font-weight: 900;
+  font-size: 12px;
+}
+.rg-pop-result small { font-size: 10px; font-weight: 900; color: var(--rg-ink); opacity: 0.7; line-height: 1; }
+.rg-pop.is-none .rg-pop-result { animation-duration: 0.85s; }
+
+/* ---------- panel ---------- */
+.rg-balloon-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px 12px;
+  border: var(--rg-outline);
+  border-radius: 0 0 26px 26px;
+  background: linear-gradient(180deg, var(--rg-pink), #e3007a);
+  color: var(--rg-white);
+}
+.rg-balloon-stats { min-width: 0; font-size: 13px; font-weight: 800; line-height: 1.2; }
+.rg-balloon-stats strong { font-family: var(--rg-font-display); font-weight: 400; font-size: 20px; }
+.rg-balloon-tray { display: flex; align-items: center; gap: 4px; min-height: 34px; margin-top: 4px; }
+.rg-balloon-tray .rg-coin { --rg-coin-size: 30px; flex: none; animation: rg-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.rg-balloon-tray-empty { font-size: 12px; opacity: 0.85; }
+.rg-balloon-total { margin-left: 4px; font-family: var(--rg-font-display); font-size: 18px; color: var(--rg-yellow); white-space: nowrap; }
+.rg-balloon-all {
+  flex: none;
+  min-height: 48px;
+  padding: 0 16px;
+  border: var(--rg-outline);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--rg-yellow-light), var(--rg-yellow) 45%, var(--rg-yellow-dark));
+  box-shadow: 0 4px 0 var(--rg-ink);
+  font-family: var(--rg-font-display);
+  font-size: 19px;
+  color: var(--rg-ink);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.rg-balloon-all:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--rg-ink); }
+.rg-balloon-all:disabled { cursor: default; filter: saturate(0.4); opacity: 0.8; }
+
+@keyframes rg-balloon-float { from { top: 101%; } to { top: -29%; } }
+@keyframes rg-balloon-sway {
+  from { transform: translateX(calc(var(--sway) * -1)) rotate(-4deg); }
+  to { transform: translateX(var(--sway)) rotate(4deg); }
+}
+@keyframes rg-cloud-drift { to { transform: translateX(520px); } }
+@keyframes rg-dart-fly {
+  0% { transform: translate(var(--dx), var(--dy)); opacity: 1; }
+  92% { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}
+@keyframes rg-pop-ring { 0% { transform: scale(0.2); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes rg-pop-shred {
+  0% { transform: rotate(var(--a)) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) translateX(10px) scale(0.5) rotate(160deg); opacity: 0; }
+}
+@keyframes rg-pop-result {
+  0% { transform: scale(0.2); opacity: 0; }
+  18% { transform: scale(1.15); opacity: 1; }
+  30%, 72% { transform: translateY(-6px) scale(1); opacity: 1; }
+  100% { transform: translateY(-34px) scale(0.9); opacity: 0; }
+}
+
+/* Reduced motion: balloons sit still in two rows, and a result simply appears until the next balloon arrives. */
+.rg-reveal.is-reduced-motion .rg-balloon { animation: none; top: var(--rest-y); translate: 0 -50%; }
+.rg-reveal.is-reduced-motion .rg-balloon-sway,
+.rg-reveal.is-reduced-motion .rg-balloon-cloud { animation: none; }
+.rg-reveal.is-reduced-motion .rg-pop-ring,
+.rg-reveal.is-reduced-motion .rg-pop-shreds { display: none; }
+.rg-reveal.is-reduced-motion .rg-pop-result { animation: none; }
+
+@media (max-height: 740px) {
+  .rg-balloon-sky { height: 280px; }
+}

@@ -1,0 +1,18 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+const steps = [["01", "np", "Pick A Prize", "Browse the comps. Each one shows the ticket price, how many tickets there are and when it closes."], ["02", "nc", "Choose Your Entry", "Buy tickets online, or enter free by post. Paid and postal entries have exactly the same chance."], ["03", "ny", "Get Your Tickets", "Pick how many and pay from your wallet or by card. Ticket numbers appear in your account straight away."], ["04", "np", "Win", "Play your instant-win games, and watch the live draw if your comp has one."]];
+---
+<Layout title="How It Works">
+  <section class="sec" style="padding-top:20px"><div class="wrap stack g24">
+    <div class="gg-rise" style="max-width:640px"><div class="eyebrow">The Basics</div><h1 class="h1">How It <span class="nc gg-flicker">Works</span></h1><p class="p" style="margin-top:8px">Pick a prize, grab your tickets — win instantly, in the live draw, or both.</p></div>
+    <div class="grid-c gg-stagger" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">{steps.map(([n, k, t, b]) => <div class="card card-p stack g8 gg-card"><span class={`d ${k}`} style="font-size:44px;line-height:1">{n}</span><h2 class="h3">{t}</h2><p class="p" style="font-size:15px">{b}</p></div>)}</div>
+    <h2 class="h2 gg-reveal">Two Ways To <span class="np">Win</span></h2>
+    <div class="split" style="gap:16px">
+      <div class="card card-hot card-p stack g8 gg-reveal"><span class="tag tag-p"><Icon name="bolt" size={11} stroke={3} /> Instant wins</span><h3 class="h3">Find Out Straight Away</h3><p class="p" style="font-size:15px">Every ticket plays a game — scratch a card, pop a balloon, hook a duck. Every outcome is fixed before the first ticket is sold and sealed with a public fingerprint, so nobody can change it. The game just shows you your result.</p></div>
+      <div class="card card-cy card-p stack g8 gg-reveal"><span class="tag tag-c"><Icon name="live" size={11} stroke={3} /> Live draws</span><h3 class="h3">Watch It Happen</h3><p class="p" style="font-size:15px">When entries close, the full entry list is frozen and published, and a winner is picked completely at random using a public randomness source anyone can check.</p></div>
+    </div>
+    <div class="card card-p row wrapx g16 gg-reveal" style="align-items:center"><span style="color:#FFF23A"><Icon name="mail" size={28} /></span><div style="flex:1;min-width:220px"><h3 class="h3">Prefer Not To Pay?</h3><p class="p" style="font-size:15px">Every comp has a free postal route with the same chance of winning.</p></div><a class="btn btn-o" href="/free-entry">Free Entry</a></div>
+    <div class="row wrapx g8"><a class="btn btn-y btn-lg gg-cta" href="/competitions">Browse Comps</a><a class="btn btn-o btn-lg" href="/faq">Read FAQs</a></div>
+  </div></section>
+</Layout>

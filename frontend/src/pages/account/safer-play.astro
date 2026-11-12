@@ -1,0 +1,14 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AccountShell from "../../components/AccountShell.astro";
+import SaferPlayForms from "../../islands/SaferPlayForms";
+import type { Limits } from "../../lib/types";
+const limits = await Astro.locals.api.get<Limits>("/api/me/limits");
+---
+<Layout title="Safer Play" active="account" noindex>
+  <AccountShell active="safer-play" title="Safer Play" eyebrow="Stay in control" glow="nc">
+    <p class="p" style="margin-top:-6px">Set limits that suit you. Lower limits and breaks apply straight away.</p>
+    <SaferPlayForms client:load initial={limits} />
+    <div class="card card-p stack g8"><h2 class="h3">Need Someone To Talk To?</h2><p class="p" style="font-size:14px;text-align:left">Free, confidential support is available from GamCare and BeGambleAware.</p><div class="row wrapx g8"><a class="btn btn-o btn-sm" href="https://www.gamcare.org.uk" rel="noopener" target="_blank">GamCare</a><a class="btn btn-o btn-sm" href="https://www.begambleaware.org" rel="noopener" target="_blank">BeGambleAware</a></div></div>
+  </AccountShell>
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AccountShell from "../../components/AccountShell.astro";
+import SettingsForms from "../../islands/SettingsForms";
+---
+<Layout title="Settings" active="account" noindex>
+  <AccountShell active="settings" title="Your Details" eyebrow="Settings">
+    <SettingsForms client:load me={Astro.locals.me!} />
+  </AccountShell>
+</Layout>
