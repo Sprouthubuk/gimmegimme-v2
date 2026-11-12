@@ -1,0 +1,18 @@
+---
+import Layout from "../../layouts/Layout.astro";
+// The public check of a competition's draw. Verity's verifier downloads the record and re-runs every
+// check in the visitor's own browser (seed against commitment, entries, drand signature, the draw),
+// trusting nothing from us but the data. The script is our own copy of Verity's (deploy publishes it).
+const ref = Astro.params.ref ?? "";
+if (!/^[A-Za-z0-9-]{1,60}$/.test(ref)) return new Response(null, { status: 404 });
+---
+<Layout title={`Check The Draw · ${ref}`} noindex>
+  <section class="sec" style="padding-top:20px"><div class="narrow stack g16">
+    <div class="gg-rise"><div class="eyebrow">Verity · {ref}</div><h1 class="h1">Check The <span class="nc gg-flicker">Draw</span></h1>
+      <p class="p" style="margin-top:8px">Every instant-win result and every draw is fixed in advance and sealed with a public fingerprint. This page re-checks all of it in your own browser.</p></div>
+    <div class="card card-p" style="overflow:auto">
+      <verity-verify src={`/verity/competitions/${ref}/verification`} style="--verity-ok:#22E6FF;--verity-bad:#FF1FA0;--verity-muted:#9aa0b4;--verity-font:Nunito,sans-serif"></verity-verify>
+    </div>
+  </div></section>
+  <script type="module" src="/vendor/verity/verify-page/verity-verify.js" is:inline></script>
+</Layout>

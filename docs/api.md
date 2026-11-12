@@ -7,8 +7,9 @@ against it; the Laravel feature tests must cover the same behaviour.
 
 ## Ground rules
 
-- **Same domain.** nginx sends `/api`, `/sanctum`, `/admin`, `/webhooks`, `/media` to Laravel and
-  everything else to Astro (`deploy/nginx.conf`). No CORS.
+- **Same domain.** nginx sends `/api`, `/sanctum`, `/admin`, `/livewire`, `/verity`, `/storage` to
+  Laravel and everything else to Astro (`deploy/nginx.conf`). No CORS.
+- **Lists** come wrapped: `{ data: [...] }` (plus `total` / `hasMore` where they page).
 - **Auth** is Sanctum SPA cookie auth. Browser code calls `GET /sanctum/csrf-cookie` once, then
   sends `X-XSRF-TOKEN` (the decoded `XSRF-TOKEN` cookie) on every write. A missing or wrong token
   is `419`. Astro's server-side calls forward the visitor's `Cookie`, with `Origin`/`Referer` set
@@ -28,12 +29,12 @@ against it; the Laravel feature tests must cover the same behaviour.
 | Method | Path | Returns |
 | --- | --- | --- |
 | GET | `/api/site` | `SiteInfo` (cached 30s by Astro) |
-| GET | `/api/competitions?status=live` | `CompetitionSummary[]` (live and sold out, featured first, then closing soonest) |
+| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest) |
 | GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player |
 | GET | `/api/winners/instant?limit=&page=&game=` | `{ data: InstantWinnerRow[], total }` |
-| GET | `/api/winners/draws` | `DrawWinnerRow[]` |
-| GET | `/api/entry-lists` | `{ slug, title, closesAt, drawAt, entries }[]` closed or drawn draws |
-| GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], total }`; names masked ("Liam P.") |
+| GET | `/api/winners/draws` | `{ data: DrawWinnerRow[] }` |
+| GET | `/api/entry-lists` | `{ data: (CompetitionSummary & { entries })[] }`: draws Verity has drawn |
+| GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], total, hasMore }`; names masked ("L*** P."); 404 until drawn |
 | GET | `/api/pages/{slug}` | `{ title, updatedAt, version, html, headings }` (terms, privacy, rules, cookies, free-entry) |
 | POST | `/api/contact` | `{ name, email, topic, message }` → `204`; rate limited |
 
@@ -70,13 +71,18 @@ reference and confirms only when the job, order number and amount all match. Whe
 it is not paid and `leftAs` is given, close the order and give back the wallet part. A late payment
 on a closed order is still confirmed.
 
-`POST /api/orders/{number}/play` → `PlayResult`. Reveals the order's unplayed instant-win tickets
-(Verity `playGroup('order:{id}')`). The outcome is already decided and credited; the response only
-reports it. `outcome.tickets` holds this order's tickets only. Calling again returns the same
-result.
+`POST /api/orders/{number}/play` → `PlayResult`. Instant prizes are won when the ticket is sold:
+fulfilment plays every instant-win entry with Verity (`playGroup`) and credits cash and site-credit
+prizes to winnings in the same transaction. This endpoint only reports the stored outcome for this
+order's tickets, and marks them watched. Calling again returns the same result and pays nothing.
 
-`POST /webhooks/cashflows` — verifies the `Hash` header, finds the order **only** by the stored
-job reference, then confirms through the same path as `/return`.
+`POST /api/webhooks/cashflows` — `{ paymentJobReference }`. Nothing in the message is trusted: the
+order is found **only** by the stored job reference, then confirmed through the same path as `/return`
+(which asks Cashflows itself).
+
+Return addresses given to Cashflows: success `/order/{n}` (deposits: `/account/wallet?deposit={n}`,
+which calls `/return` server-side), failed `/payment/failed?order={n}`, cancelled
+`/payment/cancelled?order={n}`.
 
 ## Account (signed in)
 
@@ -88,9 +94,10 @@ job reference, then confirms through the same path as `/return`.
 | POST | `/api/auth/forgot-password` | `{ email }` → `204` always |
 | POST | `/api/auth/reset-password` | `{ token, email, password }` → `204` |
 | POST | `/api/auth/email/resend` | → `204` |
+| GET | `/api/auth/email/verify/{id}/{hash}?expires&signature` | the signed link in the email; confirms and redirects to `/verify-email?status=verified` |
 | GET | `/api/me` | `Me` |
-| GET | `/api/me/wallet/transactions` | `WalletTransaction[]` newest first |
-| GET | `/api/me/tickets?tab=active\|to-play\|won\|past&limit=` | `TicketGroup[]` |
+| GET | `/api/me/wallet/transactions` | `{ data: WalletTransaction[] }` newest first |
+| GET | `/api/me/tickets?tab=active\|to-play\|won\|past&limit=` | `{ data: TicketGroup[] }`; outcomes hidden until watched |
 | GET/POST | `/api/me/limits` | `Limits` / `{ weeklyDepositPence }` → `Limits` (lowering is instant, raising waits 24h) |
 | POST | `/api/me/break` | `{ days }` → `Limits` (instant, no checks in front of it) |
 | POST | `/api/me/self-exclude` | `{ months }` → `Limits` (instant) |
@@ -98,7 +105,7 @@ job reference, then confirms through the same path as `/return`.
 | PATCH | `/api/me/address` | `{ line1, line2, city, postcode }` → `Me` (fill-once) |
 | PATCH | `/api/me/preferences` | `{ email, sms, winNotifications }` → `Me` |
 | POST | `/api/me/password` | `{ currentPassword, password }` → `204` |
-| POST | `/api/me/deposits` | `{ amountPence }` → `{ redirectUrl }` (min £5, play check) |
+| POST | `/api/me/deposits` | `{ amountPence }` → `{ redirectUrl, orderNumber }` (min £5, max setting, play check) |
 | POST | `/api/me/withdrawals` | `{ amountPence }` → `204` (winnings only, min £20, ID checked; paid by hand) |
 
 `Me.playBlock` is the same reason the play check would give, so the site can explain it before
@@ -116,3 +123,9 @@ RevealContext = { [competitionId]: { game, isInstantWin, prizeLabels, inLiveDraw
 
 Every cash or site-credit prize is credited to the winnings balance before the response is sent;
 `physical` prizes are fulfilled by hand and are not in `creditedPence`.
+
+## Verification
+
+`/verify/{ref}` (Astro) loads Verity's browser verifier (`/vendor/verity/verify-page/verity-verify.js`,
+published from the package on deploy) against `/verity/competitions/{ref}/verification`
+(`VERITY_ROUTES=true`). Every draw winner and competition links to it.

@@ -14,7 +14,8 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "mock-api": "node ./mock-api/server.mjs"
+    "mock-api": "node ./mock-api/server.mjs",
+    "test:fullstack": "vitest run --config vitest.fullstack.config.ts"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",

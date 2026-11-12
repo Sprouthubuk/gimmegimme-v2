@@ -51,8 +51,10 @@ describe("buying and playing", () => {
     expect(play.body.outcome.creditedPence).toBe(won);
     const after = (await b.api("/api/me")).body.wallet.totalPence;
     expect(after).toBe(before - 250 + won);
-    // Playing again reveals nothing new: results are never shown twice as fresh wins.
-    expect((await b.api(`/api/orders/${n}/play`, {})).body.outcome.tickets).toHaveLength(0);
+    // Playing again shows the same result and pays nothing twice.
+    const again = await b.api(`/api/orders/${n}/play`, {});
+    expect(again.body.outcome).toEqual({ ...play.body.outcome, balanceAfterPence: again.body.outcome.balanceAfterPence });
+    expect((await b.api("/api/me")).body.wallet.totalPence).toBe(after);
     const tickets = await b.page("/account/tickets");
     expect(tickets.html).toContain("Bush Bucks – Jungle Trial");
   });

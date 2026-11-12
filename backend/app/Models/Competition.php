@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Sprouthub\Verity\Models\Competition as VerityCompetition;
+
+class Competition extends Model
+{
+    use HasUlids;
+
+    protected $guarded = ['id', 'verity_ref', 'published_at'];
+
+    /** Once published, these are Verity's terms and never change. */
+    public const LOCKED_WHEN_PUBLISHED = ['type', 'price_pence', 'max_tickets', 'max_per_person', 'closes_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'presets' => 'array',
+            'tags' => 'array',
+            'featured' => 'boolean',
+            'opens_at' => 'datetime',
+            'closes_at' => 'datetime',
+            'published_at' => 'datetime',
+            'ended_at' => 'datetime',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (Competition $c) {
+            if ($c->getOriginal('verity_ref') !== null) {
+                foreach (self::LOCKED_WHEN_PUBLISHED as $field) {
+                    if ($c->isDirty($field)) {
+                        throw new \DomainException("The {$field} of a published competition can't be changed.");
+                    }
+                }
+            }
+        });
+        static::deleting(function (Competition $c) {
+            if ($c->verity_ref !== null) {
+                throw new \DomainException('A published competition is never deleted.');
+            }
+        });
+    }
+
+    public function prizes(): HasMany
+    {
+        return $this->hasMany(CompetitionPrize::class)->orderBy('sort')->orderByDesc('value_pence');
+    }
+
+    public function verity(): ?VerityCompetition
+    {
+        return $this->verity_ref ? VerityCompetition::query()->where('ref', $this->verity_ref)->first() : null;
+    }
+
+    public function isInstant(): bool
+    {
+        return $this->type === 'instant';
+    }
+
+    public function hasDraw(): bool
+    {
+        return $this->type === 'draw' || $this->end_prize_name !== null;
+    }
+
+    public function scopePublished($q)
+    {
+        return $q->whereNotNull('verity_ref');
+    }
+
+    /** The picture as a web address: uploads live on the public disk (/storage/…). */
+    public function imageUrl(): string
+    {
+        $i = (string) $this->image;
+
+        return $i === '' || str_starts_with($i, 'http') || str_starts_with($i, '/') ? $i : '/storage/'.ltrim($i, '/');
+    }
+
+    public function presetList(): array
+    {
+        $p = array_values(array_filter(array_map('intval', $this->presets ?? []), fn ($n) => $n > 0));
+
+        return $p ?: [5, 10, 25, 50];
+    }
+}

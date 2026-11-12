@@ -10,3 +10,5 @@ backend/vendor/
 backend/storage/*.key
 backend/auth.json
 frontend/tests/e2e/.tmp/
+backend/public/vendor/
+backend/public/storage

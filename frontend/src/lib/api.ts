@@ -56,8 +56,11 @@ export function serverApi(request: Request, setCookies: string[] = []) {
     if (!res.ok) throw new ApiFailure(res.status, body);
     return body as T;
   }
+  const xsrf = decodeURIComponent((cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/) ?? [])[1] ?? "");
   return {
     get: <T>(path: string) => call<T>(path),
+    /** A write on the visitor's behalf: carries their XSRF token, like the browser would. */
+    post: <T>(path: string, json: unknown = {}) => call<T>(path, { method: "POST", body: JSON.stringify(json), headers: { "X-XSRF-TOKEN": xsrf } }),
     /** Like get, but answers null on 401/404 instead of throwing. */
     maybe: async <T>(path: string): Promise<T | null> => {
       try {

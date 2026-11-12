@@ -279,9 +279,10 @@ route("POST", "/api/orders/:number/play", authed((req, res, { user, params }) =>
   const o = orders.get(params.number);
   if (!o || o.user !== user.email) return fail(res, 404, "Not found");
   if (o.status !== "paid") return fail(res, 409, "This order isn't paid yet.");
-  const ts = user.tickets.filter((t) => t.order === o.number && !t.played && byId.get(t.competitionId).type === "instant");
+  // Like Laravel: the same result every time; prizes are credited once.
+  const ts = user.tickets.filter((t) => t.order === o.number && byId.get(t.competitionId).type === "instant");
   let credited = 0;
-  for (const t of ts) { t.played = true; if (t.prize) { user.winnings += t.prize.valuePence; credited += t.prize.valuePence; user.tx.unshift({ id: crypto.randomUUID(), at: iso(Date.now()), description: `Instant win · ${t.prize.name}`, amountPence: t.prize.valuePence, direction: "in", bucket: "winnings" }); } }
+  for (const t of ts) { if (t.prize) credited += t.prize.valuePence; if (!t.played && t.prize) { user.winnings += t.prize.valuePence; user.tx.unshift({ id: crypto.randomUUID(), at: iso(Date.now()), description: `Instant win · ${t.prize.name}`, amountPence: t.prize.valuePence, direction: "in", bucket: "winnings" }); } t.played = true; }
   const context = {};
   for (const t of ts) { const c = byId.get(t.competitionId); context[c.id] = { game: c.game, isInstantWin: true, prizeLabels: ["£750", "£222.22", "£111.11", "£55.55", "£22.22", "£11.11", "£5.55", "£2.22", "£1.11", "50p"], inLiveDraw: false, skin: c.skin }; }
   send(res, 200, { outcome: { purchaseId: o.number, tickets: ts.map((t) => ({ ticketNumber: t.number, competitionId: t.competitionId, competitionTitle: byId.get(t.competitionId).title, prize: t.prize })), totalWonPence: credited, creditedPence: credited, balanceAfterPence: total(user) }, context });
@@ -292,14 +293,14 @@ route("GET", "/mock-pay/:number", (req, res, { params }) => {
   const o = orders.get(params.number);
   if (!o) return fail(res, 404, "Not found");
   res.writeHead(200, { "Content-Type": "text/html" });
-  const ok = o.deposit ? `${SITE}/account/wallet?deposit=paid` : `${SITE}/order/${o.number}`;
+  const ok = o.deposit ? `${SITE}/account/wallet?deposit=${o.number}` : `${SITE}/order/${o.number}`;
   res.end(`<!doctype html><title>Mock payment</title><body style="font-family:sans-serif;background:#fff;padding:24px"><h1>Mock Cashflows payment — £${(o.cardPence / 100).toFixed(2)}</h1><p><a id="pay" href="${SELF}/mock-pay/${o.number}/paid">Pay</a> · <a id="fail" href="${SELF}/mock-pay/${o.number}/failed">Decline</a> · <a id="cancel" href="${SITE}/payment/cancelled?order=${o.number}">Cancel</a></p><p hidden>${ok}</p></body>`);
 });
 route("GET", "/mock-pay/:number/:result", (req, res, { params }) => {
   const o = orders.get(params.number);
   if (!o) return fail(res, 404, "Not found");
   o.gateway = params.result === "paid" ? "paid" : "failed";
-  const to = o.gateway === "paid" ? (o.deposit ? `${SITE}/account/wallet?deposit=paid` : `${SITE}/order/${o.number}`) : `${SITE}/payment/failed?order=${o.number}`;
+  const to = o.gateway === "paid" ? (o.deposit ? `${SITE}/account/wallet?deposit=${o.number}` : `${SITE}/order/${o.number}`) : `${SITE}/payment/failed?order=${o.number}`;
   res.writeHead(302, { Location: to }); res.end();
 });
 route("GET", "/media/:file", (req, res, { params }) => {

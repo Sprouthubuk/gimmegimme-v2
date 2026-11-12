@@ -9,6 +9,7 @@ $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autol
 $FORGE_PHP artisan migrate --force
 $FORGE_PHP artisan optimize
 $FORGE_PHP artisan filament:optimize || true
+$FORGE_PHP artisan vendor:publish --tag=verity-assets --force
 $FORGE_PHP artisan storage:link || true
 cd ..
 

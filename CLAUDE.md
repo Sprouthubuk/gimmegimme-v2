@@ -5,8 +5,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 ## How we work
 - Never commit or push to `main`. One branch per task; Liam reviews and merges.
 - Plan first for anything non-trivial. For a bug, write a failing test first.
-- Before every commit: `cd frontend && npx astro check && npm run build && npm test`
-  (and `cd backend && php artisan test` once the backend exists).
+- Before every commit: `cd backend && php artisan test`, then
+  `cd frontend && npx astro check && npm run build && npm test && npm run test:fullstack`.
 - `docs/api.md` + `frontend/src/lib/types.ts` are the contract. Change both together, and the mock
   API (`frontend/mock-api/server.mjs`) and the Laravel tests with them.
 
@@ -26,6 +26,20 @@ Read before every task. If a request conflicts with this, stop and ask.
 - A paid order that couldn't get all its tickets is flagged for a person, never auto-refunded.
 - Never invent winners, reviews or trust figures. Free postal route always visible.
 - All dates shown in UK time (`frontend/src/lib/time.ts`).
+
+## Backend (backend/)
+- Money moves only through `app/Services`: `Wallet` (ledger), `Orders` (checkout, deposits, gateway sync,
+  closing), `Fulfilment` (Verity entries and instant wins), `Postal`, `Bonus`. Controllers and the admin
+  call these; they never write `wallet_ledger`, `orders.status` or Verity tables themselves.
+- `wallet_ledger` and `admin_actions` are append-only (database triggers, `App\Support\LedgerGuards`).
+  Every credit has a unique `reference` so repeating an event pays once.
+- Every refusal a player can see is a `RefusedException` with a stable `reason` code.
+- Never write to `verity_*` tables or edit `vendor/sprouthub/verity-engine` (its fingerprints are checked).
+- Competition terms are fixed once published to Verity (`Competition::LOCKED_WHEN_PUBLISHED`).
+- Customer accounts are never deleted (model refuses); admin actions carry a reason and are logged.
+- Admin is Filament at `/admin` (`app/Filament`); admins and staff can't play.
+- Tests: `tests/Feature` (Verity runs for real on its local beacon; Cashflows is `FakeGateway`).
+- `DemoSeeder` is for laptops and tests only and refuses production.
 
 ## Front end
 - Title Case for every title. Mobile first (44px taps, 16px inputs, no sideways scroll at 320px).
