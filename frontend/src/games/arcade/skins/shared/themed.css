@@ -1,0 +1,67 @@
+/* Shared by the themed skins drawn on a dark background (Pirates, Cash Escape, Drop It,
+   Smash My Cash): words that sit straight on the backdrop turn light. Everything on a
+   white card (the result sheet) keeps its colours. */
+.rg-skin-pirates .rg-counter,
+.rg-skin-pirates .rg-comp-title,
+.rg-skin-cash_escape .rg-counter,
+.rg-skin-cash_escape .rg-comp-title,
+.rg-skin-hip_hop .rg-counter,
+.rg-skin-hip_hop .rg-comp-title,
+.rg-skin-smash_cash .rg-counter,
+.rg-skin-smash_cash .rg-comp-title { color: var(--rg-white); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4); }
+
+.rg-skin-pirates .rg-board .rg-prompt-title.is-ink,
+.rg-skin-cash_escape .rg-board .rg-prompt-title.is-ink,
+.rg-skin-hip_hop .rg-board .rg-prompt-title.is-ink,
+.rg-skin-smash_cash .rg-board .rg-prompt-title.is-ink { color: var(--rg-white); }
+
+.rg-skin-pirates .rg-board .rg-prompt-sub,
+.rg-skin-pirates .rg-board .rg-note,
+.rg-skin-cash_escape .rg-board .rg-prompt-sub,
+.rg-skin-cash_escape .rg-board .rg-note,
+.rg-skin-hip_hop .rg-board .rg-prompt-sub,
+.rg-skin-hip_hop .rg-board .rg-note,
+.rg-skin-smash_cash .rg-board .rg-prompt-sub,
+.rg-skin-smash_cash .rg-board .rg-note { color: #ece6ff; }
+
+.rg-skin-pirates .rg-prompt-title.is-pink,
+.rg-skin-cash_escape .rg-prompt-title.is-pink,
+.rg-skin-hip_hop .rg-prompt-title.is-pink,
+.rg-skin-smash_cash .rg-prompt-title.is-pink {
+  color: #ffd23f;
+  text-shadow: 0 2px 0 var(--rg-ink), 2px 0 0 var(--rg-ink), -2px 0 0 var(--rg-ink);
+}
+
+/* Gold display lettering used in the boards' SVG signs. */
+.rg-themed-sign { display: block; overflow: visible; }
+.rg-themed-sign text { font-family: var(--rg-font-display); stroke: var(--rg-ink); stroke-linejoin: round; paint-order: stroke; }
+
+/* Reduced motion: the shell already makes every animation near-instant, but a delay would
+   still hold a prize back (a smashed jar's prize showed for only a moment before the next
+   jar). In the themed looks nothing waits: every end state shows at once. */
+.rg-reveal.is-reduced-motion:is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash, .rg-skin-christmas.rg-game-slots) *,
+.rg-reveal.is-reduced-motion:is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash, .rg-skin-christmas.rg-game-slots) *::before,
+.rg-reveal.is-reduced-motion:is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash, .rg-skin-christmas.rg-game-slots) *::after {
+  animation-delay: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* As a card (desktop, tablet, the demo dialog on a wide screen) the reveal is at most 820px
+   tall and clips what does not fit. The themed boards are taller than the classic ones, so
+   there they are drawn a little smaller, as on a phone, to keep the controls and the sound
+   button inside the card. */
+.rg-reveal:not(.rg-fullscreen):not(.rg-fill):is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash) .rg-board { zoom: 0.9; }
+@media (max-height: 800px) {
+  .rg-reveal:not(.rg-fullscreen):not(.rg-fill):is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash) .rg-board { zoom: 0.84; }
+}
+@media (max-height: 770px) {
+  .rg-reveal:not(.rg-fullscreen):not(.rg-fill):is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash) .rg-board { zoom: 0.78; }
+}
+@media (max-height: 700px) {
+  .rg-reveal:not(.rg-fullscreen):not(.rg-fill):is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash) .rg-board { zoom: 0.72; }
+  .rg-reveal:not(.rg-fullscreen):not(.rg-fill).rg-skin-christmas.rg-game-slots .rg-board { zoom: 0.86; }
+}
+@media (max-height: 630px) {
+  .rg-reveal:not(.rg-fullscreen):not(.rg-fill):is(.rg-skin-pirates, .rg-skin-cash_escape, .rg-skin-hip_hop, .rg-skin-smash_cash) .rg-board { zoom: 0.66; }
+  .rg-reveal:not(.rg-fullscreen):not(.rg-fill).rg-skin-christmas.rg-game-slots .rg-board { zoom: 0.76; }
+}

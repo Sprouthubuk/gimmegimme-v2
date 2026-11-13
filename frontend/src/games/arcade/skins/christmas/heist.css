@@ -1,0 +1,241 @@
+/* ---------- Liam's Humbug Heist (Christmas skin of Gems): a lamplit Victorian street at night ---------- */
+.rg-reveal.rg-skin-christmas.rg-game-gems {
+  background:
+    radial-gradient(45% 30% at 12% 18%, rgba(255, 190, 90, 0.26), transparent 70%),
+    radial-gradient(45% 30% at 88% 18%, rgba(255, 190, 90, 0.26), transparent 70%),
+    radial-gradient(120% 50% at 50% 110%, rgba(255, 255, 255, 0.16), transparent 60%),
+    linear-gradient(180deg, #0c1230 0%, #18204a 55%, #262c55 100%);
+}
+
+.rg-heist {
+  position: relative;
+  width: min(100%, 380px);
+  padding: 8px 10px 10px;
+  border: var(--rg-outline);
+  border-radius: 26px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 15px, rgba(0, 0, 0, 0.22) 15px 17px),
+    radial-gradient(80% 50% at 50% 0%, rgba(255, 200, 110, 0.28), transparent 70%),
+    linear-gradient(180deg, #3a2233 0%, #26203f 55%, #171b34 100%);
+  box-shadow: 0 6px 0 var(--rg-ink), inset 0 0 0 3px rgba(226, 181, 74, 0.55);
+}
+.rg-heist-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Street lamps either side of the sign. */
+.rg-heist-lamp { position: absolute; top: 10px; width: 24px; height: 72px; }
+.rg-heist-lamp.is-left { left: 8px; }
+.rg-heist-lamp.is-right { right: 8px; }
+.rg-heist-lamp-glass { filter: drop-shadow(0 0 6px #ffcf6a); animation: rg-heist-flicker 3.4s ease-in-out infinite; }
+.rg-heist-lamp.is-right .rg-heist-lamp-glass { animation-delay: -1.7s; }
+@keyframes rg-heist-flicker {
+  0%, 100% { opacity: 1; }
+  45% { opacity: 0.86; }
+  50% { opacity: 1; }
+  53% { opacity: 0.8; }
+}
+
+/* The sign. */
+.rg-heist-sign { display: block; width: 80%; margin: 0 auto; overflow: visible; }
+.rg-heist-sign text { font-family: var(--rg-font-display); }
+.rg-heist-sign-small { font-size: 20px; fill: #ffe9a8; letter-spacing: 2px; }
+.rg-heist-sign-big {
+  font-size: 46px;
+  fill: url(#rg-heist-gold);
+  stroke: var(--rg-ink);
+  stroke-width: 6px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  letter-spacing: 1px;
+}
+.rg-heist-sign-big.is-heist { font-size: 34px; fill: #fff; letter-spacing: 4px; }
+
+/* What three of each loot pays. */
+.rg-heist-paytable { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 4px 0 8px; }
+.rg-heist-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px 9px 2px 4px;
+  border: 2px solid #e2b54a;
+  border-radius: 999px;
+  background: rgba(8, 10, 28, 0.62);
+  color: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: min(17px, 4.3cqw);
+}
+.rg-heist-pay .rg-loot { width: min(26px, 6.4cqw); height: min(26px, 6.4cqw); flex: none; }
+.rg-heist-pay b { color: #ffd23f; font-weight: 400; font-size: 0.8em; margin-right: 4px; }
+.rg-heist-pay span { max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rg-heist-pay.is-hit { background: var(--rg-xmas-gold); color: var(--rg-ink); border-color: var(--rg-ink); animation: rg-glow 1s ease-in-out infinite; }
+.rg-heist-pay.is-hit b { color: var(--rg-xmas-red-dark); }
+
+/* The street: snowy cobbles with sixteen bags on them. */
+.rg-heist-street {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 12px 8px 8px;
+  border: var(--rg-outline);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse 9px 6px at 50% 50%, #4a5068 60%, transparent 66%) 0 0 / 22px 15px,
+    radial-gradient(ellipse 9px 6px at 50% 50%, #3f455c 60%, transparent 66%) 11px 7.5px / 22px 15px,
+    #252a3c;
+  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.rg-heist-street::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: -6px;
+  height: 14px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 8px 6px, #fff 7.5px, transparent 8.5px) 0 0 / 15px 14px repeat-x,
+    linear-gradient(#fff, #fff) 0 0 / 100% 8px no-repeat;
+  filter: drop-shadow(0 2px 0 rgba(20, 20, 20, 0.35));
+  pointer-events: none;
+}
+
+.rg-heist .rg-heist-tile {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  perspective: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.rg-heist .rg-heist-tile:disabled { cursor: default; }
+.rg-heist .rg-heist-tile:focus-visible { outline: 3px solid var(--rg-xmas-gold); outline-offset: 2px; }
+
+.rg-heist-bag {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  transform-origin: 50% 92%;
+  animation: rg-heist-sway 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--sway, 0s) * -1);
+}
+.rg-heist-bag-svg { width: 96%; height: 100%; overflow: visible; transition: transform 0.15s; }
+@media (hover: hover) {
+  .rg-heist-tile:not(:disabled):hover .rg-heist-bag-svg { transform: translateY(-3px) scale(1.04); }
+}
+.rg-heist-tile:not(:disabled):active .rg-heist-bag-svg { transform: scale(0.94); }
+@keyframes rg-heist-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+/* Cracking a bag: a rattle, the tie pops off, the sack bursts and the loot jumps out. */
+.rg-heist-tile.is-open .rg-heist-bag { animation: rg-heist-crack 0.55s ease-in forwards; }
+.rg-heist-bag-top { transform-box: fill-box; transform-origin: 50% 100%; }
+.rg-heist-tile.is-open .rg-heist-bag-top { animation: rg-heist-lid 0.55s ease-in forwards; }
+@keyframes rg-heist-crack {
+  0% { transform: rotate(0); opacity: 1; }
+  14% { transform: rotate(-9deg) scale(1.04); }
+  28% { transform: rotate(8deg) scale(1.06); }
+  42% { transform: rotate(-6deg) scale(1.08); }
+  58% { transform: scale(1.18, 0.88); opacity: 1; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes rg-heist-lid {
+  0%, 50% { transform: none; }
+  100% { transform: translate(-10px, -30px) rotate(-35deg); }
+}
+
+.rg-heist-loot {
+  position: absolute;
+  inset: 6%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 90, 0.5), rgba(255, 214, 90, 0) 70%);
+  animation: rg-heist-loot-in 0.5s 0.38s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.rg-heist-loot .rg-loot { width: 86%; height: 86%; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35)); }
+.rg-heist-tile.is-coal .rg-heist-loot { background: radial-gradient(circle, rgba(170, 180, 210, 0.22), transparent 70%); }
+.rg-heist-tile.is-coal .rg-loot { opacity: 0.85; }
+@keyframes rg-heist-loot-in {
+  from { transform: translateY(14px) scale(0.2); opacity: 0; }
+}
+.rg-heist-tile.is-hit .rg-heist-loot {
+  background: radial-gradient(circle, rgba(255, 232, 120, 0.95), rgba(255, 196, 40, 0.55) 45%, rgba(255, 196, 40, 0) 72%);
+  animation: rg-heist-loot-in 0.5s 0.38s cubic-bezier(0.3, 1.6, 0.5, 1) both, rg-heist-hit 1s 0.9s ease-in-out infinite;
+}
+@keyframes rg-heist-hit { 50% { transform: scale(1.13); } }
+
+/* Gold coins spilling out of a bag of loot. */
+.rg-heist-spill { position: absolute; left: 50%; top: 56%; pointer-events: none; }
+.rg-heist-spill i {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--rg-ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3a6, #ffcf2e 55%, #c98a00);
+  opacity: 0;
+  animation: rg-heist-spill 0.75s 0.36s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+@keyframes rg-heist-spill {
+  0% { transform: rotate(var(--a)) translateX(0) scale(0.6); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--d)) scale(1); opacity: 0; }
+}
+
+/* An opened sack lies flat under its loot. */
+.rg-heist-tile.is-open::before {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 6%;
+  height: 22%;
+  border: 2.5px solid var(--rg-ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 30%, #e9c37c, #b9853d 70%);
+  animation: rg-fade-in 0.3s 0.3s both;
+}
+
+/* A win: gold coins rain down over the street. */
+.rg-heist-rain { position: absolute; inset: 0; overflow: hidden; border-radius: 24px; pointer-events: none; }
+.rg-heist-rain i {
+  position: absolute;
+  top: -22px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3a6, #ffcf2e 55%, #c98a00);
+  animation: rg-heist-rain var(--t) var(--w) cubic-bezier(0.4, 0, 0.8, 0.6) both;
+}
+@keyframes rg-heist-rain {
+  from { transform: translateY(0) rotateY(0); }
+  to { transform: translateY(560px) rotateY(720deg); }
+}
+
+/* When the six are cracked, the untouched bags step back, and on a win so does loot that didn't match. */
+.rg-heist.is-won .rg-heist-tile.is-open:not(.is-hit) { opacity: 0.55; transition: opacity 0.4s 0.4s; }
+.rg-heist.is-done .rg-heist-tile:not(.is-open) .rg-heist-bag { animation: none; opacity: 0.42; filter: saturate(0.5); transition: opacity 0.4s; }
+
+/* Picks left: six gold tokens. */
+.rg-heist-picks { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-weight: 900; font-size: 15px; color: #ffe9a8; }
+.rg-heist-picks i { width: 17px; height: 17px; border: 2px solid var(--rg-ink); border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3a6, #ffcf2e 55%, #c98a00); transition: background 0.2s; }
+.rg-heist-picks i.is-used { background: #3b4260; }
+.rg-heist-picks span { margin-left: 6px; }
+
+/* Short phones: a smaller sign so the bags and the prompt fit. */
+@media (max-height: 740px) {
+  .rg-heist-sign { width: 64%; }
+  .rg-heist-lamp { height: 56px; }
+  .rg-heist-street { gap: 4px; padding-top: 10px; }
+  .rg-heist-paytable { margin-bottom: 6px; }
+}

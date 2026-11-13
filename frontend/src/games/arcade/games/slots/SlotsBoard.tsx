@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { BoardProps } from "../types";
 import { generateSlots, type SlotSymbol } from "../generators";
 import { Mascot } from "../../shell/Mascot";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
+import { useSlotsSpin } from "./useSlotsSpin";
 import "./slots.css";
 
 const NAMES: Record<SlotSymbol, string> = { coin: "£", seven: "7", bar: "BAR", star: "star", diamond: "gem", smile: "smiley" };
@@ -49,35 +50,10 @@ export function SlotIcon({ symbol }: { symbol: SlotSymbol }) {
   }
 }
 
-type Phase = "ready" | "spinning" | "landed";
-const STOP_MS = [1400, 2000, 2700];
-
 export function SlotsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: BoardProps) {
   const layout = useMemo(() => generateSlots(ticket.prize, decoys, seed), [ticket.prize, decoys, seed]);
-  const [phase, setPhase] = useState<Phase>("ready");
-  const [stopped, setStopped] = useState(0);
-  const [pulled, setPulled] = useState(false);
-
-  const spin = () => {
-    if (phase !== "ready") return;
-    setPulled(true);
-    // The strips are already painted at their start offset, so this kicks off the CSS transition.
-    setPhase("spinning");
-  };
-
-  useEffect(() => {
-    if (phase !== "spinning") return;
-    const stops = reducedMotion ? [100, 150, 200] : STOP_MS;
-    const timers = stops.map((ms, i) => setTimeout(() => setStopped(i + 1), ms + 60));
-    timers.push(setTimeout(() => setPhase("landed"), stops[2] + 150));
-    return () => timers.forEach(clearTimeout);
-  }, [phase, reducedMotion]);
-
-  useEffect(() => {
-    if (phase !== "landed") return;
-    const t = setTimeout(onReveal, reducedMotion ? 300 : layout.win ? 1200 : 800);
-    return () => clearTimeout(t);
-  }, [phase, onReveal, reducedMotion, layout.win]);
+  const { phase, stopped, spin, reelMs } = useSlotsSpin(layout, reducedMotion, onReveal);
+  const pulled = phase !== "ready";
 
   const payline = layout.windows.map((w) => w[1]);
   let prompt: React.ReactNode = null;
@@ -98,7 +74,7 @@ export function SlotsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
             {layout.strips.map((strip, r) => {
               const rolling = phase !== "ready";
               const stoppedHere = stopped > r || phase === "landed";
-              const dur = reducedMotion ? 100 : STOP_MS[r];
+              const dur = reelMs(r);
               return (
                 <div key={r} className={`rg-reel ${rolling && !stoppedHere ? "is-blur" : ""}`}>
                   <div

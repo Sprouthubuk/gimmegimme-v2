@@ -4,8 +4,8 @@ import { generateWheel, WHEEL_SEGMENTS, type WheelSegment } from "../../games/ge
 import { createRng } from "../../rng";
 import { Mascot } from "../../shell/Mascot";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
-import { playSound } from "./sounds";
-import { SoundToggle } from "./SoundToggle";
+import { playSound } from "../shared/sounds";
+import { SoundToggle } from "../shared/SoundToggle";
 import "./sleigh.css";
 
 const SEG = 360 / WHEEL_SEGMENTS;

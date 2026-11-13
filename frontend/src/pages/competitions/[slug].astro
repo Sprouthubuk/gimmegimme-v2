@@ -1,4 +1,5 @@
 ---
+import { gameName } from "../../lib/gameLabels";
 import Layout from "../../layouts/Layout.astro";
 import CompCard from "../../components/CompCard.astro";
 import Countdown from "../../components/Countdown.astro";
@@ -37,7 +38,7 @@ const [first, ...rest] = c.title.split(" – ");
         <HeroImage src={c.image} alt={c.title}>
           {isDraw
             ? <span class="tag tag-c" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><span class="gg-ping" style="width:7px;height:7px;border-radius:999px;background:#22E6FF"></span> Live Draw</span>
-            : <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {c.gameLabel}</span>}
+            : <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {gameName(c)}</span>}
         </HeroImage>
         {!isDraw && c.game && <a href={`/demo/${c.game}?skin=${c.skin}`} class="card card-cy card-p row g12 gg-card dsk" style="text-decoration:none;color:#fff;display:flex"><span style="width:48px;height:48px;border-radius:14px;border:1px solid #22E6FF;color:#22E6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><Icon name="play" size={26} stroke={1.8} /></span><span style="flex:1"><b class="d" style="font-size:20px;display:block">Try The Game Free</b><span class="hint">Every ticket plays one go. Results are fixed when you buy.</span></span><Icon name="chev" /></a>}
       </div>

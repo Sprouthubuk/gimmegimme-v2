@@ -1,0 +1,28 @@
+---
+// Development only: every reveal game, in every skin, with sample purchases (src/dev/RevealGamesPreview.tsx).
+// The route is added by astro.config.mjs only for `astro dev`, so none of this is in a production build.
+import "../styles.css";
+import RevealGamesPreview from "./RevealGamesPreview";
+---
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Reveal Games Preview (Development Only)</title>
+  <style is:global>
+    .rgp{min-height:100vh;padding:16px;color:#fff;font-family:Nunito,system-ui,sans-serif}
+    .rgp-bar{max-width:48rem;margin:0 auto 16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:12px;border:2px solid #FF2DAA;border-radius:12px;background:#120C18;font-size:14px;font-weight:800}
+    .rgp-note{width:100%;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#B9AFC6}
+    .rgp-field{display:flex;flex-direction:column;gap:4px}
+    .rgp-input{min-height:44px;font-size:16px;border:2px solid #B9AFC6;border-radius:8px;padding:4px 8px;background:#07050B;color:#fff}
+    .rgp-btn{min-height:44px;padding:4px 14px;border:2px solid #FFF23A;border-radius:8px;background:#FFF23A;color:#07050B;font-weight:900;font-size:16px;cursor:pointer}
+    .rgp-log{width:100%;font-family:ui-monospace,monospace;font-size:12px;font-weight:400;color:#B9AFC6}
+    .rgp-centre{text-align:center}
+    .rgp-bold{font-weight:800}
+  </style>
+</head>
+<body>
+  <RevealGamesPreview client:only="react" />
+</body>
+</html>

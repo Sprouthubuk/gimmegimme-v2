@@ -1,0 +1,256 @@
+/* ---------- Smash My Cash (skin of Balloon Pop): jars of cash, a golden hammer and pink lasers ---------- */
+.rg-reveal.rg-skin-smash_cash {
+  background:
+    radial-gradient(60% 35% at 50% 20%, rgba(255, 45, 149, 0.4), transparent 70%),
+    radial-gradient(80% 40% at 50% 100%, rgba(255, 204, 51, 0.2), transparent 70%),
+    linear-gradient(180deg, #1c0630 0%, #2e0a44 50%, #12041e 100%);
+}
+.rg-skin-smash_cash .rg-kicker { color: #ff2d95; }
+
+.rg-smash { width: min(100%, 380px); filter: drop-shadow(0 6px 0 var(--rg-ink)); }
+.rg-smash-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* The header: cracked gold title with lasers sweeping behind. */
+.rg-smash-top {
+  position: relative;
+  overflow: hidden;
+  padding: 8px 12px 4px;
+  border: var(--rg-outline);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: radial-gradient(80% 120% at 50% 100%, #5a1070, #24062e 70%);
+}
+.rg-smash-laser {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 3px;
+  height: 260px;
+  margin-left: -1.5px;
+  background: linear-gradient(0deg, rgba(255, 79, 176, 0), #ff4fb0 40%, rgba(255, 200, 235, 0.9));
+  box-shadow: 0 0 8px 2px rgba(255, 45, 149, 0.8);
+  transform-origin: 50% 100%;
+  animation: rg-smash-laser 3.2s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.rg-smash-laser.is-b { animation-delay: -1.6s; animation-direction: alternate-reverse; background: linear-gradient(0deg, rgba(42, 212, 255, 0), #2ad4ff 40%, #d0f6ff); box-shadow: 0 0 8px 2px rgba(42, 212, 255, 0.8); }
+@keyframes rg-smash-laser {
+  from { transform: rotate(-62deg); }
+  to { transform: rotate(62deg); }
+}
+.rg-smash-title { position: relative; width: 82%; margin: 0 auto; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.5)); }
+.rg-smash-title-top { font-size: 42px; fill: url(#rg-smash-gold); stroke-width: 7px; letter-spacing: 3px; }
+.rg-smash-title-bottom { font-size: 34px; fill: url(#rg-smash-gold); stroke-width: 6px; letter-spacing: 3px; }
+.rg-smash-title-crack { fill: none; stroke: var(--rg-ink); stroke-width: 2px; stroke-linejoin: round; }
+
+/* The shelf: four jars at a time under a spotlight. */
+.rg-smash-shelf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  padding: 12px 14px 6px;
+  border: var(--rg-outline);
+  border-bottom-width: 0;
+  background:
+    linear-gradient(180deg, transparent calc(50% - 6px), #6a3a12 calc(50% - 6px), #c98a3a calc(50% - 3px), #6a3a12 50%, transparent 50%),
+    linear-gradient(180deg, transparent calc(100% - 8px), #6a3a12 calc(100% - 8px), #c98a3a calc(100% - 5px), #6a3a12),
+    radial-gradient(70% 60% at 50% 30%, rgba(255, 79, 176, 0.35), transparent 70%),
+    linear-gradient(180deg, #2a0a3a, #180624);
+}
+.rg-smash-place { position: relative; aspect-ratio: 1 / 1.02; max-height: 26vh; justify-self: center; width: 100%; }
+.rg-smash-jar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  rotate: var(--tilt);
+  -webkit-tap-highlight-color: transparent;
+  animation: rg-smash-in 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.rg-smash-jar:disabled { cursor: default; }
+.rg-smash-jar:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; border-radius: 16px; }
+@media (hover: hover) {
+  .rg-smash-jar:not(:disabled):hover .rg-smash-jar-svg { transform: translateY(-3px) scale(1.04); }
+}
+.rg-smash-jar:not(:disabled):active .rg-smash-jar-svg { transform: scale(0.95); }
+.rg-smash-jar-svg { display: block; width: 100%; height: 100%; overflow: visible; transition: transform 0.15s; }
+@keyframes rg-smash-in { from { transform: translateY(-40%) scale(0.6); opacity: 0; } }
+
+/* The smash: the jar shudders as the hammer lands, then the glass is gone. */
+.rg-smash-jar.is-smashed .rg-smash-jar-svg { animation: rg-smash-jar 0.5s 0.28s ease-out forwards; }
+.rg-smash-lid { transform-box: fill-box; transform-origin: 50% 50%; }
+.rg-smash-jar.is-smashed .rg-smash-lid { animation: rg-smash-lid 0.6s 0.3s cubic-bezier(0.2, 0.7, 0.4, 1) forwards; }
+@keyframes rg-smash-jar {
+  0% { transform: scale(1.04, 0.94); opacity: 1; }
+  20% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+@keyframes rg-smash-lid { to { transform: translate(18px, -40px) rotate(70deg); opacity: 0; } }
+
+.rg-smash-hit { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; pointer-events: none; }
+
+.rg-smash-hammer {
+  position: absolute;
+  right: -22%;
+  top: -34%;
+  width: 92%;
+  aspect-ratio: 1;
+  transform-origin: 92% 88%;
+  animation: rg-smash-swing 0.75s cubic-bezier(0.5, 0, 0.6, 1) both;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.4));
+  z-index: 4;
+}
+.rg-smash-hammer-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes rg-smash-swing {
+  0% { transform: rotate(48deg); opacity: 0; }
+  12% { opacity: 1; }
+  40% { transform: rotate(-22deg); }
+  52% { transform: rotate(-16deg); }
+  75% { transform: rotate(-20deg); opacity: 1; }
+  100% { transform: rotate(10deg); opacity: 0; }
+}
+
+.rg-smash-flash {
+  position: absolute;
+  width: 90%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 79, 176, 0.5) 40%, transparent 70%);
+  opacity: 0;
+  animation: rg-smash-flash 0.4s 0.3s ease-out both;
+}
+@keyframes rg-smash-flash {
+  0% { transform: scale(0.3); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.rg-smash-shards { position: absolute; width: 0; height: 0; }
+.rg-smash-shards i {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(190, 230, 255, 0.7));
+  clip-path: polygon(50% 0, 100% 70%, 20% 100%);
+  scale: var(--s);
+  opacity: 0;
+  animation: rg-smash-shard 0.75s 0.3s ease-out forwards;
+}
+@keyframes rg-smash-shard {
+  0% { transform: rotate(var(--a)) translateX(0) rotate(0); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--r)) rotate(260deg) translateY(16px); opacity: 0; }
+}
+
+.rg-smash-notes { position: absolute; width: 0; height: 0; }
+.rg-smash-notes i {
+  position: absolute;
+  left: -13px;
+  top: -7px;
+  width: 26px;
+  height: 14px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 2px;
+  background: linear-gradient(135deg, #ff9a8e, #e2525a 55%, #a8283a);
+  opacity: 0;
+  animation: rg-smash-note 1s 0.35s cubic-bezier(0.15, 0.7, 0.4, 1) forwards;
+}
+@keyframes rg-smash-note {
+  0% { transform: rotate(var(--a)) translateX(0) scale(0.5); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--r)) rotate(200deg); opacity: 0; }
+}
+
+.rg-smash-result { position: relative; animation: rg-pop 0.45s 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.rg-smash-prize {
+  display: inline-block;
+  max-width: 130px;
+  padding: 6px 14px;
+  border: var(--rg-outline);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff6c2, #ffcc33 55%, #d99a00);
+  box-shadow: 0 4px 0 var(--rg-ink), 0 0 22px rgba(255, 204, 51, 0.8);
+  font-family: var(--rg-font-display);
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--rg-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rg-smash-prize.is-long { font-size: 16px; }
+.rg-smash-result em {
+  display: inline-block;
+  padding: 4px 14px;
+  border: var(--rg-outline);
+  border-radius: 999px;
+  background: var(--rg-white);
+  font-style: normal;
+  font-weight: 900;
+  font-size: 16px;
+}
+
+/* The latest result. */
+.rg-smash-latest {
+  display: grid;
+  place-items: center;
+  min-height: 74px;
+  padding: 8px 14px;
+  border: var(--rg-outline);
+  border-bottom-width: 0;
+  background: #fff4fb;
+  text-align: center;
+}
+.rg-smash-latest-empty { font-weight: 900; color: var(--rg-muted); font-size: 14px; }
+.rg-smash-latest-win { display: flex; align-items: center; gap: 12px; animation: rg-pop 0.35s ease both; }
+.rg-smash-latest-win .rg-coin { --rg-coin-size: 48px; }
+.rg-smash-latest-win strong { display: block; font-family: var(--rg-font-display); font-weight: 400; font-size: 26px; text-align: left; }
+.rg-smash-latest-win small, .rg-smash-latest-none small { display: block; font-size: 13px; color: var(--rg-muted); }
+.rg-smash-latest-win small { text-align: left; }
+.rg-smash-latest-none { animation: rg-fade-in 0.3s ease both; }
+.rg-smash-latest-none strong { display: block; font-family: var(--rg-font-display); font-weight: 400; font-size: 20px; }
+
+/* The panel. */
+.rg-smash-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: var(--rg-outline);
+  border-radius: 0 0 24px 24px;
+  background: var(--rg-white);
+}
+.rg-smash-stats { flex: 1; min-width: 0; font-size: 14px; }
+.rg-smash-stats strong { font-family: var(--rg-font-display); font-weight: 400; font-size: 20px; }
+.rg-smash-tray { display: flex; align-items: center; gap: 4px; min-height: 36px; margin-top: 4px; }
+.rg-smash-tray .rg-coin { --rg-coin-size: 32px; }
+.rg-smash-tray-empty { font-size: 12px; color: var(--rg-muted); }
+.rg-smash-total { margin-left: 4px; font-family: var(--rg-font-display); font-size: 18px; white-space: nowrap; }
+.rg-smash-all {
+  flex: none;
+  min-height: 52px;
+  padding: 0 16px;
+  border: var(--rg-outline);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff8ac8, #ff2d95 55%, #c4006a);
+  box-shadow: 0 4px 0 var(--rg-ink);
+  color: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: 20px;
+  text-shadow: 0 2px 0 var(--rg-ink);
+  cursor: pointer;
+}
+.rg-smash-all:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--rg-ink); }
+.rg-smash-all:disabled { cursor: default; background: #ececf0; color: #55555c; text-shadow: none; box-shadow: 0 2px 0 #9a9aa2; border-color: #9a9aa2; }
+
+.rg-smash-note-text { font-family: var(--rg-font-display); font-size: 8px; fill: #fff; }
+
+@media (max-height: 740px) {
+  .rg-smash-title { width: 62%; }
+  .rg-smash-place { max-height: 21vh; }
+  .rg-smash-latest { min-height: 62px; }
+}

@@ -6,7 +6,7 @@
 // a winning combination. They also check that boards only use the competition's
 // real prize labels, however few there are.
 //
-//   cd tests/reveal-games && bun test
+//   cd frontend && npx vitest run tests/games
 import { describe, expect, it } from "vitest";
 import type { RevealPrize } from "../../src/games/types";
 import { prizeShortLabel } from "../../src/games/arcade/money";

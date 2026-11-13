@@ -5,8 +5,8 @@ import { useBingoDraw } from "../../games/bingo/useBingoDraw";
 import { Mascot } from "../../shell/Mascot";
 import { GamePrompt } from "../../shell/GamePrompt";
 import { festiveCall } from "./festive";
-import { playSound } from "./sounds";
-import { SoundToggle } from "./SoundToggle";
+import { playSound } from "../shared/sounds";
+import { SoundToggle } from "../shared/SoundToggle";
 import "../../games/bingo/bingo.css";
 import "./jingleBingo.css";
 

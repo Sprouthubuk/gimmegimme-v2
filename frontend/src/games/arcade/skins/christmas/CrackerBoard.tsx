@@ -5,8 +5,8 @@ import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { crackerJoke } from "./festive";
 import { crackerColours, initState, makeReducer, type Colour } from "./crackerState";
-import { playSound } from "./sounds";
-import { SoundToggle } from "./SoundToggle";
+import { playSound } from "../shared/sounds";
+import { SoundToggle } from "../shared/SoundToggle";
 import "./cracker.css";
 
 /** Wobble, then the snap. */

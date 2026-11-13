@@ -8,13 +8,18 @@
  * look and the default for every competition.
  *
  * These are the only values competitions.game_skin may hold
- * (supabase/sql/20261021_game_skins.sql): keep the two lists in step (a test
+ * (the CHECK in the latest supabase/sql/*_game_skins.sql file, now
+ * 20261112_more_game_skins.sql): keep the two lists in step (a test
  * compares them). To add a seasonal skin: add it here and to that file's CHECK,
  * then add its folder under ./arcade/skins/ and one line in ./arcade/skins/registry.ts.
  */
 export const GAME_SKIN_OPTIONS = [
   { id: "classic", label: "Classic" },
   { id: "christmas", label: "Christmas" },
+  { id: "pirates", label: "Pirates of the Prizeibbean (Gems)" },
+  { id: "cash_escape", label: "The Great Cash Escape (Spin the Wheel)" },
+  { id: "hip_hop", label: "Drop It Like It's Hot (Coin Drop)" },
+  { id: "smash_cash", label: "Smash My Cash (Balloon Pop)" },
 ] as const;
 
 export type GameSkinId = (typeof GAME_SKIN_OPTIONS)[number]["id"];
@@ -35,7 +40,11 @@ export const normaliseGameSkin = (id: unknown): GameSkinId => (isGameSkinId(id) 
  */
 export const SKINNED_GAMES: Readonly<Record<GameSkinId, readonly string[]>> = {
   classic: [],
-  christmas: ["scratch_card", "classic", "spin_wheel", "bingo_card", "balloon_pop"],
+  christmas: ["scratch_card", "classic", "spin_wheel", "bingo_card", "balloon_pop", "gems", "claw_machine", "slots"],
+  pirates: ["gems"],
+  cash_escape: ["spin_wheel"],
+  hip_hop: ["coin_drop"],
+  smash_cash: ["balloon_pop"],
 };
 
 /** Player-facing game names under a skin. Missing ones keep the classic name. */
@@ -47,7 +56,14 @@ const SKIN_GAME_NAMES: Readonly<Record<GameSkinId, Readonly<Record<string, strin
     spin_wheel: "Dasher's Dosh Drop",
     bingo_card: "Jingle Bell Bingo Bonanza",
     balloon_pop: "Chris Cracker's Cash Bang",
+    gems: "Liam's Humbug Heist",
+    claw_machine: "Demi's Grinchmas Gold",
+    slots: "Blankets & Banknotes",
   },
+  pirates: { gems: "Pirates of the Prizeibbean" },
+  cash_escape: { spin_wheel: "The Great Cash Escape" },
+  hip_hop: { coin_drop: "Drop It Like It's Hot" },
+  smash_cash: { balloon_pop: "Smash My Cash" },
 };
 
 /** The short word on a competition card's game badge under a skin. Missing ones use the game's name. */
@@ -59,7 +75,14 @@ const SKIN_GAME_BADGES: Readonly<Record<GameSkinId, Readonly<Record<string, stri
     spin_wheel: "Sleigh",
     bingo_card: "Bingo",
     balloon_pop: "Cracker",
+    gems: "Heist",
+    claw_machine: "Claw",
+    slots: "Slots",
   },
+  pirates: { gems: "Treasure" },
+  cash_escape: { spin_wheel: "Vault" },
+  hip_hop: { coin_drop: "Drop" },
+  smash_cash: { balloon_pop: "Smash" },
 };
 
 /** The skinned name for a game, or null when the skin has no version of it. */
