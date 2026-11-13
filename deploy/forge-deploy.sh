@@ -1,28 +1,41 @@
-# Forge → Site → Deployments → Deploy Script. Zero-downtime deployments assumed
-# ($FORGE_RELEASE_DIRECTORY etc.); see deploy/README.md for the one-off setup.
-set -e
+# Forge → Site → Settings → Deployments → Deploy script (zero-downtime).
+# Turn ON "Make .env variables available to deployment script" (the build reads FRONTEND_URL).
+# Laravel lives in backend/, Astro in frontend/. Forge keeps the site's .env at <site>/.env;
+# Laravel's storage is kept across releases in <site>/backend-storage.
+$CREATE_RELEASE()
 cd $FORGE_RELEASE_DIRECTORY
+# The site's folder (/home/forge/<site>), worked out from the release folder (<site>/releases/<id>).
+SITE_ROOT="${FORGE_SITE_PATH:-$(cd "$FORGE_RELEASE_DIRECTORY/../.." && pwd)}"
+
+# --- Shared files: the environment and Laravel's storage survive every release ---
+ln -sfn "$SITE_ROOT/.env" backend/.env
+SHARED_STORAGE="$SITE_ROOT/backend-storage"
+if [ ! -d "$SHARED_STORAGE" ]; then
+  cp -r backend/storage "$SHARED_STORAGE"
+fi
+mkdir -p "$SHARED_STORAGE"/{app/public,framework/cache/data,framework/sessions,framework/views,logs}
+rm -rf backend/storage
+ln -sfn "$SHARED_STORAGE" backend/storage
 
 # --- Laravel ---
 cd backend
 $FORGE_COMPOSER install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+$FORGE_PHP artisan storage:link
+$FORGE_PHP artisan vendor:publish --tag=verity-assets --force
 $FORGE_PHP artisan migrate --force
 $FORGE_PHP artisan optimize
 $FORGE_PHP artisan filament:optimize || true
-$FORGE_PHP artisan vendor:publish --tag=verity-assets --force
-$FORGE_PHP artisan storage:link || true
+{ echo "=== verity:check $(date -u +%FT%TZ)"; $FORGE_PHP artisan verity:check 2>&1; echo "exit $?"; } | tee -a storage/logs/verity-check-deploy.log || true
 cd ..
 
-# --- Astro ---
+# --- Astro (built for this site's public address) ---
 cd frontend
+echo "Node $(node -v) / npm $(npm -v)"
 npm ci --no-audit --no-fund
-npm run build
-npm prune --omit=dev
+PUBLIC_SITE_URL="$FRONTEND_URL" npm run build
 cd ..
 
-# Activate, then restart the long-running processes on the new release.
 $ACTIVATE_RELEASE()
-( flock -w 10 9 || exit 1
-    echo 'Restarting FPM...'; sudo -S service $FORGE_PHP_FPM reload ) 9>/tmp/fpmlock
-$FORGE_PHP $FORGE_SITE_PATH/current/backend/artisan queue:restart
-sudo supervisorctl restart gimme-astro:* || true
+$RESTART_QUEUES()
+# The Astro background process restarts itself from the new release.
+pkill -x -f "node $SITE_ROOT/current/frontend/dist/server/entry.mjs" || true
