@@ -5,7 +5,8 @@
 $CREATE_RELEASE()
 cd $FORGE_RELEASE_DIRECTORY
 # The site's folder (/home/forge/<site>), worked out from the release folder (<site>/releases/<id>).
-SITE_ROOT="${FORGE_SITE_PATH:-$(cd "$FORGE_RELEASE_DIRECTORY/../.." && pwd)}"
+# Not FORGE_SITE_PATH: in zero-downtime mode that is <site>/current, which points at the OLD release.
+SITE_ROOT="$(cd "$FORGE_RELEASE_DIRECTORY/../.." && pwd)"
 
 # --- Shared files: the environment and Laravel's storage survive every release ---
 ln -sfn "$SITE_ROOT/.env" backend/.env
