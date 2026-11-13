@@ -2,13 +2,15 @@
 import { gameBadge } from "../lib/gameLabels";
 import Icon from "./Icon.astro";
 import type { CompetitionSummary } from "../lib/types";
-import { formatPence } from "../lib/money";
-import { endsIn, ukShortDay } from "../lib/time";
+import { formatCount, formatPence } from "../lib/money";
+import { endsIn, ukDate, ukShortDay } from "../lib/time";
 interface Props { c: CompetitionSummary }
 const { c } = Astro.props;
 const live = c.type === "draw";
 const href = `/competitions/${c.slug}`;
 const closed = c.status !== "live";
+const soon = c.status === "scheduled" && c.opensAt ? c.opensAt : null;
+const dayMonth = (iso: string) => ukDate(iso).replace(/ \d{4}$/, "");
 ---
 <a class="cc gg-card" href={href}>
   <div class="im">
@@ -16,7 +18,6 @@ const closed = c.status !== "live";
     {live
       ? <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>
       : <span class="gt"><Icon name="bolt" size={10} stroke={3} />{gameBadge(c) ?? "Instant Win"}</span>}
-    <span class="en" data-ends={closed ? undefined : c.closesAt}><Icon name="clock" size={11} stroke={2.6} />{closed ? (c.status === "sold_out" ? "Sold out" : "Closed") : endsIn(c.closesAt)}</span>
   </div>
   <div class="bd">
     <div class="tt">{c.title}</div>
@@ -24,8 +25,12 @@ const closed = c.status !== "live";
       <div><div class="sm">Per ticket</div><div class="pp np">{formatPence(c.pricePence)}</div></div>
       <div><div class="sm" style="text-align:right">{live ? "Draw" : "Top prize"}</div><span class="tp ny">{live ? (c.drawAt ? ukShortDay(c.drawAt) : "Live") : (c.topPrizePence ? formatPence(c.topPrizePence, { short: false }) : "")}</span></div>
     </div>
-    <div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${Math.max(0, Math.min(100, c.soldPercent))}%`}></div></div>
-    <div class="row between"><span class="sm">{c.soldPercent}% sold</span>{c.subtitle && <span class="sm">{c.subtitle}</span>}</div>
+    <div class="br"><div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${Math.max(0, Math.min(100, c.soldPercent))}%`}></div></div><span class={`pc ${live ? "cy" : ""}`}>{c.soldPercent}%<small>sold</small></span></div>
+    <div class="ch">
+      <span class="tag tag-c en" data-ends={closed || soon ? undefined : c.closesAt}><Icon name="clock" size={11} stroke={2.6} />{soon ? `Opens ${dayMonth(soon)}` : closed ? (c.status === "sold_out" ? "Sold out" : "Closed") : endsIn(c.closesAt)}</span>
+      {c.prizeCount ? <span class="tag tag-y"><Icon name="bolt" size={10} stroke={3} />{formatCount(c.prizeCount)} {c.prizeCount === 1 ? "win" : "wins"}</span> : null}
+    </div>
+    {!live && <div class="ep">{c.endPrize && <><b>+ {c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}{formatPence(c.endPrize.valuePence, { short: false })}</b><span>drawn {dayMonth(c.drawAt ?? c.closesAt)}</span></>}</div>}
     <span class="btn btn-y btn-block go">{closed ? "View" : live ? "Enter Draw" : "Play Now"}</span>
   </div>
 </a>

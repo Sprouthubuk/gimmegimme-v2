@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { addToBasket } from "../lib/basket";
 import { formatMoney, formatPence, formatCount } from "../lib/money";
+import { ukDateTime } from "../lib/time";
 import { Svg } from "./Svg";
 
 export interface PickerProps {
@@ -17,6 +18,8 @@ export interface PickerProps {
   heldByMe: number;
   ticketsLeft: number;
   open: boolean;
+  /** Set while the competition is scheduled: when entries open. */
+  opensAt?: string | null;
   salesOpen: boolean;
   signedIn: boolean;
   playBlock: string | null;
@@ -53,7 +56,7 @@ export default function TicketPicker(p: PickerProps) {
     return p.signedIn ? target : `/join?next=${encodeURIComponent(target)}`;
   }, [p.competitionId, qty, p.signedIn]);
 
-  const blocked = !p.open ? "This competition isn't open for entries." : !p.salesOpen ? "Entries open soon." : cap === 0 ? (p.ticketsLeft === 0 ? "Sold out." : `You've reached the ${formatCount(p.maxPerPerson)} ticket limit for this competition.`) : p.playBlock ? BLOCK_TEXT[p.playBlock] ?? "You can't enter right now." : null;
+  const blocked = !p.open ? (p.opensAt ? `Entries open ${ukDateTime(p.opensAt)}.` : "This competition isn't open for entries.") : !p.salesOpen ? "Entries open soon." : cap === 0 ? (p.ticketsLeft === 0 ? "Sold out." : `You've reached the ${formatCount(p.maxPerPerson)} ticket limit for this competition.`) : p.playBlock ? BLOCK_TEXT[p.playBlock] ?? "You can't enter right now." : null;
   const verb = p.type === "draw" ? "Enter Draw" : "Buy & Play";
 
   return (
@@ -106,7 +109,7 @@ export default function TicketPicker(p: PickerProps) {
         </div>
         <div className="stack g8" style={{ flex: 1, minWidth: 200 }}>
           {blocked ? (
-            <span className="btn btn-o btn-lg" aria-disabled="true">{p.open && !p.salesOpen ? "Entries Open Soon" : "Unavailable"}</span>
+            <span className="btn btn-o btn-lg" aria-disabled="true">{(p.open && !p.salesOpen) || p.opensAt ? "Entries Open Soon" : "Unavailable"}</span>
           ) : (
             <>
               <a className="btn btn-y btn-lg gg-cta" href={buyHref}>{verb} · {formatMoney(total)}</a>

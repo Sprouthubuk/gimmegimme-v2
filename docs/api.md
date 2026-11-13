@@ -29,7 +29,7 @@ against it; the Laravel feature tests must cover the same behaviour.
 | Method | Path | Returns |
 | --- | --- | --- |
 | GET | `/api/site` | `SiteInfo` (cached 30s by Astro) |
-| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest) |
+| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest). `opensAt` is when a scheduled competition opens |
 | GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player |
 | GET | `/api/winners/instant?limit=&page=&game=` | `{ data: InstantWinnerRow[], total }` |
 | GET | `/api/winners/draws` | `{ data: DrawWinnerRow[] }` |
