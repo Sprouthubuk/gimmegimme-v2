@@ -81,7 +81,9 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .cc .im img{width:100%;height:100%;object-fit:cover;display:block}
 .cc .gt{position:absolute;top:7px;left:7px;background:rgba(7,5,11,.88);color:#FFF23A;border:1px solid rgba(255,242,58,.55);border-radius:999px;padding:3px 8px;font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px}
 .cc .gt.cy{color:#22E6FF;border-color:rgba(34,230,255,.6)}
-.cc .en{position:absolute;bottom:7px;left:7px;background:rgba(7,5,11,.88);color:#fff;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px}
+.cc .mt{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:-2px}
+.cc .en{color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.cc .sb{margin:0;font-size:11px;font-weight:700;line-height:1.35;color:#B9AFC6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
 .cc .en svg{color:#22E6FF}
 .cc .bd{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
 .cc .tt{font-family:'Lilita One',sans-serif;font-size:16px;line-height:1.08;min-height:35px}
@@ -209,7 +211,7 @@ select.inp{appearance:none}
 .side{display:none}
 .hero-img{position:relative}
 .ring{position:absolute;inset:-3px;border-radius:29px;overflow:hidden;box-shadow:0 0 50px rgba(255,45,170,.4),0 0 100px rgba(34,230,255,.16)}
-.hero-img img{position:relative;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:26px;display:block;border:3px solid #07050B}
+.hero-img img{position:relative;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;border-radius:26px;display:block;border:3px solid #07050B}
 .kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .trust{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .trust>div{display:flex;gap:10px;align-items:center;padding:12px;border-radius:16px;background:#0E0914;border:1px solid rgba(255,255,255,.08);font-size:13px;font-weight:800}
@@ -231,6 +233,10 @@ select.inp{appearance:none}
 }
 
 @media (max-width:1023px){.hero-top{order:-1}}
+/* Home featured: text centred beside the picture, and the picture no bigger than the text needs. */
+@media (min-width:1024px){.hero-split{align-items:center}.hero-split .hero-img{width:100%;max-width:480px;justify-self:end}}
+/* Tablets: a big picture, but not the whole first screen. */
+@media (min-width:640px) and (max-width:1023px){.split .hero-img{width:100%;max-width:520px;justify-self:center;margin:0 auto}}
 
 .cd-xl{gap:8px}
 .cd-xl>div{padding:14px 0 12px;border-radius:18px;box-shadow:0 0 18px rgba(34,230,255,.12)}

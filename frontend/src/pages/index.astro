@@ -7,7 +7,7 @@ import HeroImage from "../components/HeroImage.astro";
 import Icon from "../components/Icon.astro";
 import type { CompetitionSummary, CompetitionDetail, InstantWinnerRow } from "../lib/types";
 import { formatPence, formatCount } from "../lib/money";
-import { ukShortDay } from "../lib/time";
+import { ukDateTime, ukShortDay } from "../lib/time";
 
 const { api, site } = Astro.locals;
 const filter = Astro.url.searchParams.get("filter") ?? "all";
@@ -30,17 +30,19 @@ const shown = instant.filter(active[2]).slice(0, 8);
 const ladder = featured?.prizes ?? [];
 const prizesLeft = ladder.reduce((n, p) => n + (p.quantity - p.won), 0);
 const prizesTotal = ladder.reduce((n, p) => n + p.quantity, 0);
+const opensLater = featured?.status === "scheduled" && featured.opensAt ? featured.opensAt : null;
 const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
 ---
 <Layout title="Home" active="home">
   {featured && (
-    <section class="sec" style="padding-top:20px"><div class="wrap split">
+    <section class="sec" style="padding-top:20px"><div class="wrap split hero-split">
       <div class="stack g16 hero-txt">
-        <div class="row g8 gg-rise gg-d2"><span class="gg-ping" style="width:8px;height:8px;border-radius:999px;background:#FF2DAA;box-shadow:0 0 10px #FF2DAA"></span><span class="eyebrow" style="color:#FF5CC0">Featured{prizesTotal ? ` · ${formatCount(prizesTotal)} instant wins` : ""}</span></div>
+        <div class="row g8 gg-rise gg-d2"><span class="gg-ping" style="width:8px;height:8px;border-radius:999px;background:#FF2DAA;box-shadow:0 0 10px #FF2DAA"></span><span class="eyebrow" style="color:#FF5CC0">{opensLater ? `Coming soon · Opens ${ukDateTime(opensLater)}` : `Featured${prizesTotal ? ` · ${formatCount(prizesTotal)} instant wins` : ""}`}</span></div>
         <h1 class="h1 hero-title gg-rise gg-d2"><span class="np gg-flicker">{featured.title}</span></h1>
         <p class="p gg-rise gg-d3">{featured.subtitle ?? featured.description.slice(0, 120)}{featured.topPrizePence ? <> · Top prize <b class="ny">{formatPence(featured.topPrizePence, { short: false })}</b>.</> : null}</p>
-        <Countdown until={featured.closesAt} size="xl" class="gg-rise gg-d3" />
-        <div class="row g8 gg-rise gg-d5"><a class="btn btn-y btn-lg gg-cta" style="flex:1" href={`/competitions/${featured.slug}`}>Play From {formatPence(featured.pricePence)} <Icon name="arrow" size={18} stroke={3} /></a></div>
+        {opensLater && <div class="eyebrow gg-rise gg-d3" style="margin-bottom:-8px">Opens in</div>}
+        <Countdown until={opensLater ?? featured.closesAt} size="xl" class="gg-rise gg-d3" />
+        <div class="row g8 gg-rise gg-d5"><a class="btn btn-y btn-lg gg-cta" style="flex:1" href={`/competitions/${featured.slug}`}>{opensLater ? "See The Prizes" : `Play From ${formatPence(featured.pricePence)}`} <Icon name="arrow" size={18} stroke={3} /></a></div>
         <p class="hint gg-rise gg-d6" style="margin:0">18+ UK only · <a href="/free-entry">Free postal entry</a> · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
       <HeroImage src={featured.image} alt={featured.title} float class="hero-top">

@@ -28,6 +28,8 @@ export interface CompetitionSummary {
   subtitle: string | null;
   soldPercent: number;
   maxTickets: number;
+  /** When entries open (status is "scheduled" until then), or null when it opened on publish. */
+  opensAt: string | null;
   closesAt: string;
   drawAt: string | null;
   featured: boolean;

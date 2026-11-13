@@ -21,6 +21,7 @@ const prizesLeft = c.prizes.reduce((n, p) => n + (p.quantity - p.won), 0);
 const prizesWon = c.prizes.reduce((n, p) => n + p.won, 0);
 const prizesTotal = prizesLeft + prizesWon;
 const open = c.status === "live";
+const opensLater = c.status === "scheduled" && c.opensAt ? c.opensAt : null;
 const ticketsLeft = Math.max(0, Math.round(c.maxTickets * (1 - c.soldPercent / 100)));
 const presets = c.presets?.length ? c.presets : isDraw ? [1, 5, 10, 25] : [5, 10, 25, 50];
 const endCount = c.endPrize?.count ?? 0;
@@ -51,16 +52,18 @@ const [first, ...rest] = c.title.split(" – ");
             {c.cashAlternativePence && <span class="tag tag-y">{formatPence(c.cashAlternativePence, { short: false })} cash alternative</span>}
             {!isDraw && prizesTotal > 0 && <span class="tag tag-c">{formatCount(prizesLeft)} prizes left</span>}
             {isDraw && c.drawAt && <span class="tag tag-c">Draw {ukDateTime(c.drawAt)}</span>}
+            {opensLater && <span class="tag tag-c">Opens {ukDateTime(opensLater)}</span>}
             <span class="tag tag-w">Closes {ukDateTime(c.closesAt)}</span>
           </div>
         </div>
         <div class={`card card-p stack g12 gg-rise gg-d3 ${isDraw ? "card-cy" : ""}`}>
-          {isDraw && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
-          <Countdown until={isDraw && c.drawAt ? c.drawAt : c.closesAt} />
+          {opensLater && <span class="eyebrow">Entries open in</span>}
+          {isDraw && !opensLater && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
+          <Countdown until={opensLater ?? (isDraw && c.drawAt ? c.drawAt : c.closesAt)} />
           <div class={`bar ${isDraw ? "cy" : ""}`}><div class="gg-shine" style={`width:${c.soldPercent}%`}></div></div>
           <div class="row between hint"><span>{c.soldPercent}% sold</span><span>{isDraw ? `${formatCount(c.maxTickets)} tickets` : "Results fixed when you buy"}</span></div>
         </div>
-        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
+        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
         <p class="hint" style="margin:0">No purchase necessary — <a href="/free-entry">enter free by post</a> with the same chance of winning. 18+ UK only · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
     </div>
@@ -83,7 +86,7 @@ const [first, ...rest] = c.title.split(" – ");
         {c.endPrize && (
           <div class="card card-cy card-p row g12 gg-reveal" data-testid="end-prize">
             <span class="d nc" style="font-size:22px;white-space:nowrap">{endPrizeLine}</span>
-            <div style="flex:1;min-width:0"><div style="font-weight:900">{endCount > 1 ? "End Prizes" : "End Prize"}: {c.endPrize.name}</div><div class="hint" style="font-size:13px">Drawn {c.drawAt ? ukShortDay(c.drawAt) : "at the close"} from every entry, instant winners included{endCount > 1 ? ". One end prize per person" : ""}.</div></div>
+            <div style="flex:1;min-width:0"><div style="font-weight:900">{endCount > 1 ? "End Prizes" : "End Prize"}: {c.endPrize.name}</div><div class="hint" style="font-size:13px">Drawn {c.drawAt ? ukDateTime(c.drawAt) : "at the close"} from every entry, instant winners included{endCount > 1 ? ". One end prize per person" : ""}.</div></div>
           </div>
         )}
       </div>

@@ -42,6 +42,7 @@ final class CompetitionPresenter
             'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format((int) $c->prizes->sum('quantity')).' instant wins' : null),
             'soldPercent' => $this->state->soldPercent($c),
             'maxTickets' => $c->max_tickets,
+            'opensAt' => $c->opens_at?->toIso8601ZuluString(),
             'closesAt' => $c->closes_at?->toIso8601ZuluString(),
             'drawAt' => $c->hasDraw() ? ($v?->drawn_at ?? $c->closes_at)?->toIso8601ZuluString() : null,
             'featured' => (bool) $c->featured,
