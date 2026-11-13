@@ -9,6 +9,7 @@ use App\Filament\Support\Money;
 use App\Models\Competition;
 use App\Services\CompetitionState;
 use App\Services\Publishing;
+use App\Support\GameIds;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -58,8 +59,12 @@ class CompetitionResource extends Resource
                     ->afterStateUpdated(fn (Set $set, Get $get, ?string $state, ?Competition $record) => $record ? null : $set('slug', Str::slug((string) $state))),
                 TextInput::make('slug')->required()->maxLength(120)->alphaDash()->unique(ignoreRecord: true)->helperText('The web address: /competitions/slug'),
                 Select::make('type')->options(['instant' => 'Instant win', 'draw' => 'Draw'])->required()->live()->disabled($locked),
-                Select::make('game')->label('Reveal game')->options(self::GAMES)->visible(fn (Get $get) => $get('type') === 'instant')->required(fn (Get $get) => $get('type') === 'instant'),
-                Select::make('skin')->label('Game look')->options(['classic' => 'Classic', 'christmas' => 'Christmas'])->default('classic')->required(),
+                Select::make('game')->label('Reveal game')->options(self::GAMES)->live()->visible(fn (Get $get) => $get('type') === 'instant')->required(fn (Get $get) => $get('type') === 'instant'),
+                // Presentation only: the result is decided before the game appears, whatever the skin.
+                Select::make('skin')->label('Game skin')->options(GameIds::skinLabels())->default('classic')->required()->live()
+                    ->helperText(fn (Get $get) => ($get('skin') ?? 'classic') !== 'classic' && $get('type') === 'instant' && $get('game') && ! GameIds::skinCovers($get('skin'), $get('game'))
+                        ? 'This skin has no version of '.(self::GAMES[$get('game')] ?? $get('game')).': the classic look will play.'
+                        : 'Changes how the reveal game looks, never the result.'),
                 FileUpload::make('image')->image()->disk('public')->directory('competitions')->imageEditor()->maxSize(4096)->required(),
                 TextInput::make('subtitle')->maxLength(120)->helperText('Under the price, e.g. "£50 cash alternative". Leave empty for instant wins to show the number of prizes.'),
                 Toggle::make('featured')->helperText('Shown first on the home page.'),

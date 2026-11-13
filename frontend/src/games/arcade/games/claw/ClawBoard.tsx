@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import type { BoardProps } from "../types";
 import { winLabel } from "../symbols";
 import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
+import { useClaw } from "./useClaw";
 import "./claw.css";
 
 type Tone = "pink" | "cyan" | "yellow";
@@ -15,12 +16,6 @@ const PILE: { x: number; y: number; tone: Tone }[] = [
   ...[24, 40, 56, 72].map((x, i) => ({ x, y: 60, tone: TONES[(i + 2) % 3] })),
   ...[33, 50, 66].map((x, i) => ({ x, y: 48, tone: TONES[i % 3] })),
 ];
-const REST_LEN = 12;
-const MIN_X = 12;
-const MAX_X = 88;
-const lenFor = (y: number) => y - 25; // head bottom meets the capsule's top
-
-type Phase = "aim" | "descend" | "close" | "ascend" | "open";
 
 function Capsule({ tone, open }: { tone: Tone; open?: boolean }) {
   return (
@@ -33,66 +28,8 @@ function Capsule({ tone, open }: { tone: Tone; open?: boolean }) {
 
 export function ClawBoard({ ticket, reducedMotion, onReveal }: BoardProps) {
   const label = winLabel(ticket.prize);
-  const [x, setX] = useState(50);
-  const [phase, setPhase] = useState<Phase>("aim");
-  const [target, setTarget] = useState<number | null>(null);
-  const [tilt, setTilt] = useState(0);
-  const hold = useRef<number | null>(null);
-  const glassRef = useRef<HTMLDivElement>(null);
-
-  const move = (dx: number) => setX((v) => Math.max(MIN_X, Math.min(MAX_X, v + dx)));
-  const startHold = (dir: -1 | 1) => {
-    if (phase !== "aim") return;
-    setTilt(dir);
-    stopHold();
-    hold.current = window.setInterval(() => move(dir * 1.2), 30);
-  };
-  const stopHold = () => {
-    if (hold.current) window.clearInterval(hold.current);
-    hold.current = null;
-    setTilt(0);
-  };
-  useEffect(() => stopHold, []);
-
-  const grab = () => {
-    if (phase !== "aim") return;
-    stopHold();
-    // Top-most capsule under the claw, else the nearest one.
-    const under = PILE.map((c, i) => ({ ...c, i })).filter((c) => Math.abs(c.x - x) <= 9);
-    const pickFrom = under.length ? under : PILE.map((c, i) => ({ ...c, i }));
-    const chosen = pickFrom.sort((a, b) => (under.length ? a.y - b.y : Math.abs(a.x - x) - Math.abs(b.x - x)))[0];
-    setTarget(chosen.i);
-    setX(PILE[chosen.i].x);
-    setPhase("descend");
-  };
-
-  useEffect(() => {
-    if (phase === "aim") return;
-    const rm = reducedMotion;
-    const steps: Partial<Record<Phase, [number, Phase | "reveal"]>> = {
-      descend: [rm ? 80 : 950, "close"],
-      close: [rm ? 80 : 350, "ascend"],
-      // Win or lose, the capsule comes up and opens. A loss is simply an empty capsule.
-      ascend: [rm ? 80 : 1050, "open"],
-      open: [rm ? 300 : 1300, "reveal"],
-    };
-    const step = steps[phase];
-    if (!step) return;
-    const t = setTimeout(() => (step[1] === "reveal" ? onReveal() : setPhase(step[1])), step[0]);
-    return () => clearTimeout(t);
-  }, [phase, label, reducedMotion, onReveal]);
-
+  const { x, phase, target, tilt, glassRef, move, startHold, stopHold, grab, onGlassPointer, carrying, len, closed } = useClaw(PILE, reducedMotion, onReveal);
   const cap = target != null ? PILE[target] : null;
-  const down = phase === "descend" || phase === "close";
-  const carrying = !!cap && (phase === "ascend" || phase === "open");
-  const len = cap && down ? lenFor(cap.y) : REST_LEN;
-  const closed = phase === "close" || phase === "ascend" || phase === "open";
-
-  const onGlassPointer = (e: React.PointerEvent) => {
-    if (phase !== "aim" || !(e.buttons & 1)) return;
-    const r = glassRef.current!.getBoundingClientRect();
-    setX(Math.max(MIN_X, Math.min(MAX_X, ((e.clientX - r.left) / r.width) * 100)));
-  };
 
   return (
     <>

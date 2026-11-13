@@ -1,0 +1,149 @@
+/* ---------- Drop It Like It's Hot (skin of Coin Drop): a graffiti wall, gold studs and speakers ---------- */
+.rg-reveal.rg-skin-hip_hop {
+  background:
+    radial-gradient(60% 35% at 10% 15%, rgba(255, 45, 149, 0.45), transparent 70%),
+    radial-gradient(60% 35% at 90% 30%, rgba(42, 212, 255, 0.35), transparent 70%),
+    radial-gradient(80% 40% at 50% 100%, rgba(255, 204, 51, 0.25), transparent 70%),
+    linear-gradient(180deg, #1a0a2e 0%, #2a0f3c 50%, #12061e 100%);
+}
+.rg-skin-hip_hop .rg-kicker { color: #ff2d95; }
+
+.rg-di { position: relative; width: min(100%, 360px); display: flex; flex-direction: column; align-items: center; }
+
+/* The title. */
+.rg-di-title { width: 92%; margin: 0 auto 6px; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.5)); }
+.rg-di-title-drop { font-size: 50px; fill: url(#rg-di-gold); stroke-width: 7px; letter-spacing: 2px; }
+.rg-di-title-like { font-size: 22px; fill: #fff; stroke-width: 5px; letter-spacing: 2px; }
+.rg-di-title-hot {
+  font-size: 44px;
+  fill: url(#rg-di-hot);
+  stroke-width: 7px;
+  letter-spacing: 2px;
+  filter: drop-shadow(0 0 6px rgba(255, 45, 149, 0.9));
+}
+.rg-di-drip { transform-box: fill-box; transform-origin: 50% 0; animation: rg-di-drip 3s ease-in infinite; animation-delay: var(--d); }
+@keyframes rg-di-drip {
+  0%, 30% { transform: scaleY(0.6); }
+  80%, 100% { transform: scaleY(1.15); }
+}
+.rg-di-flame { transform-box: fill-box; transform-origin: 50% 100%; animation: rg-di-flame 0.5s ease-in-out infinite alternate; }
+@keyframes rg-di-flame { to { transform: scale(1.06, 1.12) skewX(-3deg); } }
+
+/* Equaliser bars on each side of the title. */
+.rg-di-eq { position: absolute; top: 18px; display: flex; align-items: flex-end; gap: 3px; height: 40px; pointer-events: none; }
+.rg-di-eq.is-left { left: 2px; }
+.rg-di-eq.is-right { right: 2px; }
+.rg-di-eq i {
+  width: 5px;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(0deg, #2ad4ff, #ff2d95 60%, #ffcc33);
+  transform-origin: 50% 100%;
+  animation: rg-di-eq 0.9s ease-in-out infinite alternate;
+  animation-delay: var(--k);
+}
+@keyframes rg-di-eq {
+  0% { transform: scaleY(0.2); }
+  100% { transform: scaleY(1); }
+}
+.rg-di.is-dropping .rg-di-eq i { animation-duration: 0.3s; }
+.rg-di.is-won .rg-di-eq i { animation-duration: 0.22s; }
+
+/* The rail: a heavy gold chain. */
+.rg-di .rg-di-rail {
+  background:
+    radial-gradient(ellipse 8px 5px at 50% 50%, transparent 50%, #141414 52%, #141414 60%, #ffcc33 62%, #ffe27a 76%, #141414 78%, transparent 82%) 0 50% / 18px 14px repeat-x,
+    linear-gradient(180deg, #24123a, #12061e);
+  box-shadow: 0 0 0 3px #ffcc33, 0 0 0 5px var(--rg-ink), 0 0 18px rgba(255, 45, 149, 0.5);
+}
+.rg-di .rg-di-arrow { background: linear-gradient(180deg, #fff3a0, #ffcc33 55%, #e29a00); border: 2px solid var(--rg-ink); }
+.rg-di .rg-di-coin {
+  background: radial-gradient(circle at 35% 30%, #fff6c2, #ffd23f 50%, #c98200);
+  box-shadow: 0 0 0 2px #ffcc33, 0 0 16px 4px rgba(255, 204, 51, 0.7);
+  font-size: 20px;
+}
+.rg-di .rg-di-rail-label { position: relative; padding: 2px 14px; border-radius: 999px; background: #12061e; color: #ffcc33; text-shadow: 0 0 8px rgba(255, 45, 149, 0.9), 0 2px 0 var(--rg-ink); letter-spacing: 0.1em; }
+
+/* The wall. */
+.rg-di .rg-di-board {
+  position: relative;
+  overflow: visible;
+  border-radius: 22px;
+  background:
+    radial-gradient(70% 45% at 15% 20%, rgba(255, 45, 149, 0.4), transparent 70%),
+    radial-gradient(70% 45% at 85% 55%, rgba(42, 212, 255, 0.32), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24'%3E%3Cpath d='M0 1H48M0 13H48M1 1V13M25 13V25' stroke='%231e0d1c' stroke-width='2.4'/%3E%3C/svg%3E") 0 0 / 48px 24px,
+    linear-gradient(180deg, #8a3346 0%, #6a2846 55%, #4a1c3e 100%);
+  box-shadow: 0 6px 0 var(--rg-ink), inset 0 0 30px rgba(10, 0, 20, 0.6);
+}
+.rg-di .rg-di-board svg { border-radius: 20px; }
+.rg-di.is-landed .rg-di-board { animation: rg-di-thump 0.32s ease-out 2; }
+@keyframes rg-di-thump { 40% { transform: scale(1.015); } }
+
+.rg-di-tag { font-family: var(--rg-font-display); font-size: 40px; opacity: 0.22; letter-spacing: 2px; }
+.rg-di-tag.is-pink { fill: #ff4fb0; }
+.rg-di-tag.is-blue { fill: #2ad4ff; font-size: 30px; }
+.rg-di-tag-crown { fill: #ffcc33; opacity: 0.28; }
+.rg-di-tag-star { fill: #fff; opacity: 0.22; }
+
+.rg-di-stud-glow { fill: rgba(255, 79, 176, 0.55); animation: rg-fade-in 0.15s both; }
+
+/* Speakers and the prize plates under them. */
+.rg-di-speaker-box { fill: #1b1b22; }
+.rg-di-cone { transition: transform 0.1s; }
+.rg-di-bin.is-hit .rg-di-cone { animation: rg-di-cone 0.22s ease-in-out 6; }
+@keyframes rg-di-cone { 50% { transform: scale(1.22); } }
+.rg-di-plate.is-yellow { fill: #ffcc33; }
+.rg-di-plate.is-cyan { fill: #2ad4ff; }
+.rg-di-plate.is-pink { fill: #ff4fb0; }
+.rg-di-plate.is-none { fill: #2a2236; }
+.rg-di-bin.is-hit .rg-di-plate { animation: rg-di-plate 0.3s steps(1) 6; }
+@keyframes rg-di-plate { 50% { fill: #fff; } }
+.rg-di .rg-di-label { fill: var(--rg-ink); }
+.rg-di-wave { fill: none; stroke: #ff4fb0; stroke-width: 3; transform-box: fill-box; transform-origin: 50% 50%; animation: rg-di-wave 0.8s ease-out both; }
+.rg-di-wave.is-late { stroke: #2ad4ff; animation-delay: 0.25s; }
+@keyframes rg-di-wave {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(3.4); opacity: 0; }
+}
+
+/* The coin and its blazing trail. */
+.rg-di-trail { fill: #ff7a1a; }
+.rg-di-coin-glow { fill: rgba(255, 204, 51, 0.45); }
+
+/* A win: cash pops out of the speaker. */
+.rg-di-pop { position: absolute; top: 80%; width: 0; height: 0; pointer-events: none; z-index: 3; }
+.rg-di-pop i { position: absolute; opacity: 0; animation: rg-di-pop 1.2s var(--w) cubic-bezier(0.15, 0.7, 0.4, 1) both; }
+.rg-di-pop i.is-note {
+  left: -14px;
+  top: -8px;
+  width: 28px;
+  height: 16px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 2px;
+  background: linear-gradient(135deg, #ff9a8e, #e2525a 55%, #a8283a);
+}
+.rg-di-pop i.is-coin {
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3a6, #ffcf2e 55%, #c98a00);
+}
+@keyframes rg-di-pop {
+  0% { transform: rotate(var(--a)) translateX(0) scale(0.4); opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--d)) rotate(var(--r)) scale(1.1); opacity: 0; }
+}
+
+@media (max-height: 740px) {
+  .rg-di-title { width: 70%; margin-bottom: 2px; }
+  .rg-di-eq { height: 30px; top: 10px; }
+  .rg-di { width: min(100%, 320px); } /* rail and board narrow together */
+}
+/* Very short phones: a smaller title so the sound button stays on screen. */
+@media (max-height: 600px) {
+  .rg-di-title { width: 56%; }
+}

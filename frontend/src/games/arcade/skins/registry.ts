@@ -1,12 +1,20 @@
 import { normaliseGameSkin } from "../../skinIds";
 import { CHRISTMAS_SKIN } from "./christmas";
 import { CLASSIC_SKIN } from "./classic";
+import { CASH_ESCAPE_SKIN } from "./cashEscape";
+import { HIP_HOP_SKIN } from "./hipHop";
+import { PIRATES_SKIN } from "./pirates";
+import { SMASH_CASH_SKIN } from "./smashCash";
 import type { GameSkin } from "./types";
 
 /** Every skin, keyed by competitions.game_skin. To add one, add a line here (see ./types.ts). */
 export const GAME_SKINS: Readonly<Record<string, GameSkin>> = {
   classic: CLASSIC_SKIN,
   christmas: CHRISTMAS_SKIN,
+  pirates: PIRATES_SKIN,
+  cash_escape: CASH_ESCAPE_SKIN,
+  hip_hop: HIP_HOP_SKIN,
+  smash_cash: SMASH_CASH_SKIN,
 };
 
 /** A skin by id. Unknown or missing ids are the classic skin. */

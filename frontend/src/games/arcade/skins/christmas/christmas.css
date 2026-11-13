@@ -65,25 +65,6 @@
 .rg-xmas-lights i:nth-child(4n + 4) { background: var(--rg-cyan); animation-delay: 0.9s; }
 @keyframes rg-twinkle { 50% { filter: brightness(0.55); } }
 
-/* ---------- sound button ---------- */
-.rg-xmas-sound {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  margin-top: 8px;
-  padding: 0 14px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  border-radius: 999px;
-  background: rgba(10, 20, 50, 0.35);
-  color: var(--rg-white);
-  font-size: 14px;
-  font-weight: 900;
-  cursor: pointer;
-}
-.rg-xmas-sound svg { width: 20px; height: 20px; }
-.rg-xmas-sound[aria-pressed="true"] { background: var(--rg-xmas-gold); color: var(--rg-ink); border-color: var(--rg-ink); }
-
 /* Festive buttons: gold for the main action. */
 .rg-btn-xmas {
   min-width: 220px;

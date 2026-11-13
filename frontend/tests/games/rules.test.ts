@@ -50,6 +50,8 @@ describe("game ids stay in step", () => {
     expect(defined).toEqual(ids.filter((id) => id !== "classic"));
   });
 
+  // This build keeps the allowed lists in shared/game-ids.json: the backend validates against it
+  // (App\\Support\\GameIds) and its migration builds the database check from it.
   it("the shared list the backend validates against has exactly the same ids", () => {
     const shared = JSON.parse(fs.readFileSync(path.join(ROOT, "../shared/game-ids.json"), "utf8"));
     expect([...shared.games].sort()).toEqual(ids);

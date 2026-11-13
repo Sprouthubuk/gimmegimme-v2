@@ -1,4 +1,5 @@
 ---
+import { gameName } from "../../lib/gameLabels";
 import Layout from "../../layouts/Layout.astro";
 import CompCard from "../../components/CompCard.astro";
 import Icon from "../../components/Icon.astro";
@@ -19,7 +20,7 @@ const TYPES: [string, string, (c: CompetitionSummary) => boolean][] = [
 ];
 const t = TYPES.find((x) => x[0] === type) ?? TYPES[0];
 let list = all.filter(t[2]);
-if (q) list = list.filter((c) => `${c.title} ${c.gameLabel ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+if (q) list = list.filter((c) => `${c.title} ${c.gameLabel ?? ""} ${gameName(c) ?? ""}`.toLowerCase().includes(q.toLowerCase()));
 const sorters: Record<string, (a: CompetitionSummary, b: CompetitionSummary) => number> = {
   ending: (a, b) => a.closesAt.localeCompare(b.closesAt),
   price: (a, b) => a.pricePence - b.pricePence,

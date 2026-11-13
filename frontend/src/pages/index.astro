@@ -1,4 +1,5 @@
 ---
+import { gameBadge } from "../lib/gameLabels";
 import Layout from "../layouts/Layout.astro";
 import CompCard from "../components/CompCard.astro";
 import Countdown from "../components/Countdown.astro";
@@ -43,7 +44,7 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
         <p class="hint gg-rise gg-d6" style="margin:0">18+ UK only · <a href="/free-entry">Free postal entry</a> · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
       <HeroImage src={featured.image} alt={featured.title} float class="hero-top">
-        {featured.gameLabel && <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {featured.gameLabel}</span>}
+        {gameBadge(featured) && <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {gameBadge(featured)}</span>}
         {prizesTotal > 0 && <span class="gg-pop gg-d6" style="position:absolute;right:10px;bottom:14px;background:rgba(7,5,11,.9);border:1px solid #22E6FF;border-radius:14px;padding:8px 12px;box-shadow:0 0 20px rgba(34,230,255,.35)"><span class="eyebrow" style="display:block">Still to win</span><span class="d nc" style="font-size:22px">{formatCount(prizesLeft)} prizes</span></span>}
       </HeroImage>
     </div>

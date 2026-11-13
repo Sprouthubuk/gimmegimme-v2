@@ -1,0 +1,234 @@
+/* ---------- Pirates of the Prizeibbean (skin of Gems): a ship's deck at sunset ---------- */
+.rg-reveal.rg-skin-pirates {
+  background:
+    radial-gradient(70% 34% at 50% 34%, rgba(255, 170, 70, 0.55), transparent 70%),
+    linear-gradient(180deg, #2a1240 0%, #7a2546 30%, #d9663a 52%, #3a2a3e 62%, #10223c 100%);
+}
+.rg-skin-pirates .rg-kicker { color: #c0182c; }
+
+.rg-pir {
+  position: relative;
+  width: min(100%, 380px);
+  padding: 6px 10px 10px;
+  border: var(--rg-outline);
+  border-radius: 26px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #3a1a3a 0%, #a3403f 34%, #f08a3c 48%, #23314e 50%, #101c34 100%);
+  box-shadow: 0 6px 0 var(--rg-ink), inset 0 0 0 3px rgba(226, 165, 60, 0.6);
+  isolation: isolate;
+}
+.rg-pir-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* Sunset sky, the sun on the horizon, a galleon and the sea. */
+.rg-pir-sky { position: absolute; inset: 0 0 auto; height: 140px; z-index: -1; pointer-events: none; }
+.rg-pir-sun {
+  position: absolute;
+  left: 50%;
+  top: 46px;
+  width: 92px;
+  height: 92px;
+  margin-left: -46px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3b0 0%, #ffc04a 45%, rgba(255, 140, 40, 0) 72%);
+  animation: rg-pir-sun 5s ease-in-out infinite;
+}
+@keyframes rg-pir-sun { 50% { transform: scale(1.08); opacity: 0.9; } }
+.rg-pir-ship { position: absolute; right: 14px; top: 46px; width: 54px; height: 40px; animation: rg-pir-ship 4.4s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes rg-pir-ship {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(2px) rotate(2deg); }
+}
+.rg-pir-sea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 84px;
+  height: 56px;
+  background:
+    radial-gradient(14px 5px at 50% 0, rgba(255, 210, 140, 0.55), transparent 70%) 0 4px / 34px 12px repeat-x,
+    radial-gradient(14px 5px at 50% 0, rgba(255, 210, 140, 0.35), transparent 70%) 17px 16px / 34px 12px repeat-x,
+    linear-gradient(180deg, #2c3a66, #142140);
+  animation: rg-pir-waves 6s linear infinite;
+}
+@keyframes rg-pir-waves { to { background-position: 34px 4px, -17px 16px, 0 0; } }
+
+/* The sign. */
+.rg-pir-sign { width: 86%; margin: 0 auto; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35)); }
+.rg-pir-sign-big { font-size: 40px; fill: url(#rg-pir-sign-gold); stroke-width: 6px; letter-spacing: 2px; }
+.rg-pir-sign-big.is-banner { font-size: 25px; fill: #fff3c4; stroke-width: 5px; letter-spacing: 1.5px; }
+.rg-pir-sign-small { font-size: 13px; fill: #ffe0a0; stroke-width: 0; letter-spacing: 4px; }
+
+/* What three of each treasure pays. */
+.rg-pir-paytable { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 4px 0 8px; }
+.rg-pir-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px 9px 2px 4px;
+  border: 2px solid #e2a53c;
+  border-radius: 999px;
+  background: rgba(30, 14, 6, 0.72);
+  color: var(--rg-white);
+  font-family: var(--rg-font-display);
+  font-size: min(17px, 4.3cqw);
+}
+.rg-pir-pay .rg-treasure { width: min(26px, 6.4cqw); height: min(26px, 6.4cqw); flex: none; }
+.rg-pir-pay b { color: #ffd23f; font-weight: 400; font-size: 0.8em; margin-right: 4px; }
+.rg-pir-pay span { max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rg-pir-pay.is-hit { background: #ffd23f; color: var(--rg-ink); border-color: var(--rg-ink); animation: rg-glow 1s ease-in-out infinite; }
+.rg-pir-pay.is-hit b { color: #9e1b1b; }
+
+/* The deck: planks with a rope edge, sixteen chests on it. */
+.rg-pir-deck {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px 8px 8px;
+  border: var(--rg-outline);
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(25% - 2px), rgba(0, 0, 0, 0.35) calc(25% - 2px) 25%),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #8a5426, #6a3d17 60%, #55300f);
+  box-shadow: inset 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 0 3px #c99a58, 0 0 0 5px var(--rg-ink);
+}
+
+.rg-pir .rg-pir-tile {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  perspective: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.rg-pir .rg-pir-tile:disabled { cursor: default; }
+.rg-pir .rg-pir-tile:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
+
+.rg-pir-chest {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  transform-origin: 50% 90%;
+  animation: rg-pir-bob 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--bob, 0s) * -1);
+}
+.rg-chest-svg { width: 100%; height: 100%; overflow: visible; transition: transform 0.15s; }
+@media (hover: hover) {
+  .rg-pir-tile:not(:disabled):hover .rg-chest-svg { transform: translateY(-3px) scale(1.05); }
+}
+.rg-pir-tile:not(:disabled):active .rg-chest-svg { transform: scale(0.93); }
+@keyframes rg-pir-bob {
+  0%, 100% { transform: rotate(-1.5deg); }
+  50% { transform: rotate(1.5deg) translateY(-1px); }
+}
+
+/* Opening a chest: it rattles, the lid flies back and the treasure rises out on a glow. */
+.rg-pir-tile.is-open .rg-pir-chest { animation: rg-pir-rattle 0.4s ease-in-out both; }
+.rg-chest-lid { transform-box: fill-box; transform-origin: 50% 100%; }
+.rg-pir-tile.is-open .rg-chest-lid { animation: rg-pir-lid 0.6s 0.22s ease-out forwards; }
+.rg-pir-tile.is-open .rg-chest-body { animation: rg-pir-sink 0.4s 0.4s ease-out forwards; }
+@keyframes rg-pir-rattle {
+  0%, 100% { transform: none; }
+  20% { transform: rotate(-7deg); }
+  45% { transform: rotate(6deg); }
+  70% { transform: rotate(-4deg); }
+}
+@keyframes rg-pir-lid {
+  0% { transform: none; opacity: 1; }
+  45% { transform: translate(4px, -22px) rotate(14deg); opacity: 1; }
+  100% { transform: translate(14px, -46px) rotate(40deg); opacity: 0; }
+}
+@keyframes rg-pir-sink { to { opacity: 0.6; transform: translateY(4px); } }
+
+.rg-pir-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 55%, rgba(255, 220, 110, 0.75), rgba(255, 180, 40, 0) 68%);
+  animation: rg-fade-in 0.3s 0.3s both;
+  pointer-events: none;
+}
+.rg-pir-tile.is-boot .rg-pir-glow { background: radial-gradient(circle at 50% 55%, rgba(160, 170, 190, 0.3), transparent 68%); }
+.rg-pir-loot {
+  position: absolute;
+  inset: 4% 8% 22%;
+  display: grid;
+  place-items: center;
+  animation: rg-pir-loot-in 0.55s 0.34s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.rg-pir-loot .rg-treasure { width: 100%; height: 100%; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.4)); }
+@keyframes rg-pir-loot-in { from { transform: translateY(22px) scale(0.2); opacity: 0; } }
+.rg-pir-tile.is-hit .rg-pir-glow {
+  background: radial-gradient(circle at 50% 55%, rgba(255, 240, 150, 1), rgba(255, 196, 40, 0.6) 45%, rgba(255, 196, 40, 0) 72%);
+  animation: rg-fade-in 0.3s 0.3s both, rg-pir-pulse 1s 0.9s ease-in-out infinite;
+}
+.rg-pir-tile.is-hit .rg-pir-loot { animation: rg-pir-loot-in 0.55s 0.34s cubic-bezier(0.3, 1.6, 0.5, 1) both, rg-pir-pulse 1s 0.9s ease-in-out infinite; }
+@keyframes rg-pir-pulse { 50% { transform: scale(1.12); } }
+
+/* Glints flying out of a chest of treasure. */
+.rg-pir-sparks { position: absolute; left: 50%; top: 42%; pointer-events: none; }
+.rg-pir-sparks i {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  background: #fff6c2;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+  animation: rg-pir-spark 0.7s 0.4s ease-out both;
+}
+@keyframes rg-pir-spark {
+  0% { transform: rotate(var(--a)) translateX(0) scale(0.5); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(var(--d)) scale(1.3); opacity: 0; }
+}
+
+/* A win: doubloons rain over the deck. */
+.rg-pir-rain { position: absolute; inset: 0; overflow: hidden; border-radius: 24px; pointer-events: none; }
+.rg-pir-rain i {
+  position: absolute;
+  top: -22px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--rg-ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3a6, #ffcf2e 55%, #c98a00);
+  animation: rg-pir-rain var(--t) var(--w) cubic-bezier(0.4, 0, 0.8, 0.6) both;
+}
+@keyframes rg-pir-rain {
+  from { transform: translateY(0) rotateY(0); }
+  to { transform: translateY(560px) rotateY(720deg); }
+}
+
+/* When six are open, untouched chests step back; on a win so does treasure that does not match. */
+.rg-pir.is-won .rg-pir-tile.is-open:not(.is-hit) { opacity: 0.55; transition: opacity 0.4s 0.4s; }
+.rg-pir.is-done .rg-pir-tile:not(.is-open) .rg-pir-chest { animation: none; opacity: 0.42; filter: saturate(0.5); transition: opacity 0.4s; }
+
+/* Picks left: six doubloons. */
+.rg-pir-picks { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-weight: 900; font-size: 15px; color: #ffe0a0; }
+.rg-pir-picks i { width: 17px; height: 17px; border: 2px solid var(--rg-ink); border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3a6, #ffcf2e 55%, #c98a00); transition: background 0.2s; }
+.rg-pir-picks i.is-used { background: #4a3a40; }
+.rg-pir-picks span { margin-left: 6px; }
+
+@media (max-height: 740px) {
+  .rg-pir-sign { width: 70%; }
+  .rg-pir-deck { gap: 4px; padding-top: 8px; }
+  .rg-pir-paytable { margin-bottom: 6px; }
+}
+/* Short phones: a smaller sign and a narrower deck so the counter and the sound button stay on screen. */
+@media (max-height: 680px) {
+  .rg-pir { width: min(100%, 340px); }
+  .rg-pir-sign { width: 60%; }
+  .rg-pir-deck { gap: 3px; padding: 7px 6px 6px; }
+  .rg-pir-picks { margin-top: 4px; }
+}
+@media (max-height: 600px) {
+  .rg-pir { width: min(100%, 300px); }
+  .rg-pir-sign { width: 52%; }
+}

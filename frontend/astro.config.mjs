@@ -16,10 +16,22 @@ const allowedDomains = [
 
 // Server-rendered on Forge by a Node process (see deploy/). Laravel answers /api,
 // /sanctum, /admin and /webhooks on the same domain; nginx routes the rest here.
+// /dev/reveal-games (every reveal game with sample purchases) exists only under `astro dev`: nothing of it is built.
+const devOnlyPages = {
+  name: "gg-dev-only-pages",
+  hooks: {
+    "astro:config:setup": ({ command, injectRoute }) => {
+      if (command === "dev") injectRoute({ pattern: "/dev/reveal-games", entrypoint: "./src/dev/reveal-games.astro" });
+    },
+  },
+};
+
 export default defineConfig({
+  // The browser game tests turn the dev toolbar off: it sits over the bottom of the screen, where the reveal sheets put their buttons.
+  devToolbar: { enabled: process.env.GG_NO_DEV_TOOLBAR !== "1" },
   output: "server",
   adapter: node({ mode: "standalone" }),
-  integrations: [react()],
+  integrations: [react(), devOnlyPages],
   site: process.env.PUBLIC_SITE_URL || "http://localhost:4321",
   server: { host: "127.0.0.1", port: 4321 },
   security: { checkOrigin: true, allowedDomains },

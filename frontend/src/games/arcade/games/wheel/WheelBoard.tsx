@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { BoardProps } from "../types";
 import { generateWheel, WHEEL_SEGMENTS } from "../generators";
-import { createRng } from "../../rng";
+import { useWheelSpin } from "./useWheelSpin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import "./wheel.css";
 
@@ -23,38 +23,9 @@ function wedge(i: number) {
   return `M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
 }
 
-type Phase = "ready" | "spinning" | "landed";
-
 export function WheelBoard({ ticket, seed, decoys, reducedMotion, onReveal }: BoardProps) {
   const layout = useMemo(() => generateWheel(ticket.prize, decoys, seed), [ticket.prize, decoys, seed]);
-  const [phase, setPhase] = useState<Phase>("ready");
-  const [rotation, setRotation] = useState(0);
-
-  // Land somewhere inside the target segment, not dead centre every time.
-  const finalRotation = useMemo(() => {
-    const rng = createRng(`wheel-land:${seed}`);
-    const jitter = (rng() - 0.5) * SEG * 0.6;
-    return 360 * 6 - layout.target * SEG + jitter;
-  }, [seed, layout.target]);
-
-  const spin = () => {
-    if (phase !== "ready") return;
-    // The wheel is already painted at 0°, so this runs the CSS transition.
-    setPhase("spinning");
-    setRotation(finalRotation);
-  };
-
-  useEffect(() => {
-    if (phase !== "spinning") return;
-    const t1 = setTimeout(() => setPhase("landed"), reducedMotion ? 250 : SPIN_MS + 100);
-    return () => clearTimeout(t1);
-  }, [phase, reducedMotion]);
-
-  useEffect(() => {
-    if (phase !== "landed") return;
-    const t = setTimeout(onReveal, reducedMotion ? 300 : 900);
-    return () => clearTimeout(t);
-  }, [phase, onReveal, reducedMotion]);
+  const { phase, rotation, spin, transition } = useWheelSpin(layout, seed, reducedMotion, onReveal, { spinMs: SPIN_MS });
 
   const bulbs = Array.from({ length: 24 }, (_, i) => polar(i * 15, 94));
 
@@ -76,7 +47,7 @@ export function WheelBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
             className="rg-wheel-rotor"
             style={{
               transform: `rotate(${rotation}deg)`,
-              transition: phase === "spinning" && !reducedMotion ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.6, 0.08, 1)` : "none",
+              transition,
             }}
           >
             <circle r={R + 1} fill="#141414" />

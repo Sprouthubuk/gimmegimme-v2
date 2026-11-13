@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AdminAction;
 use App\Models\Competition;
 use App\Models\User;
+use App\Support\GameIds;
 use Illuminate\Support\Facades\DB;
 use Sprouthub\Verity\Facades\Verity;
 
@@ -14,10 +15,6 @@ use Sprouthub\Verity\Facades\Verity;
  */
 final class Publishing
 {
-    public const GAMES = ['scratch_card', 'spin_wheel', 'bingo_card', 'balloon_pop', 'hook_a_duck', 'claw_machine', 'coin_drop', 'slots', 'gems', 'classic'];
-
-    public const SKINS = ['classic', 'christmas'];
-
     public const MAX_END_PRIZES = 50;
 
     /** @return list<string> what stops this competition being published */
@@ -50,13 +47,13 @@ final class Publishing
             if ($prizes->contains(fn ($x) => $x->quantity < 1 || $x->value_pence < 0 || ! in_array($x->type, ['cash', 'site_credit', 'physical'], true))) {
                 $p[] = 'Every prize needs a quantity and a type.';
             }
-            if (! in_array($c->game, self::GAMES, true)) {
+            if (! in_array($c->game, GameIds::games(), true)) {
                 $p[] = 'Choose a reveal game.';
             }
         } elseif (! $c->end_prize_name) {
             $p[] = 'A draw needs its prize.';
         }
-        if (! in_array($c->skin ?? 'classic', self::SKINS, true)) {
+        if (! in_array($c->skin ?? 'classic', GameIds::skins(), true)) {
             $p[] = 'Choose a game look.';
         }
         if ($c->end_prize_name) {

@@ -3,11 +3,11 @@ import Layout from "../../layouts/Layout.astro";
 import Icon from "../../components/Icon.astro";
 import DemoReveal from "../../islands/DemoReveal";
 import { REVEAL_GAME_OPTIONS, revealGameLabel } from "../../games/gameIds";
-import { normaliseGameSkin } from "../../games/skinIds";
+import { normaliseGameSkin, skinnedGameName } from "../../games/skinIds";
 const game = Astro.params.game!;
 if (!REVEAL_GAME_OPTIONS.some((g) => g.id === game)) return Astro.rewrite("/404");
 const skin = normaliseGameSkin(Astro.url.searchParams.get("skin"));
-const label = revealGameLabel(game);
+const label = skinnedGameName(game, skin) ?? revealGameLabel(game);
 ---
 <Layout title={`Try ${label}`} noindex>
   <section class="sec" style="padding-top:16px"><div class="narrow stack g16" style="max-width:720px">

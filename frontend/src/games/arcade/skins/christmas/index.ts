@@ -3,7 +3,7 @@ import type { GameSkin } from "../types";
 import { Snowfall } from "./Snowfall";
 
 /**
- * The Christmas skin, named after the four Christmas competitions. Four of the
+ * The Christmas skin, named after the Christmas competitions. Seven of the
  * games have a Christmas version; the others play their classic look. Each
  * board below draws the same generator as the classic game it replaces, and is
  * its own lazy chunk. Every miss line is neutral: it says what happened, never
@@ -39,6 +39,21 @@ export const CHRISTMAS_SKIN: GameSkin = {
       id: "bingo_card", name: "Jingle Bell Bingo Bonanza", kind: "single", noun: "Card", playNextLabel: "Play next card", theme: "yellow",
       noWinLine: "The bells didn't line up.",
       Board: lazy(() => import("./JingleBingoBoard").then((m) => ({ default: m.JingleBingoBoard }))),
+    },
+    gems: {
+      id: "gems", name: "Liam's Humbug Heist", kind: "single", noun: "Heist", playNextLabel: "Next heist", theme: "yellow",
+      noWinLine: "No three the same in those bags.",
+      Board: lazy(() => import("./HeistBoard").then((m) => ({ default: m.HeistBoard }))),
+    },
+    claw_machine: {
+      id: "claw_machine", name: "Demi's Grinchmas Gold", kind: "single", noun: "Grab", playNextLabel: "Next grab", theme: "pink",
+      noWinLine: "That bauble was empty.",
+      Board: lazy(() => import("./GrinchClawBoard").then((m) => ({ default: m.GrinchClawBoard }))),
+    },
+    slots: {
+      id: "slots", name: "Blankets & Banknotes", kind: "single", noun: "Spin", playNextLabel: "Next spin", theme: "pink",
+      noWinLine: "No three in a row on the payline.",
+      Board: lazy(() => import("./BlanketsSlotsBoard").then((m) => ({ default: m.BlanketsSlotsBoard }))),
     },
   },
 };

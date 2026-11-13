@@ -1,4 +1,5 @@
 import { setSoundOn, useSoundOn } from "./sounds";
+import "./sound.css";
 
 /** "Sound off" / "Sound on". Off until the player turns it on. */
 export function SoundToggle() {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\GameIds;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,6 +35,15 @@ class Competition extends Model
 
     protected static function booted(): void
     {
+        // Only known games and skins (shared/game-ids.json). A skin is presentation only.
+        static::saving(function (Competition $c) {
+            if (! in_array($c->skin ?? 'classic', GameIds::skins(), true)) {
+                throw new \DomainException("Unknown game skin: {$c->skin}.");
+            }
+            if ($c->game !== null && ! in_array($c->game, GameIds::games(), true)) {
+                throw new \DomainException("Unknown reveal game: {$c->game}.");
+            }
+        });
         static::updating(function (Competition $c) {
             if ($c->getOriginal('verity_ref') !== null) {
                 foreach (self::LOCKED_WHEN_PUBLISHED as $field) {

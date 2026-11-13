@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { BoardProps } from "../types";
 import { GEM_PICKS, generateGems, type GemKind } from "../generators";
+import { useGemPicks } from "./useGemPicks";
 import { GamePrompt } from "../../shell/GamePrompt";
 import "./gems.css";
 
@@ -33,26 +34,7 @@ export function Gem({ kind, className = "" }: { kind: GemKind; className?: strin
 
 export function GemsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: BoardProps) {
   const layout = useMemo(() => generateGems(ticket.prize, decoys, seed), [ticket.prize, decoys, seed]);
-  // Tile index → pick number. The Nth tile tapped shows the Nth pre-set gem.
-  const [opened, setOpened] = useState<number[]>([]);
-  const done = opened.length === GEM_PICKS;
-
-  const open = (tile: number) => {
-    if (done || opened.includes(tile)) return;
-    setOpened((o) => [...o, tile]);
-  };
-
-  useEffect(() => {
-    if (!done) return;
-    const t = setTimeout(onReveal, reducedMotion ? 300 : layout.winGem ? 1300 : 900);
-    return () => clearTimeout(t);
-  }, [done, onReveal, reducedMotion, layout.winGem]);
-
-  const revealed = opened.map((_, i) => layout.picks[i]);
-  const counts = new Map<GemKind, number>();
-  revealed.forEach((g) => g !== "dud" && counts.set(g, (counts.get(g) ?? 0) + 1));
-  const [topGem, topCount] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
-  const left = GEM_PICKS - opened.length;
+  const { opened, done, open, left, kindAt, pair } = useGemPicks(layout, reducedMotion, onReveal);
 
   const dots = (
     <div className="rg-gem-dots" aria-label={`${left} picks left`}>
@@ -66,8 +48,7 @@ export function GemsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Boa
   let prompt: React.ReactNode;
   if (done) prompt = <GamePrompt title={layout.winGem ? `Three ${GEM_NAME[layout.winGem]}s!` : "No match this time"} tone={layout.winGem ? "pink" : "ink"} />;
   else if (opened.length === 0) prompt = <GamePrompt title={`Tap ${GEM_PICKS} tiles to find 3 matching gems`}>{dots}</GamePrompt>;
-  // Only a ticket that really wins is told it has a pair; a loss gets no "nearly" prompt.
-  else if (topCount >= 2 && topGem && topGem === layout.winGem) prompt = <GamePrompt title={`Two ${GEM_NAME[topGem]}s!`} tone="pink">{dots}</GamePrompt>;
+  else if (pair) prompt = <GamePrompt title={`Two ${GEM_NAME[pair]}s!`} tone="pink">{dots}</GamePrompt>;
   else prompt = <GamePrompt title="Keep picking…">{dots}</GamePrompt>;
 
   return (
@@ -84,8 +65,7 @@ export function GemsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Boa
       </div>}
       <div className="rg-gem-grid">
         {Array.from({ length: 16 }, (_, tile) => {
-          const pickNo = opened.indexOf(tile);
-          const gem = pickNo >= 0 ? layout.picks[pickNo] : null;
+          const gem = kindAt(tile);
           const hit = done && gem === layout.winGem && gem !== null;
           return (
             <button

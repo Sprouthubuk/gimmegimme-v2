@@ -6,8 +6,8 @@ import { createRng, shuffle } from "../../rng";
 import { formatTicketNumber } from "../../money";
 import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
-import { playSound } from "./sounds";
-import { SoundToggle } from "./SoundToggle";
+import { playSound } from "../shared/sounds";
+import { SoundToggle } from "../shared/SoundToggle";
 import "../../games/scratch/scratch.css";
 import "./vault.css";
 
