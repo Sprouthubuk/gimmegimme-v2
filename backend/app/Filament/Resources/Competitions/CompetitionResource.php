@@ -109,8 +109,9 @@ class CompetitionResource extends Resource
                 ImageColumn::make('image')->disk('public')->square(),
                 TextColumn::make('title')->searchable()->wrap(),
                 TextColumn::make('type')->badge(),
-                TextColumn::make('status')->badge()->state(fn (Competition $c) => app(CompetitionState::class)->status($c))
-                    ->color(fn (string $state) => ['live' => 'success', 'scheduled' => 'gray', 'sold_out' => 'warning', 'closed' => 'warning', 'drawn' => 'info', 'ended' => 'gray'][$state] ?? 'gray'),
+                // Not yet handed to Verity: a draft, whatever its dates say.
+                TextColumn::make('status')->badge()->state(fn (Competition $c) => $c->verity_ref === null ? 'draft' : app(CompetitionState::class)->status($c))
+                    ->color(fn (string $state) => ['draft' => 'gray', 'live' => 'success', 'scheduled' => 'info', 'sold_out' => 'warning', 'closed' => 'warning', 'drawn' => 'info', 'ended' => 'gray'][$state] ?? 'gray'),
                 TextColumn::make('sold')->state(fn (Competition $c) => app(CompetitionState::class)->sold($c).' / '.number_format($c->max_tickets)),
                 TextColumn::make('price_pence')->label('Price')->formatStateUsing(fn ($state) => Money::show($state)),
                 TextColumn::make('closes_at')->label('Closes')->dateTime('D j M Y, H:i', 'Europe/London')->sortable(),
