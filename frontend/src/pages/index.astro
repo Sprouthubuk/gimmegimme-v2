@@ -31,6 +31,11 @@ const ladder = featured?.prizes ?? [];
 const prizesLeft = ladder.reduce((n, p) => n + (p.quantity - p.won), 0);
 const prizesTotal = ladder.reduce((n, p) => n + p.quantity, 0);
 const opensLater = featured?.status === "scheduled" && featured.opensAt ? featured.opensAt : null;
+// A scrolling strip loops by sliding exactly one copy along, so each copy must be wider than the
+// widest screen: repeat short lists (about 16 pills is wider than 1440px), and pace it by length.
+const loopOf = <T,>(items: T[], min = 16): T[] => (items.length ? Array.from({ length: Math.max(1, Math.ceil(min / items.length)) }, () => items).flat() : []);
+const ladderLoop = loopOf(ladder);
+const winnersLoop = loopOf(winners, 8);
 const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
 ---
 <Layout title="Home" active="home">
@@ -52,7 +57,7 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
     </div>
     {ladder.length > 0 && (
       <div class="wrap" style="margin-top:24px"><div style="border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 0;overflow:hidden" aria-label="Prize ladder">
-        <div class="gg-marq">{[...ladder, ...ladder].map((p, i) => <span aria-hidden={i >= ladder.length ? "true" : undefined} style="white-space:nowrap;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800"><span class="d" style="color:#FF5CC0">{formatPence(p.valuePence)}</span> <span class="dim">×</span> {formatCount(p.quantity)}</span>)}</div>
+        <div class="gg-marq" style={`animation-duration:${ladderLoop.length * 3.5}s`}>{[...ladderLoop, ...ladderLoop].map((p, i) => <span aria-hidden={i >= ladder.length ? "true" : undefined} style="white-space:nowrap;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800"><span class="d" style="color:#FF5CC0">{formatPence(p.valuePence)}</span> <span class="dim">×</span> {formatCount(p.quantity)}</span>)}</div>
       </div></div>
     )}
     </section>
@@ -75,8 +80,8 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
   {winners.length > 0 && (
     <section style="border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);padding:16px 0"><div class="wrap row g16">
       <h2 class="d ny gg-flicker" style="font-size:22px;white-space:nowrap;margin:0">Just Won</h2>
-      <div style="flex:1;min-width:0;overflow:hidden"><div class="gg-marq" style="animation-duration:28s">
-        {[...winners, ...winners].map((w, i) => <span aria-hidden={i >= winners.length ? "true" : undefined} class="row g8" style="flex-shrink:0;border:1px solid rgba(255,242,58,.35);border-radius:999px;padding:5px 14px 5px 5px;font-size:13px;font-weight:700;color:#B9AFC6"><span class="av" style="width:28px;height:28px;background:#FF2DAA;font-size:13px">{w.name.slice(0, 1)}</span><b style="color:#fff">{w.name}</b> won <b style="color:#FFF23A">{w.prizeName}</b></span>)}
+      <div style="flex:1;min-width:0;overflow:hidden"><div class="gg-marq" style={`animation-duration:${winnersLoop.length * 3.5}s`}>
+        {[...winnersLoop, ...winnersLoop].map((w, i) => <span aria-hidden={i >= winners.length ? "true" : undefined} class="row g8" style="flex-shrink:0;border:1px solid rgba(255,242,58,.35);border-radius:999px;padding:5px 14px 5px 5px;font-size:13px;font-weight:700;color:#B9AFC6"><span class="av" style="width:28px;height:28px;background:#FF2DAA;font-size:13px">{w.name.slice(0, 1)}</span><b style="color:#fff">{w.name}</b> won <b style="color:#FFF23A">{w.prizeName}</b></span>)}
       </div></div>
       <a href="/instant-winners" class="dsk" style="font-weight:900;color:#fff;text-decoration:none;white-space:nowrap">All Winners →</a>
     </div></section>
