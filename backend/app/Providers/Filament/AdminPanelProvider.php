@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -27,6 +28,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            // Every admin signs in with a code from an authenticator app as well as the password; the first time,
+            // Filament walks them through setting it up and gives recovery codes. Lost phone: gimme:reset-two-step.
+            ->multiFactorAuthentication([AppAuthentication::make()->recoverable()], isRequired: true)
             ->brandName('Gimme Gimme Admin')
             ->spa()
             ->colors([

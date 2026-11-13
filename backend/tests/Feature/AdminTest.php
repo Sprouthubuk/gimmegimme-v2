@@ -21,7 +21,9 @@ use App\Services\CompetitionState;
 use App\Services\PlayCheck;
 use App\Services\Postal;
 use App\Services\Settings;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -41,10 +43,31 @@ class AdminTest extends TestCase
     {
         $this->get('/admin')->assertRedirect('/admin/login');
         $this->actingAs($this->player())->get('/admin')->assertForbidden();
-        $this->actingAs($this->admin())->get('/admin')->assertOk();
+        // An admin without two-step sign-in is sent to set it up first, whatever page they ask for.
+        $admin = $this->admin();
+        $setup = $this->actingAs($admin)->get('/admin/competitions');
+        $setup->assertRedirect();
+        $this->assertStringContainsString('multi-factor-authentication', (string) $setup->headers->get('Location'));
+        $this->get((string) $setup->headers->get('Location'))->assertOk()->assertSee('Set up two-factor authentication (2FA)', false);
+        $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
+        $this->actingAs($admin->refresh())->get('/admin')->assertOk();
         foreach (['competitions', 'orders', 'users', 'withdrawals', 'prize-claims', 'contact-messages', 'pages', 'promo-codes', 'site-settings', 'postal-entries'] as $p) {
             $this->get('/admin/'.$p)->assertOk();
         }
+    }
+
+    public function test_two_step_secrets_are_encrypted_and_never_sent_to_the_site(): void
+    {
+        $admin = $this->admin();
+        $admin->saveAppAuthenticationSecret('JBSWY3DPEHPK3PXP');
+        $admin->saveAppAuthenticationRecoveryCodes(['aaaa-bbbb']);
+        $raw = DB::table('users')->where('id', $admin->id)->first();
+        $this->assertStringNotContainsString('JBSWY3DPEHPK3PXP', (string) $raw->app_authentication_secret);
+        $this->assertArrayNotHasKey('app_authentication_secret', $admin->refresh()->toArray());
+        $this->actingAs($admin)->getJson('/api/me')->assertJsonMissingPath('app_authentication_secret');
+
+        $this->artisan('gimme:reset-two-step', ['email' => $admin->email])->assertSuccessful();
+        $this->assertNull($admin->refresh()->getAppAuthenticationSecret());
     }
 
     public function test_create_an_instant_win_competition_with_prizes_then_publish_it(): void

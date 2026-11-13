@@ -35,6 +35,9 @@ cd ..
 # --- Astro (built for this site's public address) ---
 cd frontend
 echo "Node $(node -v) / npm $(npm -v)"
+# Astro 7 needs Node 22.23.4 or newer. Stop here (the live release stays as it is) rather than build on an older one.
+node -e 'const [a,b,c]=process.versions.node.split(".").map(Number);process.exit(a>22||(a===22&&(b>23||(b===23&&c>=4)))?0:1)' \
+  || { echo "Node $(node -v) is too old for Astro 7: install Node 22.23.4+ (Forge: Server > Node.js) and deploy again."; exit 1; }
 npm ci --no-audit --no-fund
 PUBLIC_SITE_URL="$FRONTEND_URL" npm run build
 cd ..
