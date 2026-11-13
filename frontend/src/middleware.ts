@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { serverApi, ApiFailure } from "./lib/api";
+import { serverApi, ApiFailure, latestSetCookies } from "./lib/api";
 import type { Me, SiteInfo } from "./lib/types";
 
 const FALLBACK_SITE: SiteInfo = {
@@ -50,7 +50,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const res = await next();
   // Keep the visitor's session alive: pass on cookies Laravel set while rendering.
-  for (const c of new Set(setCookies)) res.headers.append("Set-Cookie", c);
+  // One line per cookie: each API call during the page view refreshes them, and only the newest counts.
+  for (const c of latestSetCookies(setCookies)) res.headers.append("Set-Cookie", c);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("X-Frame-Options", "DENY");

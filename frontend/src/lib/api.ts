@@ -34,8 +34,12 @@ function siteOrigin(): string {
  * the page response by the middleware.
  */
 export function serverApi(request: Request, setCookies: string[] = []) {
-  const cookie = request.headers.get("cookie") ?? "";
+  // The visitor's cookies, updated as Laravel sets new ones during this page view, so later calls
+  // use the same session as earlier ones (a first-time visitor gets one session, not one per call).
+  const jar = parseCookieHeader(request.headers.get("cookie") ?? "");
+  const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
   async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const cookie = cookieHeader();
     const res = await fetch(`${internalBase()}${path}`, {
       ...init,
       headers: {
@@ -50,17 +54,31 @@ export function serverApi(request: Request, setCookies: string[] = []) {
       },
     });
     // Keep the session alive: pass Laravel's cookies back to the browser.
-    if (typeof res.headers.getSetCookie === "function") setCookies.push(...res.headers.getSetCookie());
+    if (typeof res.headers.getSetCookie === "function") {
+      for (const sc of res.headers.getSetCookie()) {
+        setCookies.push(sc);
+        const pair = sc.split(";", 1)[0];
+        const eq = pair.indexOf("=");
+        if (eq > 0) jar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+      }
+    }
     const text = await res.text();
     const body = text ? JSON.parse(text) : null;
     if (!res.ok) throw new ApiFailure(res.status, body);
     return body as T;
   }
-  const xsrf = decodeURIComponent((cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/) ?? [])[1] ?? "");
+  // The XSRF token that goes with the session in the jar (the newest one Laravel handed out).
+  const xsrf = () => {
+    try {
+      return decodeURIComponent(jar.get("XSRF-TOKEN") ?? "");
+    } catch {
+      return "";
+    }
+  };
   return {
     get: <T>(path: string) => call<T>(path),
     /** A write on the visitor's behalf: carries their XSRF token, like the browser would. */
-    post: <T>(path: string, json: unknown = {}) => call<T>(path, { method: "POST", body: JSON.stringify(json), headers: { "X-XSRF-TOKEN": xsrf } }),
+    post: <T>(path: string, json: unknown = {}) => call<T>(path, { method: "POST", body: JSON.stringify(json), headers: { "X-XSRF-TOKEN": xsrf() } }),
     /** Like get, but answers null on 401/404 instead of throwing. */
     maybe: async <T>(path: string): Promise<T | null> => {
       try {
@@ -71,6 +89,28 @@ export function serverApi(request: Request, setCookies: string[] = []) {
       }
     },
   };
+}
+
+/** "a=1; b=2" → Map { a → "1", b → "2" } (values kept exactly as sent). */
+export function parseCookieHeader(header: string): Map<string, string> {
+  const jar = new Map<string, string>();
+  for (const part of header.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq > 0) jar.set(part.slice(0, eq).trim(), part.slice(eq + 1).trim());
+  }
+  return jar;
+}
+
+/** Several Set-Cookie lines for the same cookie → only the last one (it carries the newest value). */
+export function latestSetCookies(lines: string[]): string[] {
+  const byName = new Map<string, string>();
+  for (const line of lines) {
+    const name = line.split(";", 1)[0].split("=", 1)[0].trim();
+    if (!name) continue;
+    byName.delete(name);
+    byName.set(name, line);
+  }
+  return [...byName.values()];
 }
 
 function readCookie(name: string): string | null {
