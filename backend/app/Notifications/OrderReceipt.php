@@ -28,13 +28,14 @@ class OrderReceipt extends Notification
         $site = rtrim((string) config('app.frontend_url'), '/');
         $money = fn (int $p) => '£'.number_format($p / 100, 2);
         if ($o->isDeposit()) {
-            return (new MailMessage)->subject('Top up received · '.$o->number)
+            return (new MailMessage)->subject('Top Up Received · '.$o->number)
                 ->greeting('Thanks, '.$notifiable->first_name)
                 ->line($money($o->total_pence).' has been added to your Gimme Gimme wallet.')
                 ->action('See Your Wallet', $site.'/account/wallet')
-                ->line('Order '.$o->number.'. 18+ UK only. Please play responsibly.');
+                ->line('Order '.$o->number.'. 18+ UK only. Please play responsibly.')
+                ->salutation('The Gimme Gimme team');
         }
-        $m = (new MailMessage)->subject('You’re in! Order '.$o->number)->greeting('You’re in, '.$notifiable->first_name.'!');
+        $m = (new MailMessage)->subject('You’re In! Order '.$o->number)->greeting('You’re in, '.$notifiable->first_name.'!');
         foreach ($o->lines as $l) {
             if (! $l->tickets) {
                 continue;
@@ -52,6 +53,7 @@ class OrderReceipt extends Notification
 
         return $m->line('Paid '.implode(' and ', $paid ?: [$money($o->total_pence)]).'.')
             ->action($o->lines->contains(fn ($l) => $l->competition->isInstant()) ? 'Play Your Games' : 'See Your Order', $site.'/order/'.$o->number)
-            ->line('Your tickets are also in My Tickets. 18+ UK only. Please play responsibly.');
+            ->line('Your tickets are also in My Tickets. 18+ UK only. Please play responsibly.')
+            ->salutation('The Gimme Gimme team');
     }
 }

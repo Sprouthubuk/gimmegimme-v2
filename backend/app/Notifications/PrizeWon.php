@@ -24,10 +24,11 @@ class PrizeWon extends Notification
         $c = $this->claim->loadMissing('competition');
         $site = rtrim((string) config('app.frontend_url'), '/');
 
-        return (new MailMessage)->subject('You won! '.$c->prize_name)
+        return (new MailMessage)->subject('You Won! '.$c->prize_name)
             ->greeting('Congratulations, '.$notifiable->first_name.'!')
             ->line('You’ve won **'.e($c->prize_name).'** in '.e($c->competition->title).'.')
             ->line('We’ll contact you at this email address to arrange your prize. Check your address in your account settings is up to date.')
-            ->action('Your Account', $site.'/account/settings');
+            ->action('Your Account', $site.'/account/settings')
+            ->salutation('The Gimme Gimme team');
     }
 }

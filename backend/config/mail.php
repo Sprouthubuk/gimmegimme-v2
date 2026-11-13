@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+
+    /*
+    | Notification emails use Laravel's Markdown layout with the Gimme Gimme theme
+    | (resources/views/vendor/mail/html/themes/gimme.css).
+    */
+    'markdown' => [
+        'theme' => env('MAIL_MARKDOWN_THEME', 'gimme'),
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];
