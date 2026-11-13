@@ -40,6 +40,7 @@ PUBLIC_SITE_URL="$FRONTEND_URL" npm run build
 cd ..
 
 $ACTIVATE_RELEASE()
-$RESTART_QUEUES()
+# Not Forge's restart-queues macro: it runs <site>/current/artisan, and ours is in backend/.
+$FORGE_PHP "$SITE_ROOT/current/backend/artisan" queue:restart
 # The Astro background process restarts itself from the new release.
 pkill -x -f "node $SITE_ROOT/current/frontend/dist/server/entry.mjs" || true
