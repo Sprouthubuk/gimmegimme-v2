@@ -27,6 +27,10 @@ export interface CompetitionSummary {
   /** Shown under the price, e.g. "£50 cash alternative" or "2,516 wins". */
   subtitle: string | null;
   soldPercent: number;
+  /** Instant wins: how many instant prizes there are in total. Null for draws. */
+  prizeCount: number | null;
+  /** Instant wins with an end prize: what is drawn at the close, and for how many winners. Null otherwise. */
+  endPrize: { name: string; valuePence: Pence; count: number } | null;
   maxTickets: number;
   /** When entries open (status is "scheduled" until then), or null when it opened on publish. */
   opensAt: string | null;
