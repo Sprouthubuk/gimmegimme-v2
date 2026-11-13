@@ -301,7 +301,9 @@ select.inp{appearance:none}
 .gg-stagger>*:nth-child(2){animation-delay:.07s}.gg-stagger>*:nth-child(3){animation-delay:.14s}.gg-stagger>*:nth-child(4){animation-delay:.21s}.gg-stagger>*:nth-child(5){animation-delay:.28s}.gg-stagger>*:nth-child(6){animation-delay:.35s}.gg-stagger>*:nth-child(7){animation-delay:.42s}.gg-stagger>*:nth-child(8){animation-delay:.49s}.gg-stagger>*:nth-child(9){animation-delay:.56s}.gg-stagger>*:nth-child(10){animation-delay:.63s}.gg-stagger>*:nth-child(11){animation-delay:.7s}.gg-stagger>*:nth-child(12){animation-delay:.77s}
 .gg-float{animation:gg-float 7s ease-in-out infinite}
 .gg-ringspin{position:absolute;left:50%;top:50%;width:160%;height:160%;margin:-80% 0 0 -80%;background:conic-gradient(#FF2DAA,#22E6FF,#FFF23A,#FF2DAA);animation:gg-spin 6s linear infinite}
-.gg-marq{display:flex;gap:10px;width:max-content;animation:gg-marquee 45s linear infinite}
+/* Spacing is a margin, not a flex gap, so the second copy starts exactly at -50% and the loop has no seam. */
+.gg-marq{display:flex;width:max-content;animation:gg-marquee 45s linear infinite}
+.gg-marq>*{margin-right:10px}
 .gg-marq:hover{animation-play-state:paused}
 .gg-spark{position:absolute;border-radius:999px;animation:gg-twinkle 2.6s ease-in-out infinite;pointer-events:none}
 .gg-ping{position:relative}.gg-ping::after{content:"";position:absolute;inset:0;border-radius:999px;background:inherit;animation:gg-ping 1.6s ease-out infinite}
