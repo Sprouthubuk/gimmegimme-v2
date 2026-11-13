@@ -1,9 +1,9 @@
 ---
-interface Props { src: string; alt: string; float?: boolean; class?: string }
-const { src, alt, float = false, class: cls = "" } = Astro.props;
+interface Props { src: string; srcset?: string | null; alt: string; float?: boolean; class?: string }
+const { src, srcset, alt, float = false, class: cls = "" } = Astro.props;
 ---
-<div class={`hero-img gg-rise gg-d1 ${float ? "gg-float" : ""} ${cls}`}>
+<div class={`hero-img gg-lift ${float ? "gg-float" : ""} ${cls}`}>
   <div class="ring" aria-hidden="true"><div class="gg-ringspin"></div></div>
-  <img src={src} alt={alt} width="640" height="640" fetchpriority="high">
+  <img src={src} srcset={srcset ?? undefined} sizes={srcset ? "(min-width:1024px) 560px, (min-width:640px) 520px, 100vw" : undefined} alt={alt} width="640" height="640" fetchpriority="high">
   <slot />
 </div>

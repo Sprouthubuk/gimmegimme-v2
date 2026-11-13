@@ -147,7 +147,7 @@ select.inp{appearance:none}
 .ft{text-align:center}
 .ft-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
 .ft-cols>div{align-items:center}
-.ft h4{margin:0 0 10px;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.ft h2{margin:0 0 10px;font-family:inherit;font-weight:900;line-height:1.2;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
 .buybar{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(10,7,15,.96);backdrop-filter:blur(14px);border-top:1px solid #FF2DAA;box-shadow:0 -10px 30px rgba(255,45,170,.22);padding:10px 14px 14px}
 .stepper{display:flex;align-items:center;gap:6px}
 .stepper button{width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:#120C18;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s,box-shadow .2s}
@@ -283,6 +283,9 @@ select.inp{appearance:none}
 @keyframes gg-confetti{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(540deg)}}
 @keyframes gg-drum{to{transform:rotate(-360deg)}}
 .gg-rise{animation:gg-rise .9s cubic-bezier(.2,.8,.2,1) both}
+/* The main picture rises without fading in, so it is visible (and counted as loaded) from its first frame. */
+@keyframes gg-lift{from{translate:0 18px}to{translate:0 0}}
+.gg-lift{animation:gg-lift .9s cubic-bezier(.2,.8,.2,1) both}
 .gg-d1{animation-delay:.05s}.gg-d2{animation-delay:.15s}.gg-d3{animation-delay:.25s}.gg-d4{animation-delay:.35s}.gg-d5{animation-delay:.45s}.gg-d6{animation-delay:.6s}
 .gg-flicker{animation:gg-flicker 7s linear infinite}
 .gg-cta{position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.2,.8,.2,1);animation:gg-pulse 2.6s ease-in-out infinite}

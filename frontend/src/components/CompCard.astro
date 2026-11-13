@@ -14,7 +14,7 @@ const dayMonth = (iso: string) => ukDate(iso).replace(/ \d{4}$/, "");
 ---
 <a class="cc gg-card" href={href}>
   <div class="im">
-    <img src={c.image} alt={c.title} loading="lazy" width="400" height="400">
+    <img src={c.imageSmall} srcset={c.imageSrcset ?? undefined} sizes="(min-width:1024px) 300px, (min-width:640px) 33vw, 50vw" alt={c.title} loading="lazy" decoding="async" width="400" height="400">
     {live
       ? <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>
       : <span class="gt"><Icon name="bolt" size={10} stroke={3} />{gameBadge(c) ?? "Instant Win"}</span>}

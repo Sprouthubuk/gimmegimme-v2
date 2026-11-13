@@ -15,6 +15,26 @@ const FALLBACK_SITE: SiteInfo = {
 
 let siteCache: { at: number; value: SiteInfo } | null = null;
 
+/**
+ * What a page may load: only the site itself (pictures may also be data:/blob: for the games). Nothing
+ * third-party loads anywhere, so nothing else is listed: add an address here only alongside its consent check.
+ * Inline scripts stay allowed because Astro's island loader is inline; the gain is that no outside script,
+ * frame, plugin, <base> or form target can be injected. Not sent by the dev server (Vite needs websockets).
+ */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "media-src 'self' data: blob:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 /** Pages that need a signed-in player. Anyone else is sent to log in and brought back. */
 const MEMBERS_ONLY = [/^\/account(\/|$)/, /^\/checkout$/, /^\/order\//];
 
@@ -56,6 +76,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (import.meta.env.PROD) res.headers.set("Content-Security-Policy", CSP);
+  // Browsers only ever use https for the site once they've seen this over https (a year; subdomains not included).
+  if (context.url.protocol === "https:" || context.request.headers.get("x-forwarded-proto") === "https") {
+    res.headers.set("Strict-Transport-Security", "max-age=31536000");
+  }
   if (context.locals.me || MEMBERS_ONLY.some((r) => r.test(path))) res.headers.set("Cache-Control", "private, no-store");
   return res;
 });

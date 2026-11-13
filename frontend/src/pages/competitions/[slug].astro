@@ -12,9 +12,12 @@ import { ukDateTime, ukShortDay } from "../../lib/time";
 
 const { api, site, me } = Astro.locals;
 const slug = Astro.params.slug!;
+const othersCall = () => api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
+const early = api.hasSession() ? othersCall() : null;
+early?.catch(() => undefined); // still rejects where it is awaited; this only stops an early failure crashing Node
 const c = await api.maybe<CompetitionDetail>(`/api/competitions/${encodeURIComponent(slug)}`);
 if (!c) return Astro.rewrite("/404");
-const { data: others } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
+const { data: others } = await (early ?? othersCall());
 const more = others.filter((o) => o.id !== c.id && o.type === c.type).slice(0, 3);
 const isDraw = c.type === "draw";
 const prizesLeft = c.prizes.reduce((n, p) => n + (p.quantity - p.won), 0);
@@ -36,7 +39,7 @@ const [first, ...rest] = c.title.split(" – ");
     <nav aria-label="Breadcrumb" class="dsk" style="font-size:13px;font-weight:800;color:#8E84A0"><a href="/" style="color:#8E84A0;text-decoration:none">Home</a> / <a href={`/competitions?type=${c.type}`} style="color:#8E84A0;text-decoration:none">{isDraw ? "Live Draws" : "Instant Wins"}</a> / <span style="color:#fff">{c.title}</span></nav>
     <div class="split">
       <div class="stack g16">
-        <HeroImage src={c.image} alt={c.title}>
+        <HeroImage src={c.image} srcset={c.imageSrcset} alt={c.title}>
           {isDraw
             ? <span class="tag tag-c" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><span class="gg-ping" style="width:7px;height:7px;border-radius:999px;background:#22E6FF"></span> Live Draw</span>
             : <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {gameName(c)}</span>}

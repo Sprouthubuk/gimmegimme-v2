@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\SafeHtml;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -17,8 +18,10 @@ class Page extends Model
 
     protected static function booted(): void
     {
+        // The wording is shown as HTML on the site: keep formatting only (App\Support\SafeHtml).
         // Every <h2> gets an id so the page can list its sections and link to them.
         static::saving(function (Page $p) {
+            $p->html = SafeHtml::clean((string) $p->html);
             $used = [];
             $p->html = preg_replace_callback('/<h2(\s[^>]*)?>(.*?)<\/h2>/s', function ($m) use (&$used) {
                 $attrs = preg_replace('/\sid="[^"]*"/', '', $m[1] ?? '');

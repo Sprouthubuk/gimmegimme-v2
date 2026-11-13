@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\GameIds;
+use App\Support\PictureSizes;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,6 +37,12 @@ class Competition extends Model
     protected static function booted(): void
     {
         // Only known games and skins (shared/game-ids.json). A skin is presentation only.
+        // Smaller WebP copies of a new picture, for cards and thumbnails (App\Support\PictureSizes).
+        static::saved(function (Competition $c) {
+            if ($c->wasChanged('image') || $c->wasRecentlyCreated) {
+                PictureSizes::make($c->image);
+            }
+        });
         static::saving(function (Competition $c) {
             if (! in_array($c->skin ?? 'classic', GameIds::skins(), true)) {
                 throw new \DomainException("Unknown game skin: {$c->skin}.");
@@ -91,6 +98,12 @@ class Competition extends Model
         $i = (string) $this->image;
 
         return $i === '' || str_starts_with($i, 'http') || str_starts_with($i, '/') ? $i : '/storage/'.ltrim($i, '/');
+    }
+
+    /** The picture fields for the API: the original, a small copy and the sizes for srcset. */
+    public function pictureFields(): array
+    {
+        return PictureSizes::fields($this->image, $this->imageUrl());
     }
 
     /** The ticket buttons on the competition page, smallest first. */

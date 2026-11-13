@@ -76,6 +76,9 @@ export function serverApi(request: Request, setCookies: string[] = []) {
     }
   };
   return {
+    /** True once this page view has a Laravel session cookie. Calls can then run side by side without
+     *  each one starting its own session (a first-time visitor's first call is made on its own). */
+    hasSession: () => [...jar.keys()].some((k) => k.endsWith("_session")),
     get: <T>(path: string) => call<T>(path),
     /** A write on the visitor's behalf: carries their XSRF token, like the browser would. */
     post: <T>(path: string, json: unknown = {}) => call<T>(path, { method: "POST", body: JSON.stringify(json), headers: { "X-XSRF-TOKEN": xsrf() } }),

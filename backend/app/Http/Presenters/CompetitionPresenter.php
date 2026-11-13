@@ -36,7 +36,7 @@ final class CompetitionPresenter
             'game' => $c->isInstant() ? $c->game : null,
             'gameLabel' => $c->isInstant() ? (self::GAME_LABELS[$c->game] ?? null) : null,
             'skin' => $c->skin ?? 'classic',
-            'image' => $c->imageUrl(),
+            ...$c->pictureFields(),
             'pricePence' => $c->price_pence,
             'topPrizePence' => $top ?: null,
             'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format((int) $c->prizes->sum('quantity')).' instant wins' : null),

@@ -16,7 +16,7 @@ const nav = [
   <>
     <div class="ann"><b>18+</b><span>Free postal entry on every comp</span><span style="color:#FF2DAA">✦</span><span>Wins paid straight to your wallet</span><span style="color:#FF2DAA">✦</span><a href="/account/safer-play" style="color:#22E6FF;text-decoration:none">Play responsibly</a></div>
     <header class="hd"><div class="wrap hd-in">
-      <a class="logo" href="/" aria-label="Gimme Gimme Prizes home"><img src="/logo.webp" alt="Gimme Gimme Prizes" width="84" height="56"></a>
+      <a class="logo" href="/" aria-label="Gimme Gimme Prizes home"><img src="/logo-sm.webp" alt="Gimme Gimme Prizes" width="84" height="56"></a>
       <nav class="nav" aria-label="Main">{nav.map(([n, href, key]) => <a href={href} class={key === active ? "on" : ""} aria-current={key === active ? "page" : undefined}>{n}</a>)}</nav>
       <div class="hd-r">
         {me ? (
@@ -39,7 +39,7 @@ const nav = [
 )}
 {variant === "auth" && (
   <header class="auth-hd"><div class="wrap row g12" style="height:64px">
-    <a href="/" class="logo" aria-label="Home"><img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:42px" width="63" height="42"></a>
+    <a href="/" class="logo" aria-label="Home"><img src="/logo-sm.webp" alt="Gimme Gimme Prizes" style="height:42px" width="63" height="42"></a>
     <a href={back} class="ib" aria-label="Close" style="margin-left:auto"><Icon name="close" size={18} /></a>
   </div></header>
 )}
@@ -47,12 +47,12 @@ const nav = [
   <header class="auth-hd"><div class="wrap row g12" style="height:60px">
     <a href={back} class="ib" aria-label="Back"><Icon name="back" size={18} /></a>
     <div class="row g8" style="flex:1;justify-content:center;font-weight:900"><Icon name="lock" size={16} />{title}</div>
-    <a href="/" class="logo" aria-label="Home"><img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:36px" width="54" height="36"></a>
+    <a href="/" class="logo" aria-label="Home"><img src="/logo-sm.webp" alt="Gimme Gimme Prizes" style="height:36px" width="54" height="36"></a>
   </div></header>
 )}
 {variant === "menu" && (
   <header class="auth-hd"><div class="wrap row g12" style="height:60px">
-    <a href="/" class="logo" aria-label="Home"><img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:40px" width="60" height="40"></a>
+    <a href="/" class="logo" aria-label="Home"><img src="/logo-sm.webp" alt="Gimme Gimme Prizes" style="height:40px" width="60" height="40"></a>
     <a href={back} class="ib" aria-label="Close menu" style="margin-left:auto"><Icon name="close" size={18} /></a>
   </div></header>
 )}

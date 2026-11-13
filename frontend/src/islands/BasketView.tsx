@@ -46,7 +46,7 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
           if (!pl) return <div key={line?.competitionId ?? i} className="card card-p empty"><span className="spin" /></div>;
           return (
             <div key={pl.competitionId} className="card card-p row g12 gg-card" style={{ alignItems: "flex-start" }} data-testid="basket-line">
-              <img src={pl.image} alt="" style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", flexShrink: 0 }} />
+              <img src={pl.imageSmall} alt="" style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", flexShrink: 0 }} />
               <div className="stack g8" style={{ flex: 1, minWidth: 0 }}>
                 <div className="row between g8" style={{ alignItems: "flex-start" }}>
                   <div><a href={`/competitions/${pl.slug}`} className="d" style={{ fontSize: 18, lineHeight: 1.1, color: "#fff", textDecoration: "none" }}>{pl.title}</a><div className="hint">{pl.type === "draw" ? "Live draw" : "Instant win"} · {formatPence(pl.unitPence)} each</div></div>

@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,6 +27,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (DomainException $e, Request $r) {
             if ($r->is('api/*')) {
                 return response()->json(['message' => $e->getMessage()], 422);
+            }
+        });
+        // "No query results for model [App\Models\…]" names an internal class: say "Not found." instead.
+        $exceptions->render(function (NotFoundHttpException $e, Request $r) {
+            if ($r->is('api/*')) {
+                return response()->json(['message' => 'Not found.'], 404);
             }
         });
         $exceptions->shouldRenderJsonWhen(fn (Request $r) => $r->is('api/*') || $r->expectsJson());

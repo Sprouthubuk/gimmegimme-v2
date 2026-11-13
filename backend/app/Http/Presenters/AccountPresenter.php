@@ -124,7 +124,7 @@ final class AccountPresenter
 
         return [
             'competition' => [
-                'id' => $c->id, 'slug' => $c->slug, 'title' => $c->title, 'type' => $c->type, 'image' => $c->imageUrl(),
+                'id' => $c->id, 'slug' => $c->slug, 'title' => $c->title, 'type' => $c->type, ...$c->pictureFields(),
                 'drawAt' => $c->hasDraw() ? $c->closes_at->toIso8601ZuluString() : null, 'closesAt' => $c->closes_at->toIso8601ZuluString(), 'status' => $status,
             ],
             'orderNumber' => $line->order->number,
@@ -200,7 +200,7 @@ final class AccountPresenter
             'paidAt' => $o->paid_at?->toIso8601ZuluString(),
             'lines' => $lines->map(fn (OrderLine $l) => [
                 'competitionId' => $l->competition_id, 'slug' => $l->competition->slug, 'title' => $l->competition->title,
-                'image' => $l->competition->imageUrl(), 'type' => $l->competition->type, 'quantity' => $l->quantity,
+                ...$l->competition->pictureFields(), 'type' => $l->competition->type, 'quantity' => $l->quantity,
                 'tickets' => $l->tickets ?? [], 'drawAt' => $l->competition->hasDraw() ? $l->competition->closes_at->toIso8601ZuluString() : null,
             ])->all(),
             'toPlay' => $o->status === 'paid' ? (int) $lines->filter(fn ($l) => $l->competition->isInstant() && $l->tickets && ! $l->revealed_at)->sum('quantity') : 0,
