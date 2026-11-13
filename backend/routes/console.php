@@ -9,3 +9,4 @@ Verity::schedule(app(Schedule::class));
 
 Scheduler::command('orders:sweep')->everyFiveMinutes()->withoutOverlapping();
 Scheduler::command('players:housekeeping')->everyFifteenMinutes()->withoutOverlapping();
+Scheduler::command('gimme:end-prize-rules')->everyMinute()->withoutOverlapping();

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
-import { formatMoney } from "../lib/money";
+import { formatMoney, formatCount } from "../lib/money";
 import { ukDateTime } from "../lib/time";
 import type { OrderView as Order, PlayResult } from "../lib/types";
 import { Svg } from "./Svg";
@@ -102,7 +102,7 @@ export default function OrderView({ number, initial }: { number: string; initial
       {instant.map((l) => (
         <div key={l.competitionId} className="card card-hot card-p stack g16 gg-rise gg-d2" data-testid="instant-line">
           <div className="row g12"><img src={l.image} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover" }} /><div style={{ flex: 1 }}><div className="d" style={{ fontSize: 20 }}>{l.title}</div><div className="hint">{l.quantity} {l.quantity === 1 ? "game" : "games"}</div></div></div>
-          <div className="stack g8"><span className="eyebrow">Your ticket numbers</span><div className="row wrapx g8">{l.tickets.map((t) => <span key={t} className="tn">#{t}</span>)}</div></div>
+          <div className="stack g8"><span className="eyebrow">Your ticket numbers</span><div className="row wrapx g8">{l.tickets.slice(0, 60).map((t) => <span key={t} className="tn">#{t}</span>)}{l.tickets.length > 60 && <a className="tap" href="/account/tickets">+{formatCount(l.tickets.length - 60)} more in My Tickets</a>}</div></div>
         </div>
       ))}
 

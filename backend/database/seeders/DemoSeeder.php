@@ -47,6 +47,8 @@ class DemoSeeder extends Seeder
             app(Publishing::class)->publish($c, $admin);
         };
         $make(['slug' => 'bush-bucks-jungle-trial', 'title' => 'Bush Bucks – Jungle Trial', 'type' => 'instant', 'game' => 'balloon_pop', 'image' => 'competitions/bush.webp', 'featured' => true,
+            'presets' => [5, 10, 20, 50, 100, 200, 500], 'popular_preset' => 20, 'min_tickets' => 4,
+            'end_prize_name' => 'Jungle Jackpot', 'end_prize_value_pence' => 5000, 'end_prize_count' => 2, 'end_prize_type' => 'site_credit',
             'description' => 'Every ticket plays one game. Your result is fixed when you buy: the game just reveals it.'],
             [['£500 Cash', 50000, 1, 'cash'], ['£5 Site Credit', 500, 100, 'site_credit'], ['50p Site Credit', 50, 1500, 'site_credit']]);
         $make(['slug' => 'cash-bang', 'title' => 'Cash Bang', 'type' => 'instant', 'game' => 'scratch_card', 'skin' => 'christmas', 'image' => 'competitions/cash.webp', 'price_pence' => 10],

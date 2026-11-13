@@ -51,8 +51,14 @@ export interface CompetitionDetail extends CompetitionSummary {
   cashAlternativePence: Pence | null;
   /** Instant wins: one row per prize tier, biggest first. */
   prizes: PrizeTier[];
-  /** Instant wins with an end prize, and draws: what is drawn. */
-  endPrize: { name: string; valuePence: Pence } | null;
+  /** Instant wins with an end prize, and draws: what is drawn, and for how many winners (one each). */
+  endPrize: { name: string; valuePence: Pence; count: number } | null;
+  /** Ticket quick-pick buttons, smallest first. */
+  presets: number[];
+  /** The button marked "Most popular", or null. */
+  popularPreset: number | null;
+  /** Fewest tickets in one order for this competition (1 unless set). */
+  minTickets: number;
   /** Verity reference and public seed commitment. */
   verityRef: string | null;
   commitment: string | null;
@@ -108,10 +114,30 @@ export interface WalletTransaction {
 export interface TicketGroup {
   competition: Pick<CompetitionSummary, "id" | "slug" | "title" | "type" | "image" | "drawAt" | "closesAt" | "status">;
   orderNumber: string | null;
-  tickets: { number: number; won: boolean; played: boolean; prizeName: string | null }[];
+  /** A preview: the first 40 tickets plus every winning one. `ticketCount` is how many there are. */
+  tickets: TicketRow[];
+  ticketCount: number;
   toPlay: number;
   wonPence: Pence;
   status: "in_draw" | "to_play" | "won" | "no_win" | "drawn";
+}
+
+export interface TicketRow {
+  number: number;
+  won: boolean;
+  played: boolean;
+  prizeName: string | null;
+}
+
+/** GET /api/me/tickets/{order}/{competition}?page=: one order line's tickets, 500 a page. */
+export interface TicketPage {
+  competition: Pick<CompetitionSummary, "id" | "slug" | "title" | "type">;
+  orderNumber: string;
+  data: TicketRow[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
 }
 
 export interface BasketLine {
@@ -129,6 +155,7 @@ export interface PricedLine {
   unitPence: Pence;
   linePence: Pence;
   maxQuantity: number;
+  minQuantity: number;
   problem: string | null;
 }
 

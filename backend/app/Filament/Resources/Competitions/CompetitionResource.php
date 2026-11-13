@@ -44,7 +44,7 @@ class CompetitionResource extends Resource
     protected static ?int $navigationSort = 1;
 
     public const GAMES = [
-        'scratch_card' => 'Scratch Card', 'spin_wheel' => 'Spin the Wheel', 'bingo_card' => 'Bingo Card', 'balloon_pop' => 'Balloon Pop',
+        'classic' => 'Classic reveal', 'scratch_card' => 'Scratch Card', 'spin_wheel' => 'Spin the Wheel', 'bingo_card' => 'Bingo Card', 'balloon_pop' => 'Balloon Pop',
         'hook_a_duck' => 'Hook a Duck', 'claw_machine' => 'Claw Machine', 'coin_drop' => 'Coin Drop', 'slots' => 'Slots', 'gems' => 'Gems',
     ];
 
@@ -72,14 +72,22 @@ class CompetitionResource extends Resource
                 TextInput::make('max_tickets')->label('Tickets')->integer()->minValue(1)->maxValue(10_000_000)->required()->disabled($locked),
                 TextInput::make('max_per_person')->label('Tickets per person')->integer()->minValue(1)->required()->disabled($locked)
                     ->lte('max_tickets'),
+                TextInput::make('min_tickets')->label('Minimum tickets per order')->integer()->minValue(1)->default(1)->required()->disabled($locked)
+                    ->lte('max_per_person')->helperText('E.g. 100 on a 1p competition for a £1 minimum.'),
                 DateTimePicker::make('opens_at')->label('Opens (UK time)')->timezone('Europe/London')->seconds(false)->disabled($locked),
                 DateTimePicker::make('closes_at')->label('Closes (UK time)')->timezone('Europe/London')->seconds(false)->required()->after('now')->disabled($locked),
                 Money::input('cash_alternative_pence', 'Cash alternative'),
+                TagsInput::make('presets')->label('Ticket buttons')->placeholder('e.g. 50')->nestedRecursiveRules(['integer', 'min:1'])
+                    ->helperText('Quick-pick amounts on the competition page. Empty: 5, 10, 25, 50 (1, 5, 10, 25 for draws).')->columnSpan(2),
+                TextInput::make('popular_preset')->label('“Most popular” button')->integer()->minValue(1)->helperText('One of the ticket buttons, or empty.'),
             ]),
             Section::make('Prizes')->columns(2)->components([
                 TextInput::make('end_prize_name')->label(fn (Get $get) => $get('type') === 'instant' ? 'End prize (optional draw at the close)' : 'Prize')
                     ->required(fn (Get $get) => $get('type') === 'draw')->maxLength(120)->disabled($locked),
                 Money::input('end_prize_value_pence', 'Prize value')->disabled($locked),
+                TextInput::make('end_prize_count')->label('How many winners')->integer()->minValue(1)->maxValue(Publishing::MAX_END_PRIZES)->default(1)->required()
+                    ->disabled($locked)->helperText('Each wins the prize above. One end prize per person: a repeat win is redrawn.'),
+                Select::make('end_prize_type')->label('How the end prize is paid')->options(Competition::END_PRIZE_TYPES)->default('physical')->required()->disabled($locked),
                 Repeater::make('prizes')->relationship()->label('Instant-win prizes')->visible(fn (Get $get) => $get('type') === 'instant')
                     ->disabled($locked)->orderColumn('sort')->columnSpanFull()->columns(4)->defaultItems(1)
                     ->components([

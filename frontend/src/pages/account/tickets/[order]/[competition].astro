@@ -1,0 +1,33 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import AccountShell from "../../../../components/AccountShell.astro";
+import type { TicketPage } from "../../../../lib/types";
+import { formatCount } from "../../../../lib/money";
+// Every ticket of one order line, 500 a page (an order can hold thousands of tickets).
+const { api } = Astro.locals;
+const { order, competition } = Astro.params;
+const page = Math.max(1, Number(Astro.url.searchParams.get("page")) || 1);
+const p = await api.maybe<TicketPage>(`/api/me/tickets/${encodeURIComponent(order!)}/${encodeURIComponent(competition!)}?page=${page}`);
+if (!p) return Astro.rewrite("/404");
+const pages = Math.max(1, Math.ceil(p.total / p.perPage));
+const from = (p.page - 1) * p.perPage + 1;
+const to = from + p.data.length - 1;
+const href = (n: number) => `/account/tickets/${encodeURIComponent(order!)}/${encodeURIComponent(competition!)}?page=${n}`;
+---
+<Layout title={`Your Tickets · ${p.competition.title}`} active="account" noindex>
+  <AccountShell active="tickets" title="Your Tickets" eyebrow={`${p.competition.title} · order ${p.orderNumber}`}>
+    <a class="tap" href="/account/tickets" style="padding-left:0">Back to My Tickets</a>
+    <div class="card card-p stack g12" data-testid="ticket-page">
+      <div class="row between wrapx g8"><span class="d" style="font-size:20px">{formatCount(p.total)} tickets</span><span class="hint">Showing {formatCount(from)}–{formatCount(to)}</span></div>
+      <div class="row wrapx g8">{p.data.map((t) => <span class={`tn ${t.won ? "w" : ""}`} title={t.prizeName ?? undefined}>#{t.number}</span>)}</div>
+    </div>
+    {pages > 1 && (
+      <nav class="row between g8" aria-label="Pages">
+        {p.page > 1 ? <a class="btn btn-o" href={href(p.page - 1)}>Previous</a> : <span></span>}
+        <span class="hint">Page {p.page} of {pages}</span>
+        {p.hasMore ? <a class="btn btn-o" href={href(p.page + 1)}>Next</a> : <span></span>}
+      </nav>
+    )}
+    <p class="hint" style="margin:0">Gold tickets are winners.</p>
+  </AccountShell>
+</Layout>

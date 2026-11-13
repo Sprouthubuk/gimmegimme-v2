@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\RefusedException;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
+use App\Models\OrderLine;
 use App\Models\Withdrawal;
 use App\Services\Orders;
 use App\Services\Settings;
@@ -35,6 +36,16 @@ class AccountController extends Controller
         $tab = in_array($r->query('tab'), ['active', 'to-play', 'won', 'past'], true) ? $r->query('tab') : 'active';
 
         return response()->json(['data' => $this->present()->ticketGroups($r->user(), $tab, max(1, min(200, (int) $r->query('limit', 100))))]);
+    }
+
+    /** Every ticket of one order line, a page at a time (orders can hold thousands). */
+    public function ticketPage(Request $r, string $number, string $competition): JsonResponse
+    {
+        $line = OrderLine::query()->with(['competition', 'order'])->where('competition_id', $competition)->whereNotNull('tickets')
+            ->whereHas('order', fn ($q) => $q->where('number', $number)->where('user_id', $r->user()->id)->where('status', 'paid'))->first();
+        abort_if(! $line, 404);
+
+        return response()->json($this->present()->ticketPage($line, (int) $r->query('page', 1)));
     }
 
     public function limits(Request $r): JsonResponse

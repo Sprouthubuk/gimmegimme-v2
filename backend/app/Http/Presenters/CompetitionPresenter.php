@@ -70,11 +70,13 @@ final class CompetitionPresenter
             'heldByMe' => $user ? $this->state->held($c, $user->ownerRef()) : 0,
             'cashAlternativePence' => $c->cash_alternative_pence,
             'prizes' => $prizes,
-            'endPrize' => $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence] : null,
+            'endPrize' => $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence, 'count' => $c->endPrizeCount()] : null,
             'verityRef' => $v?->ref,
             'commitment' => $v?->commitment,
             'verifyUrl' => $v ? '/verify/'.$v->ref : null,
             'presets' => $c->presetList(),
+            'popularPreset' => $c->popularPreset(),
+            'minTickets' => (int) ($c->min_tickets ?: 1),
         ];
     }
 }

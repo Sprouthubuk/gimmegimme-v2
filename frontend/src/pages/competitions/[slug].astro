@@ -21,7 +21,9 @@ const prizesWon = c.prizes.reduce((n, p) => n + p.won, 0);
 const prizesTotal = prizesLeft + prizesWon;
 const open = c.status === "live";
 const ticketsLeft = Math.max(0, Math.round(c.maxTickets * (1 - c.soldPercent / 100)));
-const presets = isDraw ? [1, 5, 10, 25] : [5, 10, 25, 50];
+const presets = c.presets?.length ? c.presets : isDraw ? [1, 5, 10, 25] : [5, 10, 25, 50];
+const endCount = c.endPrize?.count ?? 0;
+const endPrizeLine = c.endPrize ? `${endCount > 1 ? `${endCount} × ` : ""}${formatPence(c.endPrize.valuePence, { short: false })}` : "";
 const glow = ["np", "nc", "ny"];
 const [first, ...rest] = c.title.split(" – ");
 ---
@@ -57,7 +59,7 @@ const [first, ...rest] = c.title.split(" – ");
           <div class={`bar ${isDraw ? "cy" : ""}`}><div class="gg-shine" style={`width:${c.soldPercent}%`}></div></div>
           <div class="row between hint"><span>{c.soldPercent}% sold</span><span>{isDraw ? `${formatCount(c.maxTickets)} tickets` : "Results fixed when you buy"}</span></div>
         </div>
-        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
+        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
         <p class="hint" style="margin:0">No purchase necessary — <a href="/free-entry">enter free by post</a> with the same chance of winning. 18+ UK only · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
     </div>
@@ -77,6 +79,12 @@ const [first, ...rest] = c.title.split(" – ");
             </div>
           ))}
         </div>
+        {c.endPrize && (
+          <div class="card card-cy card-p row g12 gg-reveal" data-testid="end-prize">
+            <span class="d nc" style="font-size:22px;white-space:nowrap">{endPrizeLine}</span>
+            <div style="flex:1;min-width:0"><div style="font-weight:900">{endCount > 1 ? "End Prizes" : "End Prize"}: {c.endPrize.name}</div><div class="hint" style="font-size:13px">Drawn {c.drawAt ? ukShortDay(c.drawAt) : "at the close"} from every entry, instant winners included{endCount > 1 ? ". One end prize per person" : ""}.</div></div>
+          </div>
+        )}
       </div>
     ) : (
       <div class="stack g12">
@@ -96,7 +104,7 @@ const [first, ...rest] = c.title.split(" – ");
       <details class="acd"><summary>Free Postal Entry <Icon name="down" /></summary><div class="ab">Same chance of winning. <a href="/free-entry">How to enter by post</a></div></details>
       <details class="acd"><summary>Entry List <Icon name="down" /></summary><div class="ab">Every confirmed ticket with a masked name. <a href={`/entry-lists/${c.slug}`}>View the entry list</a></div></details>
       {c.verityRef && <details class="acd"><summary>Fair Play Record <Icon name="down" /></summary><div class="ab stack g8"><span>Competition reference <b style="color:#fff">{c.verityRef}</b></span>{c.commitment && <span style="word-break:break-all">Seed fingerprint <code style="color:#22E6FF">{c.commitment}</code></span>}{c.verifyUrl && <a class="tap" style="padding-left:0" href={c.verifyUrl}>Verify this competition</a>}</div></details>}
-      <details class="acd"><summary>Terms <Icon name="down" /></summary><div class="ab">18+ UK residents only. Max {formatCount(c.maxPerPerson)} tickets per person. <a href="/legal/terms">Full T&amp;Cs</a></div></details>
+      <details class="acd"><summary>Terms <Icon name="down" /></summary><div class="ab">18+ UK residents only. Max {formatCount(c.maxPerPerson)} tickets per person.{(c.minTickets ?? 1) > 1 && ` Minimum ${formatCount(c.minTickets)} tickets per order.`} <a href="/legal/terms">Full T&amp;Cs</a></div></details>
       {!isDraw && c.game && <a href={`/demo/${c.game}?skin=${c.skin}`} class="card card-cy card-p row g12 gg-card mob" style="text-decoration:none;color:#fff;display:flex"><span style="width:44px;height:44px;border-radius:14px;border:1px solid #22E6FF;color:#22E6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><Icon name="play" size={24} stroke={1.8} /></span><span style="flex:1"><b class="d" style="font-size:19px;display:block">Try The Game Free</b><span class="hint">See how it works first</span></span><Icon name="chev" /></a>}
     </div>
   </div></section>

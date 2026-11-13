@@ -49,12 +49,14 @@ final class Pricing
                 $max === 0 && $this->state->left($c) - $this->state->reserved($c) <= 0 => 'The last tickets are being paid for right now. Try again in a few minutes.',
                 $max === 0 => "You've reached the ticket limit for this competition.",
                 $qty > $max => 'You can buy '.$max.' more '.($max === 1 ? 'ticket' : 'tickets').' for this competition.',
+                // The minimum order for the competition, unless fewer than that are left for this player.
+                $qty < (int) ($c->min_tickets ?: 1) && $qty < $max => 'The minimum for this competition is '.number_format((int) $c->min_tickets).' tickets.',
                 default => null,
             };
             $line = $qty * $c->price_pence;
             $out[] = [
                 'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, 'image' => $c->imageUrl(), 'type' => $c->type,
-                'quantity' => $qty, 'unitPence' => $c->price_pence, 'linePence' => $line, 'maxQuantity' => $max, 'problem' => $problem,
+                'quantity' => $qty, 'unitPence' => $c->price_pence, 'linePence' => $line, 'maxQuantity' => $max, 'minQuantity' => (int) ($c->min_tickets ?: 1), 'problem' => $problem,
             ];
             $subtotal += $line;
             $count += $qty;

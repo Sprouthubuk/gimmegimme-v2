@@ -9,6 +9,10 @@ export interface PickerProps {
   type: "instant" | "draw";
   pricePence: number;
   presets: number[];
+  /** The button marked "Most popular" (one of presets), or null. */
+  popularPreset?: number | null;
+  /** Fewest tickets in one order (1 unless the competition sets more). */
+  minTickets?: number;
   maxPerPerson: number;
   heldByMe: number;
   ticketsLeft: number;
@@ -31,10 +35,13 @@ const BLOCK_TEXT: Record<string, string> = {
 
 export default function TicketPicker(p: PickerProps) {
   const cap = Math.max(0, Math.min(p.maxPerPerson - p.heldByMe, p.ticketsLeft));
-  const [qty, setQty] = useState(() => Math.min(cap || 1, p.presets[1] ?? p.presets[0] ?? 1));
+  // The minimum order, unless fewer than that are left for this player.
+  const min = Math.max(1, Math.min(p.minTickets ?? 1, cap || 1));
+  const popular = p.popularPreset && p.presets.includes(p.popularPreset) ? p.popularPreset : null;
+  const [qty, setQty] = useState(() => Math.max(min, Math.min(cap || 1, popular ?? p.presets[1] ?? p.presets[0] ?? 1)));
   const [typed, setTyped] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
-  const clamp = (n: number) => Math.max(1, Math.min(cap || 1, Math.floor(n) || 1));
+  const clamp = (n: number) => Math.max(min, Math.min(cap || 1, Math.floor(n) || 1));
   const set = (n: number) => {
     setQty(clamp(n));
     setTyped(null);
@@ -57,7 +64,7 @@ export default function TicketPicker(p: PickerProps) {
           <div className="d np" style={{ fontSize: 44, lineHeight: 1 }}>{formatPence(p.pricePence)}</div>
         </div>
         <div className="stepper">
-          <button type="button" aria-label="One fewer ticket" onClick={() => set(qty - 1)} disabled={!!blocked || qty <= 1}><Svg name="minus" size={18} stroke={2.6} /></button>
+          <button type="button" aria-label="One fewer ticket" onClick={() => set(qty - 1)} disabled={!!blocked || qty <= min}><Svg name="minus" size={18} stroke={2.6} /></button>
           <output className="qty" aria-live="polite" data-testid="qty">{qty}</output>
           <button type="button" className="plus" aria-label="One more ticket" onClick={() => set(qty + 1)} disabled={!!blocked || qty >= cap}><Svg name="plus" size={18} stroke={2.6} /></button>
         </div>
@@ -65,10 +72,11 @@ export default function TicketPicker(p: PickerProps) {
 
       <div className="stack g8">
         <span className="lbl">How many tickets?</span>
-        <div className="r4">
+        <div className="r4" style={popular ? { rowGap: 16, paddingTop: 6 } : undefined}>
           {p.presets.map((n) => (
-            <button key={n} type="button" className={qty === n ? "pick on" : "pick"} aria-pressed={qty === n} disabled={!!blocked || n > cap} onClick={() => set(n)}>
-              {n}
+            <button key={n} type="button" className={qty === n ? "pick on" : "pick"} aria-pressed={qty === n} disabled={!!blocked || n > cap || n < min} onClick={() => set(n)} style={n === popular ? { position: "relative" } : undefined}>
+              {n === popular && <span className="pick-pop" data-testid="most-popular">Most popular</span>}
+              {formatCount(n)}
               <small>{formatMoney(n * p.pricePence)}</small>
             </button>
           ))}
@@ -76,25 +84,25 @@ export default function TicketPicker(p: PickerProps) {
       </div>
 
       <div className="stack g8">
-        <div className="row between g12"><label className="lbl" htmlFor={`qty-${p.slug}`}>Or choose your own amount</label><span className="hint">1–{formatCount(cap || 1)}</span></div>
+        <div className="row between g12"><label className="lbl" htmlFor={`qty-${p.slug}`}>Or choose your own amount</label><span className="hint">{formatCount(min)}–{formatCount(cap || 1)}</span></div>
         <div className="row g8">
           <input
-            className="inp" id={`qty-${p.slug}`} type="number" inputMode="numeric" min={1} max={cap || 1}
+            className="inp" id={`qty-${p.slug}`} type="number" inputMode="numeric" min={min} max={cap || 1}
             value={typed ?? String(qty)} disabled={!!blocked}
-            onChange={(e) => { setTyped(e.target.value); const n = Number(e.target.value); if (Number.isFinite(n) && n >= 1) { setQty(clamp(n)); setAdded(false); } }}
+            onChange={(e) => { setTyped(e.target.value); const n = Number(e.target.value); if (Number.isFinite(n) && n >= min) { setQty(clamp(n)); setAdded(false); } }}
             onBlur={() => setTyped(null)}
             style={{ flex: 1, fontFamily: "'Lilita One',sans-serif", fontSize: 22, textAlign: "center" }}
           />
           <span className="muted" style={{ fontWeight: 800 }}>tickets</span>
         </div>
-        <input type="range" className="gg-range" min={1} max={cap || 1} value={qty} disabled={!!blocked} onChange={(e) => set(Number(e.target.value))} aria-label="Number of tickets" />
+        <input type="range" className="gg-range" min={min} max={cap || 1} value={qty} disabled={!!blocked} onChange={(e) => set(Number(e.target.value))} aria-label="Number of tickets" />
       </div>
 
       <div className="row between wrapx g12" style={{ borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 14 }}>
         <div>
           <div className="eyebrow">To pay</div>
           <div className="d ny" style={{ fontSize: 38, lineHeight: 1 }} data-testid="total">{formatMoney(total)}</div>
-          <div className="hint">{qty} × {formatPence(p.pricePence)}</div>
+          <div className="hint">{formatCount(qty)} × {formatPence(p.pricePence)}{min > 1 ? ` · min ${formatCount(min)}` : ""}</div>
         </div>
         <div className="stack g8" style={{ flex: 1, minWidth: 200 }}>
           {blocked ? (

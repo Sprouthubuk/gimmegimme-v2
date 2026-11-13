@@ -32,7 +32,7 @@ const COMPS = [
   comp("c-fruity", "fruity-fortunes", "Fruity Fortunes", "instant", "slots", "classic", "fruity", 4, 44444, 2, "Instant wins"),
   comp("c-scratch", "gimme-a-scratch", "Gimme A Scratch", "instant", "scratch_card", "classic", "scratch", 10, 50000, 3, "Instant wins"),
   comp("c-penny", "penny-pusher-payday", "Penny Pusher Payday", "instant", "coin_drop", "classic", "penny", 2, 50000, 1, "Instant wins"),
-  comp("c-pop", "pop-for-pennies", "Pop For Pennies", "instant", "balloon_pop", "classic", "pop", 1, 33333, 3, "Instant wins"),
+  comp("c-pop", "pop-for-pennies", "Pop For Pennies", "instant", "balloon_pop", "classic", "pop", 1, 33333, 3, "Instant wins", { presets: [100, 200, 300, 400, 500, 1000, 2000], popularPreset: 200, minTickets: 100, endPrize: { name: "The Big Pop", valuePence: 15000, count: 2 } }),
   comp("c-gems", "demis-diamond-dosh", "Demi’s Diamond Dosh", "instant", "gems", "classic", "diamond", 39, 11111, 3, "Every gem wins"),
   comp("c-ducks", "liams-lucky-ducks", "Liam’s Lucky Ducks", "instant", "hook_a_duck", "classic", "ducks", 25, 25000, 8, "Every duck wins"),
   comp("c-dasher", "dashers-dosh-drop", "Dasher’s Dosh Drop", "instant", "spin_wheel", "christmas", "dasher", 25, 44444, 7, "Instant wins"),
@@ -56,7 +56,10 @@ function detail(c, user) {
     heldByMe: held,
     cashAlternativePence: c.cashAlternativePence ?? null,
     prizes: c.type === "instant" ? LADDER.map(([name, v, q], i) => ({ name, valuePence: v, type: "site_credit", quantity: q, won: i > 3 ? Math.floor(q * 0.03) : 0 })) : [],
-    endPrize: c.type === "draw" ? { name: c.title, valuePence: c.topPrizePence } : null,
+    endPrize: c.endPrize ?? (c.type === "draw" ? { name: c.title, valuePence: c.topPrizePence, count: 1 } : null),
+    presets: c.presets ?? (c.type === "draw" ? [1, 5, 10, 25] : [5, 10, 25, 50]),
+    popularPreset: c.popularPreset ?? null,
+    minTickets: c.minTickets ?? 1,
     verityRef: `VTY-${c.id.slice(2, 8).toUpperCase()}`,
     commitment: crypto.createHash("sha256").update(c.id).digest("hex"),
     verifyUrl: `/verify/VTY-${c.id.slice(2, 8).toUpperCase()}`,
@@ -130,7 +133,7 @@ function price(lines, u, promoCode) {
     if (!c) { problems.push("A competition in your basket isn't available any more."); continue; }
     const max = (c.type === "draw" ? 100 : 2000) - (u ? u.tickets.filter((t) => t.competitionId === c.id).length : 0);
     const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
-    out.push({ competitionId: c.id, slug: c.slug, title: c.title, image: c.image, type: c.type, quantity: q, unitPence: c.pricePence, linePence: q * c.pricePence, maxQuantity: Math.max(0, max), problem: q > max ? `You can have up to ${max} more tickets in this competition.` : null });
+    out.push({ competitionId: c.id, slug: c.slug, title: c.title, image: c.image, type: c.type, quantity: q, unitPence: c.pricePence, linePence: q * c.pricePence, maxQuantity: Math.max(0, max), minQuantity: 1, problem: q > max ? `You can have up to ${max} more tickets in this competition.` : null });
   }
   const sum = out.reduce((s, l) => s + l.linePence, 0);
   const promo = promoCode && String(promoCode).toUpperCase() === "GIMME10" ? { code: "GIMME10", discountPence: Math.floor(sum * 0.1) } : null;
@@ -225,13 +228,22 @@ route("GET", "/api/me/tickets", authed((req, res, { user, query }) => {
     const c = byId.get(ts[0].competitionId);
     const toPlay = c.type === "instant" ? ts.filter((t) => !t.played).length : 0;
     const wonPence = ts.filter((t) => t.played && t.prize).reduce((s, t) => s + t.prize.valuePence, 0);
-    return { competition: { id: c.id, slug: c.slug, title: c.title, type: c.type, image: c.image, drawAt: c.drawAt, closesAt: c.closesAt, status: c.status }, orderNumber: ts[0].order, tickets: ts.map((t) => ({ number: t.number, won: t.played && !!t.prize, played: t.played, prizeName: t.played && t.prize ? t.prize.name : null })), toPlay, wonPence, status: toPlay ? "to_play" : c.type === "draw" ? "in_draw" : wonPence ? "won" : "no_win" };
+    return { competition: { id: c.id, slug: c.slug, title: c.title, type: c.type, image: c.image, drawAt: c.drawAt, closesAt: c.closesAt, status: c.status }, orderNumber: ts[0].order, tickets: ts.slice(0, 40).map((t) => ({ number: t.number, won: t.played && !!t.prize, played: t.played, prizeName: t.played && t.prize ? t.prize.name : null })), ticketCount: ts.length, toPlay, wonPence, status: toPlay ? "to_play" : c.type === "draw" ? "in_draw" : wonPence ? "won" : "no_win" };
   });
   const tab = query.get("tab");
   if (tab === "to-play") data = data.filter((g) => g.toPlay);
   if (tab === "won") data = data.filter((g) => g.wonPence);
   if (tab === "past") data = [];
   send(res, 200, { data: data.slice(0, Number(query.get("limit") || 100)) });
+}));
+route("GET", "/api/me/tickets/:number/:competitionId", authed((req, res, { user, query, params }) => {
+  const { number, competitionId } = params;
+  const ts = user.tickets.filter((t) => t.order === number && t.competitionId === competitionId);
+  if (!ts.length) return fail(res, 404, "Not found.");
+  const c = byId.get(competitionId);
+  const page = Math.max(1, Number(query.get("page") || 1));
+  const slice = ts.slice((page - 1) * 500, page * 500);
+  send(res, 200, { competition: { id: c.id, slug: c.slug, title: c.title, type: c.type }, orderNumber: number, data: slice.map((t) => ({ number: t.number, won: t.played && !!t.prize, played: t.played, prizeName: t.played && t.prize ? t.prize.name : null })), total: ts.length, page, perPage: 500, hasMore: page * 500 < ts.length });
 }));
 route("GET", "/api/me/limits", authed((req, res, { user }) => send(res, 200, user.limits)));
 route("POST", "/api/me/limits", authed(async (req, res, { user }) => { const b = await readJson(req); user.limits.weeklyDepositPence = b.weeklyDepositPence ?? null; send(res, 200, user.limits); }));

@@ -40,13 +40,18 @@ against it; the Laravel feature tests must cover the same behaviour.
 
 `CompetitionDetail.prizes` lists the prize *tiers* and how many of each are won. It must never
 reveal which ticket numbers win (Verity holds them until the competition ends).
+`CompetitionDetail.endPrize` is `{ name, valuePence, count }`: `count` winners each win the prize
+(Verity draws that many different tickets; one end prize per person, a repeat win is redrawn).
+`presets` are the ticket quick-pick buttons (smallest first), `popularPreset` the one marked
+"Most popular" (or null), and `minTickets` the fewest tickets one order can hold.
 
 ## Basket and checkout
 
 `POST /api/basket/price` — `{ lines: BasketLine[], promoCode?: string|null }` → `PricedBasket`.
 Works signed out (no wallet figures then). Prices come only from the database. Each line gets a
 `problem` when it cannot be bought as asked (closed, sold out, over the per-person limit with
-`maxQuantity` set to what is still allowed). `problems` holds basket-wide reasons (sales closed,
+`maxQuantity` set to what is still allowed, or under the competition's `minQuantity`, its
+`minTickets`, unless fewer than that are still allowed). `problems` holds basket-wide reasons (sales closed,
 play block). Promo codes take at most 50% off and never make an order free.
 
 `POST /api/checkout` (signed in) —
@@ -98,6 +103,7 @@ which calls `/return` server-side), failed `/payment/failed?order={n}`, cancelle
 | GET | `/api/me` | `Me` |
 | GET | `/api/me/wallet/transactions` | `{ data: WalletTransaction[] }` newest first |
 | GET | `/api/me/tickets?tab=active\|to-play\|won\|past&limit=` | `{ data: TicketGroup[] }`; outcomes hidden until watched |
+| GET | `/api/me/tickets/{order}/{competitionId}?page=` | `TicketPage`: every ticket of one order line, 500 a page (a `TicketGroup` lists only the first 40 plus winners, with `ticketCount`) |
 | GET/POST | `/api/me/limits` | `Limits` / `{ weeklyDepositPence }` → `Limits` (lowering is instant, raising waits 24h) |
 | POST | `/api/me/break` | `{ days }` → `Limits` (instant, no checks in front of it) |
 | POST | `/api/me/self-exclude` | `{ months }` → `Limits` (instant) |

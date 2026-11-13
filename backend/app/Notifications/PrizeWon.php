@@ -24,9 +24,17 @@ class PrizeWon extends Notification
         $c = $this->claim->loadMissing('competition');
         $site = rtrim((string) config('app.frontend_url'), '/');
 
-        return (new MailMessage)->subject('You Won! '.$c->prize_name)
+        $m = (new MailMessage)->subject('You Won! '.$c->prize_name)
             ->greeting('Congratulations, '.$notifiable->first_name.'!')
-            ->line('You’ve won **'.e($c->prize_name).'** in '.e($c->competition->title).'.')
+            ->line('You’ve won **'.e($c->prize_name).'** in '.e($c->competition->title).'.');
+        if ($c->status === 'fulfilled') {
+            // A site-credit end prize: already paid.
+            return $m->line('£'.number_format($c->value_pence / 100, 2).' has been added to your winnings balance. You can play with it or withdraw it.')
+                ->action('See Your Wallet', $site.'/account/wallet')
+                ->salutation('The Gimme Gimme team');
+        }
+
+        return $m
             ->line('We’ll contact you at this email address to arrange your prize. Check your address in your account settings is up to date.')
             ->action('Your Account', $site.'/account/settings')
             ->salutation('The Gimme Gimme team');

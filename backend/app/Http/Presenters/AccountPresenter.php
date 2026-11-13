@@ -15,6 +15,11 @@ use Sprouthub\Verity\Models\Winner;
 /** Me, WalletTransaction, TicketGroup, OrderView, Limits. */
 final class AccountPresenter
 {
+    /** Tickets listed per order line in My Tickets; the rest are paged. */
+    public const TICKET_PREVIEW = 40;
+
+    public const TICKET_PAGE = 500;
+
     public function __construct(private Wallet $wallet, private PlayCheck $check, private CompetitionState $state) {}
 
     public function me(User $u): array
@@ -100,8 +105,17 @@ final class AccountPresenter
         $c = $line->competition;
         $watched = $line->revealed_at !== null;
         $wins = $watched ? $this->winsByTicket($c, $line->tickets ?? []) : [];
-        $tickets = array_map(fn ($n) => ['number' => $n, 'won' => isset($wins[$n]), 'played' => $c->isInstant() && $watched, 'prizeName' => $wins[$n]['name'] ?? null], $line->tickets ?? []);
-        $toPlay = $c->isInstant() && ! $watched ? count($tickets) : 0;
+        $all = $line->tickets ?? [];
+        // A preview, not every ticket (an order can hold thousands): the first ones plus every winner.
+        // The full list is paged: GET /api/me/tickets/{order}/{competition}.
+        $preview = array_slice($all, 0, self::TICKET_PREVIEW);
+        foreach (array_keys($wins) as $n) {
+            if (! in_array($n, $preview, true)) {
+                $preview[] = $n;
+            }
+        }
+        $tickets = array_map(fn ($n) => $this->ticket($c, $n, $wins, $watched), $preview);
+        $toPlay = $c->isInstant() && ! $watched ? count($all) : 0;
         $wonPence = array_sum(array_column($wins, 'value'));
         $status = $this->state->status($c);
         $drawWin = $c->hasDraw() && in_array($status, ['drawn', 'ended'], true)
@@ -115,6 +129,7 @@ final class AccountPresenter
             ],
             'orderNumber' => $line->order->number,
             'tickets' => $tickets,
+            'ticketCount' => count($all),
             'toPlay' => $toPlay,
             'wonPence' => $wonPence,
             'status' => match (true) {
@@ -124,6 +139,32 @@ final class AccountPresenter
                 $c->hasDraw() => 'in_draw',
                 default => 'no_win',
             },
+        ];
+    }
+
+    private function ticket(Competition $c, int $n, array $wins, bool $watched): array
+    {
+        return ['number' => $n, 'won' => isset($wins[$n]), 'played' => $c->isInstant() && $watched, 'prizeName' => $wins[$n]['name'] ?? null];
+    }
+
+    /** One page of an order line's tickets, in number order (TicketPage). */
+    public function ticketPage(OrderLine $line, int $page): array
+    {
+        $c = $line->competition;
+        $all = $line->tickets ?? [];
+        $page = max(1, $page);
+        $slice = array_slice($all, ($page - 1) * self::TICKET_PAGE, self::TICKET_PAGE);
+        $watched = $line->revealed_at !== null;
+        $wins = $watched ? $this->winsByTicket($c, $slice) : [];
+
+        return [
+            'competition' => ['id' => $c->id, 'slug' => $c->slug, 'title' => $c->title, 'type' => $c->type],
+            'orderNumber' => $line->order->number,
+            'data' => array_map(fn ($n) => $this->ticket($c, $n, $wins, $watched), $slice),
+            'total' => count($all),
+            'page' => $page,
+            'perPage' => self::TICKET_PAGE,
+            'hasMore' => $page * self::TICKET_PAGE < count($all),
         ];
     }
 

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Sprouthub\Verity\Engine\VerityException;
 use Sprouthub\Verity\Facades\Verity;
 use Sprouthub\Verity\Models\Entry;
+use Sprouthub\Verity\Models\EntryGroup;
 use Sprouthub\Verity\Models\InstantPrize;
 use Sprouthub\Verity\Models\Winner;
 
@@ -62,14 +63,26 @@ final class Fulfilment
         }
     }
 
-    /** Play every instant-win entry in one entry group and pay what it won. Safe to repeat. */
+    /**
+     * Settle one entry group's instant wins and pay them. Safe to repeat.
+     *
+     * Verity fixed every outcome at publish and links each WINNING ticket to its prize when the
+     * entry is made (instant_ticket_id); a losing ticket has no link and nothing to pay. So only the
+     * winning entries are played through Verity (which records the winner and audits it): a few per
+     * order, instead of every ticket one by one (playGroup), which took ~4 queries a ticket and
+     * seconds for a 3,000-ticket order. Losing entries stay unplayed in Verity; the reveal shows them.
+     */
     public function playAll(string $groupRef): void
     {
-        do {
-            $r = Verity::playGroup($groupRef);
-        } while ($r['played'] > 0 && $r['remaining'] > 0);
-        $entryIds = array_column(array_filter($r['entries'], fn ($e) => $e['won']), 'entry');
-        foreach (Winner::query()->whereIn('entry_id', $entryIds)->where('type', 'instant')->get() as $w) {
+        $group = EntryGroup::query()->where('reference', $groupRef)->first();
+        if (! $group) {
+            return;
+        }
+        $winning = Entry::query()->where('entry_group_id', $group->id)->whereNotNull('instant_ticket_id');
+        foreach ((clone $winning)->whereNull('revealed_at')->orderBy('id')->get() as $entry) {
+            Verity::play($entry);
+        }
+        foreach (Winner::query()->whereIn('entry_id', (clone $winning)->select('id'))->where('type', 'instant')->get() as $w) {
             $this->awardInstantWin($w);
         }
     }
@@ -93,12 +106,36 @@ final class Fulfilment
         }
     }
 
-    /** A drawn (end) prize: always handled by a person. */
+    /**
+     * A drawn (end) prize. One per person: a repeat win isn't paid and goes to a redraw (EndPrizeRules).
+     * A site-credit end prize is paid to winnings once (reference verity-winner:{id}) and recorded as a
+     * fulfilled claim; anything else is a claim handled by a person.
+     */
     public function recordDrawWin(Winner $w): void
     {
-        if (($userId = self::userIdFromOwner($w->owner_ref)) !== null) {
-            $this->claim($w, $userId, 'draw');
+        $rules = app(EndPrizeRules::class);
+        $w->refresh(); // a just-created winner hasn't loaded its database defaults (status)
+        if ($w->status !== 'active') {
+            return;
         }
+        if ($rules->isRepeatWinner($w)) {
+            $rules->enforce($w->competition);
+
+            return;
+        }
+        if (($userId = self::userIdFromOwner($w->owner_ref)) !== null) {
+            $competition = Competition::query()->where('verity_ref', $w->competition->ref)->first();
+            if ($competition?->end_prize_type === 'site_credit' && $w->prize_value_pence > 0 && User::query()->whereKey($userId)->exists()) {
+                DB::transaction(function () use ($w, $userId) {
+                    $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'End prize · '.$w->prize_name, 'verity-winner:'.$w->id);
+                    $this->claim($w, $userId, 'draw', 'fulfilled');
+                });
+            } else {
+                $this->claim($w, $userId, 'draw');
+            }
+        }
+        // A redraw's replacement may free the next repeat win for its own redraw.
+        $rules->enforce($w->competition);
     }
 
     public function flag(Order $order, string $reason): void
@@ -111,7 +148,7 @@ final class Fulfilment
         return preg_match('/^user:(\d+)$/', $ownerRef, $m) ? (int) $m[1] : null;
     }
 
-    private function claim(Winner $w, int $userId, string $kind): void
+    private function claim(Winner $w, int $userId, string $kind, string $status = 'open'): void
     {
         $competition = Competition::query()->where('verity_ref', $w->competition->ref)->first();
         if (! $competition || ! User::query()->whereKey($userId)->exists()) {
@@ -119,7 +156,7 @@ final class Fulfilment
         }
         $claim = PrizeClaim::query()->firstOrCreate(['verity_winner_id' => $w->id], [
             'user_id' => $userId, 'competition_id' => $competition->id, 'prize_name' => $w->prize_name,
-            'value_pence' => (int) $w->prize_value_pence, 'kind' => $kind,
+            'value_pence' => (int) $w->prize_value_pence, 'kind' => $kind, 'status' => $status,
         ]);
         if ($claim->wasRecentlyCreated) {
             DB::afterCommit(function () use ($claim) {

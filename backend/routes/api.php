@@ -35,6 +35,7 @@ Route::middleware('throttle:api')->group(function () {
         Route::get('me', [AccountController::class, 'me']);
         Route::get('me/wallet/transactions', [AccountController::class, 'transactions']);
         Route::get('me/tickets', [AccountController::class, 'tickets']);
+        Route::get('me/tickets/{number}/{competition}', [AccountController::class, 'ticketPage']);
         Route::get('me/limits', [AccountController::class, 'limits']);
         Route::post('me/limits', [AccountController::class, 'setLimits']);
         Route::post('me/break', [AccountController::class, 'takeBreak']);

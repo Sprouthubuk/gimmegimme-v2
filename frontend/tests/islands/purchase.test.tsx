@@ -13,6 +13,26 @@ const qty = () => screen.getByTestId("qty").textContent;
 const total = () => screen.getByTestId("total").textContent;
 
 describe("ticket picker", () => {
+  it("starts on the Most popular button, marks it, and keeps to the competition's minimum", () => {
+    render(<TicketPicker {...base} pricePence={1} presets={[500, 1000, 2000, 3000]} popularPreset={1000} minTickets={100} maxPerPerson={1000000} />);
+    expect(qty()).toBe("1000");
+    expect(total()).toBe("£10.00");
+    expect(screen.getAllByTestId("most-popular")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /Most popular/ }).textContent).toContain("1,000");
+    const input = screen.getByLabelText("Or choose your own amount") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "150" } });
+    expect(total()).toBe("£1.50");
+    fireEvent.change(input, { target: { value: "20" } });
+    expect(total()).toBe("£1.50"); // under the minimum: not taken
+    for (let i = 0; i < 60; i++) fireEvent.click(screen.getByLabelText("One fewer ticket"));
+    expect(total()).toBe("£1.00");
+    expect((screen.getByLabelText("One fewer ticket") as HTMLButtonElement).disabled).toBe(true);
+  });
+  it("when fewer than the minimum are left, the last ones can still be bought together", () => {
+    render(<TicketPicker {...base} pricePence={1} minTickets={100} ticketsLeft={30} />);
+    expect(qty()).toBe("30");
+    expect((screen.getByLabelText("One fewer ticket") as HTMLButtonElement).disabled).toBe(true);
+  });
   it("starts on the second preset and keeps the total in step", () => {
     render(<TicketPicker {...base} />);
     expect(qty()).toBe("10");

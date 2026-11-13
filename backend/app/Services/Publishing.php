@@ -18,6 +18,8 @@ final class Publishing
 
     public const SKINS = ['classic', 'christmas'];
 
+    public const MAX_END_PRIZES = 50;
+
     /** @return list<string> what stops this competition being published */
     public function problems(Competition $c): array
     {
@@ -57,6 +59,20 @@ final class Publishing
         if (! in_array($c->skin ?? 'classic', self::SKINS, true)) {
             $p[] = 'Choose a game look.';
         }
+        if ($c->end_prize_name) {
+            $n = (int) ($c->end_prize_count ?? 1);
+            if ($n < 1 || $n > self::MAX_END_PRIZES) {
+                $p[] = 'The number of end prizes must be between 1 and '.self::MAX_END_PRIZES.'.';
+            } elseif ($n > $c->max_tickets) {
+                $p[] = 'There are more end prizes than tickets.';
+            }
+            if (! array_key_exists($c->end_prize_type ?? 'physical', Competition::END_PRIZE_TYPES)) {
+                $p[] = 'Choose how the end prize is paid.';
+            }
+        }
+        if ((int) ($c->min_tickets ?: 1) < 1 || (int) $c->min_tickets > $c->max_per_person) {
+            $p[] = 'The minimum tickets per order must be at least 1 and no more than the tickets per person.';
+        }
 
         return $p;
     }
@@ -68,7 +84,8 @@ final class Publishing
         }
 
         return DB::transaction(function () use ($c, $admin) {
-            $endPrizes = $c->end_prize_name ? [['name' => $c->end_prize_name, 'value_pence' => (int) $c->end_prize_value_pence]] : [];
+            // N places of the same prize, first place first (Verity draws N different tickets).
+            $endPrizes = array_fill(0, $c->endPrizeCount(), ['name' => $c->end_prize_name, 'value_pence' => (int) $c->end_prize_value_pence, 'meta' => ['type' => $c->end_prize_type ?? 'physical']]);
             $instant = $c->isInstant()
                 ? $c->prizes()->get()->map(fn ($p) => ['name' => $p->name, 'quantity' => (int) $p->quantity, 'value_pence' => (int) $p->value_pence, 'meta' => ['type' => $p->type]])->all()
                 : [];

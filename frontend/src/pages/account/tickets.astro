@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import AccountShell from "../../components/AccountShell.astro";
 import Icon from "../../components/Icon.astro";
 import type { TicketGroup } from "../../lib/types";
-import { formatPence } from "../../lib/money";
+import { formatPence, formatCount } from "../../lib/money";
 import { ukDateTime } from "../../lib/time";
 const { api, me } = Astro.locals;
 const TABS = [["active", "Active"], ["to-play", "To Play"], ["won", "Won"], ["past", "Past"]];
@@ -18,8 +18,8 @@ const tag: Record<string, [string, string]> = { to_play: ["tag-y", "To play"], i
       <div class="stack g12 gg-stagger">
         {groups.map((g) => (
           <div class="card card-p stack g12 gg-card" data-testid="ticket-group">
-            <div class="row g12"><img src={g.competition.image} alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover" /><div style="flex:1;min-width:0"><a href={`/competitions/${g.competition.slug}`} class="d" style="font-size:18px;color:#fff;text-decoration:none">{g.competition.title}</a><div class="hint">{g.tickets.length} tickets · {g.competition.type === "draw" && g.competition.drawAt ? `draw ${ukDateTime(g.competition.drawAt)}` : `closes ${ukDateTime(g.competition.closesAt)}`}</div></div><span class={`tag ${tag[g.status][0]}`}>{g.status === "won" ? `Won ${formatPence(g.wonPence)}` : g.status === "to_play" ? `${g.toPlay} to play` : tag[g.status][1]}</span></div>
-            <div class="row wrapx g8">{g.tickets.slice(0, 40).map((t) => <span class={`tn ${t.won ? "w" : ""}`} title={t.prizeName ?? undefined}>#{t.number}</span>)}{g.tickets.length > 40 && <span class="hint">+{g.tickets.length - 40} more</span>}</div>
+            <div class="row g12"><img src={g.competition.image} alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover" /><div style="flex:1;min-width:0"><a href={`/competitions/${g.competition.slug}`} class="d" style="font-size:18px;color:#fff;text-decoration:none">{g.competition.title}</a><div class="hint">{formatCount(g.ticketCount ?? g.tickets.length)} {(g.ticketCount ?? g.tickets.length) === 1 ? "ticket" : "tickets"} · {g.competition.type === "draw" && g.competition.drawAt ? `draw ${ukDateTime(g.competition.drawAt)}` : `closes ${ukDateTime(g.competition.closesAt)}`}</div></div><span class={`tag ${tag[g.status][0]}`}>{g.status === "won" ? `Won ${formatPence(g.wonPence)}` : g.status === "to_play" ? `${g.toPlay} to play` : tag[g.status][1]}</span></div>
+            <div class="row wrapx g8">{g.tickets.map((t) => <span class={`tn ${t.won ? "w" : ""}`} title={t.prizeName ?? undefined}>#{t.number}</span>)}{(g.ticketCount ?? 0) > g.tickets.length && g.orderNumber && <a class="tap" href={`/account/tickets/${encodeURIComponent(g.orderNumber)}/${encodeURIComponent(g.competition.id)}`} data-testid="all-tickets">See all {formatCount(g.ticketCount)} tickets</a>}</div>
             {g.toPlay > 0 && g.orderNumber && <a class="btn btn-y gg-cta" href={`/order/${g.orderNumber}`}><Icon name="play" size={16} /> Play {g.toPlay} {g.toPlay === 1 ? "Game" : "Games"}</a>}
           </div>
         ))}
