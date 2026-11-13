@@ -9,6 +9,9 @@ SITE_ROOT="${FORGE_SITE_PATH:-$(cd "$FORGE_RELEASE_DIRECTORY/../.." && pwd)}"
 
 # --- Shared files: the environment and Laravel's storage survive every release ---
 ln -sfn "$SITE_ROOT/.env" backend/.env
+# Forge's Composer credentials (Site > Settings > Composer) live in <site>/auth.json; Composer
+# only reads auth.json next to composer.json, which is in backend/.
+if [ -f "$SITE_ROOT/auth.json" ]; then ln -sfn "$SITE_ROOT/auth.json" backend/auth.json; fi
 SHARED_STORAGE="$SITE_ROOT/backend-storage"
 if [ ! -d "$SHARED_STORAGE" ]; then
   cp -r backend/storage "$SHARED_STORAGE"
