@@ -135,6 +135,7 @@ export function createSpinWheel(ctx: ShellContext): GameScene {
     const turns = fast || reducedMotion ? 1 : 3 + Math.round(strength * 1.5);
     const end = -(target * step) - inside - turns * Math.PI * 2;
     await gsap.to(wheel, { rotation: end, duration: fast ? 0.7 : reducedMotion ? 1.2 : 2.3 + strength * 0.4, ease: "power4.out" });
+    if (holder.destroyed) return;
     // Self-check: the segment under the pointer must match the server's result.
     const k = SEGMENTS;
     const under = ((Math.round(-wheel.rotation / step) % k) + k) % k;
@@ -150,6 +151,7 @@ export function createSpinWheel(ctx: ShellContext): GameScene {
     plate.position.set(0, -34);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
   };
 
   return {

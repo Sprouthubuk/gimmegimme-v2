@@ -53,6 +53,7 @@ export function createBalloonPop(ctx: ShellContext): GameScene {
     const at = stage.root.toLocal(holder.toGlobal({ x: b.s.x, y: b.s.y - 14 }));
     if (!reducedMotion) particles.burst({ x: at.x, y: at.y, count: fast ? 14 : 34, texture: sparkle, tints: [b.s.tint as number, 0xffffff], speed: [3, 9], size: [5, 12], life: [20, 45], gravity: 0.15, flutter: true });
     await gsap.to(b.s.scale, { x: b.s.scale.x * 1.25, y: b.s.scale.y * 1.25, duration: fast ? 0.05 : 0.09, ease: "power2.out" });
+    if (holder.destroyed) return;
     b.s.visible = false;
     b.halo.visible = false;
     for (const o of balloons) if (o !== b) gsap.to([o.s, o.halo], { alpha: 0.18, duration: fast ? 0.15 : 0.35 });
@@ -62,6 +63,7 @@ export function createBalloonPop(ctx: ShellContext): GameScene {
     const show = showPlate(plate, reducedMotion, fast);
     const move = gsap.to(plate, { x: 0, y: -10, duration: fast ? 0.2 : 0.5, ease: "power3.out" });
     await Promise.all([show, move]);
+    if (holder.destroyed) return;
   };
 
   return {

@@ -35,6 +35,7 @@ export function createClawMachine(ctx: ShellContext): GameScene {
   let onRevealed: (() => void) | null = null;
   let t0 = 0;
   let idle = true;
+  const grip = { v: 1 };
 
   const fit = () => fitPlayfield(stage, holder, H, W);
   stage.onResize(fit);
@@ -114,14 +115,22 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     const sp = fast || reducedMotion ? 0.35 : 1;
     const onUpdate = drawCable;
     await gsap.to(c, { x: target.x, duration: 0.3 * sp, ease: "power1.inOut", onUpdate });
+    if (holder.destroyed) return;
     await gsap.to(c, { y: target.y - 28, duration: 0.7 * sp, ease: "power2.in", onUpdate });
-    await gsap.to({ v: 1 }, { v: 0, duration: 0.25 * sp, onUpdate() { setOpen(this.targets()[0].v); } });
+    if (holder.destroyed) return;
+    grip.v = 1;
+    await gsap.to(grip, { v: 0, duration: 0.25 * sp, onUpdate: () => setOpen(grip.v) });
+    if (holder.destroyed) return;
     // Lift with the capsule.
     const dy = target.y - c.y;
     await gsap.to(c, { y: TOP, duration: 0.7 * sp, ease: "power2.out", onUpdate: () => { target.y = c.y + dy; target.x = c.x; target.rotation *= 0.9; drawCable(); } });
+    if (holder.destroyed) return;
     await gsap.to(c, { x: CHUTE_X, duration: 0.6 * sp, ease: "power1.inOut", onUpdate: () => { target.x = c.x; drawCable(); } });
-    await gsap.to({ v: 0 }, { v: 1, duration: 0.2 * sp, onUpdate() { setOpen(this.targets()[0].v); } });
+    if (holder.destroyed) return;
+    await gsap.to(grip, { v: 1, duration: 0.2 * sp, onUpdate: () => setOpen(grip.v) });
+    if (holder.destroyed) return;
     await gsap.to(target, { y: PILE_Y - 10, duration: 0.35 * sp, ease: "bounce.out" });
+    if (holder.destroyed) return;
     // The capsule opens on the result.
     audio.play("reveal");
     const at = stage.root.toLocal(cabinet!.toGlobal({ x: target.x, y: target.y }));
@@ -132,6 +141,7 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     plate.position.set(0, -20);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
     busy = false;
   };
 
@@ -167,6 +177,7 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     },
 
     async dismiss(_won, fast) {
+      gsap.killTweensOf(grip);
       const all = [cabinet, plate].filter(Boolean) as Container[];
       await gsap.to(all, { alpha: 0, duration: fast ? 0.15 : 0.3 });
       for (const o of [claw, ...capsules].filter(Boolean)) gsap.killTweensOf(o);
@@ -178,6 +189,7 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     },
 
     destroy() {
+      gsap.killTweensOf(grip);
       stage.app.ticker.remove(sway);
       holder.destroy({ children: true });
       glow.destroy(true);

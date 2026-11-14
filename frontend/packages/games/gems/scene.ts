@@ -56,8 +56,10 @@ export function createGems(ctx: ShellContext): GameScene {
     if (!reducedMotion) {
       // Lift to the centre and turn (a flip on its vertical axis).
       await gsap.to(g.s, { x: 0, y: -20, duration: fast ? 0.18 : 0.42, ease: "power3.out" });
+      if (holder.destroyed) return;
       g.halo.position.set(0, -20);
       await gsap.to(g.s.scale, { x: -0.7, y: 0.7, duration: fast ? 0.12 : 0.32, ease: "sine.inOut", yoyo: true, repeat: 1 });
+      if (holder.destroyed) return;
     }
     audio.play("reveal");
     const at = stage.root.toLocal(holder.toGlobal({ x: g.s.x, y: g.s.y }));
@@ -68,6 +70,7 @@ export function createGems(ctx: ShellContext): GameScene {
     plate.position.set(g.s.x, g.s.y);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
   };
 
   return {

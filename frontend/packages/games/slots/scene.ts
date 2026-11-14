@@ -186,6 +186,7 @@ export function createSlots(ctx: ShellContext): GameScene {
       return gsap.to(inner, { y: end, duration: d, ease: fast || reducedMotion ? "power2.out" : "back.out(0.9)", onComplete: () => audio.play("button") });
     });
     await Promise.all(stops);
+    if (holder.destroyed) return;
     // Self-check: the payline shows exactly the line chosen for this result.
     const shown = reels.map((c) => {
       const inner = c.getChildByLabel("strip") as Container;
@@ -205,6 +206,7 @@ export function createSlots(ctx: ShellContext): GameScene {
     plate.position.set(0, 0);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
   };
 
   return {

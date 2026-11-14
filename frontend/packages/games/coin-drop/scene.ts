@@ -110,6 +110,7 @@ export function createCoinDrop(ctx: ShellContext): GameScene {
     const c = coin;
     const sp = fast || reducedMotion ? 0.3 : 1;
     await gsap.to(c, { x: 0, y: TOP - 12, duration: 0.25 * sp, ease: "power2.in" });
+    if (holder.destroyed) return;
     let k = 0;
     for (let r = 0; r < ROWS; r++) {
       const peg = pegs[r][k];
@@ -124,6 +125,7 @@ export function createCoinDrop(ctx: ShellContext): GameScene {
         .to(c, { y: ny, duration: 0.14 * sp, ease: "power2.in" }, 0.08 * sp)
         .to(c, { rotation: c.rotation + (moves[r] ? 1 : -1), duration: 0.22 * sp }, 0);
       await tl;
+      if (holder.destroyed) return;
     }
     // Landed.
     audio.play("reveal");
@@ -132,10 +134,12 @@ export function createCoinDrop(ctx: ShellContext): GameScene {
     const at = stage.root.toLocal(board!.toGlobal({ x: c.x, y: c.y }));
     if (!reducedMotion) particles.burst({ x: at.x, y: at.y, count: fast ? 10 : 26, texture: sparkle, tints: [isWinBin(bin) ? hex(theme.gold) : hex(theme.neonB), 0xffffff], speed: [2, 6], size: [4, 10], life: [20, 40], gravity: 0.1, additive: true });
     await gsap.to(board!, { alpha: 0.35, duration: fast ? 0.1 : 0.35, delay: fast ? 0 : 0.25 });
+    if (holder.destroyed) return;
     plate = prizePlate(theme, ticket, 250, 118);
     plate.position.set(0, -30);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
     busy = false;
   };
 

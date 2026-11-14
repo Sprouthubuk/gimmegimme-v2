@@ -31,6 +31,7 @@ export function createHookADuck(ctx: ShellContext): GameScene {
   let onRevealed: (() => void) | null = null;
   let t0 = 0;
   let flow = 0;
+  const p = { y: 0 };
 
   const fit = () => fitPlayfield(stage, holder, H, W);
   stage.onResize(fit);
@@ -77,11 +78,13 @@ export function createHookADuck(ctx: ShellContext): GameScene {
     (d.s.parent ?? pond).addChild(line, hk);
     line.zIndex = hk.zIndex = 10;
     const top = -H / 2 + 10;
-    const p = { y: top };
+    p.y = top;
     const draw = () => { line.clear().moveTo(d.s.x, top).lineTo(d.s.x, p.y).stroke({ width: 2, color: 0xe9e4f2, alpha: 0.8 }); hk.position.set(d.s.x, p.y + 4); };
     const sp = fast || reducedMotion ? 0.35 : 1;
     await gsap.to(p, { y: d.s.y - 40, duration: 0.35 * sp, ease: "power2.in", onUpdate: draw });
+    if (holder.destroyed) return;
     await gsap.to(p, { y: -H / 2 + 60, duration: 0.5 * sp, ease: "power2.out", onUpdate: () => { draw(); d.s.y = p.y + 40; } });
+    if (holder.destroyed) return;
     audio.play("reveal");
     const at = stage.root.toLocal(pond.toGlobal({ x: d.s.x, y: d.s.y }));
     if (!reducedMotion) particles.burst({ x: at.x, y: at.y + 20, count: fast ? 10 : 26, texture: sparkle, tints: [hex(theme.neonB), 0xffffff], speed: [2, 6], size: [4, 10], life: [20, 40], gravity: 0.18 });
@@ -90,6 +93,7 @@ export function createHookADuck(ctx: ShellContext): GameScene {
     plate.position.set(0, -10);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
   };
 
   return {
@@ -153,6 +157,7 @@ export function createHookADuck(ctx: ShellContext): GameScene {
     },
 
     async dismiss(_won, fast) {
+      gsap.killTweensOf(p);
       const all = [pond, plate].filter(Boolean) as Container[];
       await gsap.to(all, { alpha: 0, duration: fast ? 0.15 : 0.3 });
       for (const o of all) { gsap.killTweensOf(o); o.destroy({ children: true }); }
@@ -162,6 +167,7 @@ export function createHookADuck(ctx: ShellContext): GameScene {
     },
 
     destroy() {
+      gsap.killTweensOf(p);
       stage.app.ticker.remove(swim);
       holder.destroy({ children: true });
       glow.destroy(true);

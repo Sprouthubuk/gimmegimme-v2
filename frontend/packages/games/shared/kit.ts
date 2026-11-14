@@ -217,3 +217,15 @@ export function glowSprite(tex: Texture, color: string, w: number, h = w, alpha 
 
 /** Pick an index in [0, n) for the look only (which balloon to auto-pop, a wheel's landing offset). */
 export const lookPick = (n: number) => Math.floor(Math.random() * n);
+
+/**
+ * Stop every tween on a display tree (objects, their scale and pivot) so nothing animates an object after it
+ * is destroyed, e.g. when the game is closed mid-animation.
+ */
+export function killTweensIn(o: Container): void {
+  if (o.destroyed) return;
+  gsap.killTweensOf(o);
+  gsap.killTweensOf(o.scale);
+  gsap.killTweensOf(o.pivot);
+  for (const c of o.children) killTweensIn(c);
+}

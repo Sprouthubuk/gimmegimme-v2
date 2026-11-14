@@ -3,6 +3,7 @@ import { Graphics, Sprite, type Texture } from "pixi.js";
 import "./shell.css";
 import { GameAudio } from "../shared/audio";
 import { buzz } from "../shared/haptics";
+import { killTweensIn } from "../shared/kit";
 import { Particles } from "../shared/particles";
 import { raysTexture, sparkleTexture } from "../shared/textures";
 import { hex, resolveTheme, type Theme } from "../shared/theme";
@@ -281,18 +282,21 @@ export async function runShell(host: HTMLElement, config: GameConfig, makeScene:
       let revealedByPlayer = false;
       const revealed = new Promise<void>((r) => { wake = r; });
       await scene.present(t, s.index, total, () => { revealedByPlayer = true; nudge(); });
+      if (!alive) return;
       hint.hidden = fast || skipping;
       if (!fast && !skipping && !revealedByPlayer) await revealed;
       if (!alive) return;
       if (skipping) break;
       hint.hidden = true;
       if (!revealedByPlayer || session.snapshot().revealingAll || tapReveal) await scene.revealNow(session.snapshot().revealingAll);
+      if (!alive) return;
       const r = session.resolveCurrent();
       if (!r) break;
       const fastNow = session.snapshot().revealingAll;
       if (r.result === "win") {
         say(`${theme.labels.ticket} ${r.ticketNumber}: ${theme.labels.youWon} ${r.prize?.label ?? ""}`);
         await scene.celebrate(r, fastNow);
+        if (!alive) return;
         if (!fastNow) await showWin(r);
         else {
           audio.play("win-small");
@@ -321,6 +325,7 @@ export async function runShell(host: HTMLElement, config: GameConfig, makeScene:
       unsubscribe();
       gsap.killTweensOf([counter, dim, raySprite, winLayer.children, sumLayer.children]);
       stage.app.ticker.remove(spin);
+      killTweensIn(stage.app.stage);
       scene.destroy();
       particles.destroy();
       audio.destroy();

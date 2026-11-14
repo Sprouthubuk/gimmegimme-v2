@@ -95,6 +95,7 @@ export function createBingoCard(ctx: ShellContext): GameScene {
       else {
         b.position.set(W / 2 + 30, BALL_Y);
         await gsap.to(b, { x: slot, rotation: -4, duration: 0.45, ease: "power2.out" });
+        if (holder.destroyed) return;
         b.rotation = 0;
       }
       const c = board.numbers.indexOf(n);
@@ -109,9 +110,11 @@ export function createBingoCard(ctx: ShellContext): GameScene {
           dab.pivot.set(cell.x, cell.y);
           dab.position.set(cell.x, cell.y);
           await gsap.to(dab.scale, { x: 1, y: 1, duration: 0.22, ease: "back.out(2)" });
+          if (holder.destroyed) return;
         }
       }
       if (!quick) await gsap.to({}, { duration: 0.15 });
+      if (holder.destroyed) return;
     }
     done = true;
     audio.play("reveal");
@@ -126,15 +129,18 @@ export function createBingoCard(ctx: ShellContext): GameScene {
       }
       if (!quick) {
         await gsap.fromTo(board.line.map((c) => cells[c].box), { alpha: 0.3 }, { alpha: 1, duration: 0.15, repeat: 3, yoyo: true });
+        if (holder.destroyed) return;
         const at = stage.root.toLocal(card.toGlobal({ x: (a.x + z.x) / 2, y: (a.y + z.y) / 2 }));
         particles.burst({ x: at.x, y: at.y, count: 26, texture: sparkle, tints: [hex(theme.gold), 0xffffff], speed: [2, 7], size: [5, 11], life: [25, 50], additive: true });
       }
     }
     await gsap.to(card, { alpha: 0.32, duration: fast ? 0.1 : 0.35, delay: quick ? 0 : 0.35 });
+    if (holder.destroyed) return;
     plate = prizePlate(theme, ticket, 250, 118);
     plate.position.set(0, 20);
     holder.addChild(plate);
     await showPlate(plate, reducedMotion, fast);
+    if (holder.destroyed) return;
     busy = false;
   };
 
