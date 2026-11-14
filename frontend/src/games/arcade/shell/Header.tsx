@@ -1,5 +1,9 @@
 import type { RevealTicket } from "../contract";
 import { formatBalance, formatTicketNumber } from "../money";
+import logoAsset from "./brand/logo.webp";
+
+// Astro imports an image as { src, width, height }; a plain Vite build gives the URL string.
+const logo = typeof (logoAsset as unknown) === "string" ? (logoAsset as unknown as string) : (logoAsset as unknown as { src: string }).src;
 
 interface HeaderProps {
   title?: string;
@@ -18,6 +22,7 @@ export function Header({ title, counter, balancePence, onClose, closeLabel }: He
         </svg>
       </button>
       <div className="rg-header-mid">
+        <img className="rg-brand-logo" src={logo} alt="Gimme Gimme Prizes" width={60} height={40} />
         {title && <div className="rg-comp-title">{title}</div>}
         <h2 className="rg-counter">{counter}</h2>
       </div>

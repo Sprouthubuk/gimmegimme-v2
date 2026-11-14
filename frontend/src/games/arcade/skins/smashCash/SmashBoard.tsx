@@ -6,6 +6,8 @@ import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { crackerColours, initState, makeReducer, type Colour } from "../christmas/crackerState";
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
+import { Scene3D } from "../../three/Scene3D";
+import { buildSmashScene, type SmashState } from "./smash3d";
 import "../shared/themed.css";
 import "./smash.css";
 
@@ -181,7 +183,7 @@ export function SmashBoard({ tickets, seed, reducedMotion, onProgress, onReveal 
   const left = n - state.pulled;
   const latest = state.latest;
 
-  return (
+  const flat = (
     <>
       <div className="rg-smash">
         <SharedDefs />
@@ -243,6 +245,74 @@ export function SmashBoard({ tickets, seed, reducedMotion, onProgress, onReveal 
           })}
         </div>
 
+        <div className="rg-smash-latest" aria-live="polite">
+          {!latest ? (
+            <span className="rg-smash-latest-empty">Each jar holds a ticket's result</span>
+          ) : latest.ticket.prize ? (
+            <div className="rg-smash-latest-win">
+              <Coin tone="yellow" label={prizeShortLabel(latest.ticket.prize)} />
+              <div>
+                <strong>{isCredited(latest.ticket.prize) ? `+${formatPence(latest.ticket.prize.valuePence)}` : latest.ticket.prize.name}</strong>
+                <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
+              </div>
+            </div>
+          ) : (
+            <div className="rg-smash-latest-none">
+              <strong>No win</strong>
+              <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
+            </div>
+          )}
+        </div>
+
+        <div className="rg-smash-panel">
+          <div className="rg-smash-stats">
+            <div>
+              <strong>{state.pulled.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} smashed
+            </div>
+            <div className="rg-smash-tray">
+              {wins.length === 0 ? (
+                <span className="rg-smash-tray-empty">Prizes you find land here</span>
+              ) : (
+                <>
+                  {wins.slice(-3).map((t) => (
+                    <Coin key={t.ticketNumber} tone="yellow" label={prizeShortLabel(t.prize!)} />
+                  ))}
+                  <span className="rg-smash-total">
+                    {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <button type="button" className="rg-smash-all" onClick={handleSmashAll} disabled={done || smashAll}>
+            SMASH ALL
+          </button>
+        </div>
+      </div>
+    </>
+  );
+  const state3d: SmashState = {
+    slots: state.slots,
+    snaps: state.snaps,
+    colours,
+    labelFor: (snap) => (snap.ticket.prize ? prizeShortLabel(snap.ticket.prize) : null),
+    smash: (slot) => !smashAll && smashSlot(slot),
+    done,
+  };
+
+  return (
+    <>
+      <Scene3D
+        state={state3d}
+        setup={(ctx) => buildSmashScene(ctx)}
+        seed={seed}
+        reducedMotion={reducedMotion}
+        aspect={0.82}
+        fallback={flat}
+        label="Smash My Cash: glass jars of cash"
+      >
+      </Scene3D>
+      <div className="rg-smash rg3-smash-below">
         <div className="rg-smash-latest" aria-live="polite">
           {!latest ? (
             <span className="rg-smash-latest-empty">Each jar holds a ticket's result</span>

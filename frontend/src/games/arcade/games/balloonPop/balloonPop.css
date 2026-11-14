@@ -204,3 +204,6 @@
 @media (max-height: 740px) {
   .rg-balloon-sky { height: 280px; }
 }
+/* Under the 3D sky: only the panel, without the 2D cabinet. */
+.rg-balloon-machine.rg3-below { margin-top: 12px; filter: none; }
+.rg-balloon-machine.rg3-below .rg-balloon-panel { border-radius: 22px; }

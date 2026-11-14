@@ -5,6 +5,8 @@ import { balloonLooks, type BalloonColour, type BalloonLook } from "../generator
 import { formatPence, formatTicketNumber, isCredited, prizeShortLabel } from "../../money";
 import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
+import { Scene3D } from "../../three/Scene3D";
+import { buildBalloonScene, type BalloonState } from "../../three/balloonScene";
 import "./balloonPop.css";
 
 /** Where each balloon in the air floats, as % across the sky. Nine lanes, none sharing a column. */
@@ -176,6 +178,20 @@ export function BalloonPopBoard({ tickets, seed, reducedMotion, onProgress, onRe
     }, flight + (reducedMotion ? 800 : RESPAWN_MS));
   };
 
+  /** The same pop for the 3D board, which has no DOM balloon to measure. */
+  const popLane3D = (lane: number) => {
+    if (busy.current.has(lane) || popAll) return;
+    busy.current.add(lane);
+    const flight = reducedMotion ? 0 : DART_MS;
+    dispatch({ type: "hit", lane, x: 50, y: 50, dart: null });
+    if (!reducedMotion) navigator.vibrate?.(10);
+    later(() => dispatch({ type: "burst", lane }), flight);
+    later(() => {
+      busy.current.delete(lane);
+      dispatch({ type: "respawn", lane });
+    }, flight + (reducedMotion ? 800 : RESPAWN_MS + 500));
+  };
+
   const handlePopAll = () => {
     if (popAll || done) return;
     setPopAll(true);
@@ -185,7 +201,7 @@ export function BalloonPopBoard({ tickets, seed, reducedMotion, onProgress, onRe
     }
     // Burst what's in the air one after another, then show the rest at once.
     const inAir = state.lanes.map((l, i) => (l.serial !== null && !l.hit ? i : -1)).filter((i) => i >= 0);
-    inAir.forEach((lane, k) => later(() => popLane(lane), k * 70));
+    inAir.forEach((lane, k) => later(() => (skyRef.current ? popLane(lane) : popLane3D(lane)), k * 70));
     later(() => dispatch({ type: "rest" }), inAir.length * 70 + DART_MS + 250);
   };
 
@@ -202,7 +218,7 @@ export function BalloonPopBoard({ tickets, seed, reducedMotion, onProgress, onRe
   const otherPrizes = wins.filter((t) => !isCredited(t.prize!)).length;
   const left = n - state.popped;
 
-  return (
+  const flat = (
     <>
       <div className="rg-balloon-machine">
         <div className="rg-balloon-top">
@@ -288,6 +304,53 @@ export function BalloonPopBoard({ tickets, seed, reducedMotion, onProgress, onRe
           ))}
         </div>
 
+        <div className="rg-balloon-panel">
+          <div className="rg-balloon-stats" aria-live="polite">
+            <div>
+              <strong>{state.popped.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} popped
+            </div>
+            <div className="rg-balloon-tray">
+              {wins.length === 0 ? (
+                <span className="rg-balloon-tray-empty">Prizes you find land here</span>
+              ) : (
+                <>
+                  {wins.slice(-4).map((t) => (
+                    <Coin key={t.ticketNumber} label={prizeShortLabel(t.prize!)} />
+                  ))}
+                  <span className="rg-balloon-total">
+                    {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <button type="button" className="rg-balloon-all" onClick={handlePopAll} disabled={done || popAll}>
+            POP ALL
+          </button>
+        </div>
+      </div>
+    </>
+  );
+  const state3d: BalloonState = {
+    lanes: state.lanes,
+    looks,
+    results: state.fx.map((f) => ({ lane: f.lane, order: f.order, label: f.ticket.prize ? prizeShortLabel(f.ticket.prize) : null })),
+    pop: popLane3D,
+    laneCount: LANES,
+  };
+
+  return (
+    <>
+      <Scene3D
+        state={state3d}
+        setup={(ctx) => buildBalloonScene(ctx)}
+        seed={seed}
+        reducedMotion={reducedMotion}
+        aspect={1.1}
+        fallback={flat}
+        label="Balloon pop"
+      />
+      <div className="rg-balloon-machine rg3-below">
         <div className="rg-balloon-panel">
           <div className="rg-balloon-stats" aria-live="polite">
             <div>
