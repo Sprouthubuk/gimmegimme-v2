@@ -4,6 +4,10 @@ import { generateSlots, type SlotSymbol } from "../generators";
 import { Mascot } from "../../shell/Mascot";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { useSlotsSpin } from "./useSlotsSpin";
+import { Scene3D } from "../../three/Scene3D";
+import { buildSlotsScene, type SlotsState } from "../../three/slotsScene";
+import { classicSlots3D } from "../../three/classicSkins";
+import { svgElementToImage } from "../../three/svgImage";
 import "./slots.css";
 
 const NAMES: Record<SlotSymbol, string> = { coin: "£", seven: "7", bar: "BAR", star: "star", diamond: "gem", smile: "smiley" };
@@ -62,7 +66,7 @@ export function SlotsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
     else prompt = <GamePrompt title={stopped === 2 ? "Last reel…" : "Spinning…"} tone="pink" />;
   } else if (phase === "landed") prompt = <GamePrompt title={layout.win ? "Three in a row!" : "No win"} tone={layout.win ? "pink" : "ink"} />;
 
-  return (
+  const flat = (
     <>
       <div className={`rg-slots is-${phase} ${layout.win && phase === "landed" ? "is-win" : ""}`}>
         <div className="rg-slots-top">
@@ -108,9 +112,35 @@ export function SlotsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
           </div>}
         </div>
       </div>
+    </>
+  );
+  const state: SlotsState = { phase, stopped, win: layout.win, pull: spin };
+
+  return (
+    <>
+      <Scene3D
+        state={state}
+        setup={(ctx) => buildSlotsScene(ctx, classicSlots3D(slotImage), layout)}
+        seed={seed}
+        reducedMotion={reducedMotion}
+        aspect={1.2}
+        fallback={flat}
+        label="Slot machine"
+      />
+      {layout.paytable.length > 0 && (
+        <div className="rg3-paytable">
+          {layout.paytable.map((p) => (
+            <span key={p.symbol} className={`rg3-pay ${phase === "landed" && layout.win && p.symbol === payline[0] ? "is-hit" : ""}`}>
+              <b>3×</b>
+              <SlotIcon symbol={p.symbol} />
+              <span>{p.label}</span>
+            </span>
+          ))}
+        </div>
+      )}
       {phase === "ready" ? (
         <div className="rg-slots-controls">
-          <button type="button" className="rg-btn rg-btn-yellow" onClick={spin}>
+          <button type="button" className="rg3-btn is-yellow rg3-spin" onClick={spin}>
             SPIN
           </button>
           <p className="rg-note">{RESULT_SET_NOTE}</p>
@@ -121,3 +151,7 @@ export function SlotsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
     </>
   );
 }
+
+const SLOT_CSS = ".rg-slot-glyph{font:900 30px Arial Black,Arial,sans-serif;fill:#141414}.rg-slot-bar{font:900 15px Arial Black,Arial,sans-serif;fill:#ffe11a}";
+/** The board's own symbol, as a picture for the 3D drums. */
+const slotImage = (symbol: SlotSymbol) => svgElementToImage(<SlotIcon symbol={symbol} />, { css: SLOT_CSS });

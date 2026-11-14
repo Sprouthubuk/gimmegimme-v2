@@ -3,6 +3,10 @@ import type { BoardProps } from "../types";
 import { GEM_PICKS, generateGems, type GemKind } from "../generators";
 import { useGemPicks } from "./useGemPicks";
 import { GamePrompt } from "../../shell/GamePrompt";
+import { Scene3D } from "../../three/Scene3D";
+import { buildPickScene, type PickState } from "../../three/pickScene";
+import { classicGems3D } from "../../three/classicSkins";
+import { svgElementToImage } from "../../three/svgImage";
 import "./gems.css";
 
 const GEM_FILL: Record<Exclude<GemKind, "dud">, [string, string]> = {
@@ -51,7 +55,7 @@ export function GemsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Boa
   else if (pair) prompt = <GamePrompt title={`Two ${GEM_NAME[pair]}s!`} tone="pink">{dots}</GamePrompt>;
   else prompt = <GamePrompt title="Keep picking…">{dots}</GamePrompt>;
 
-  return (
+  const flat = (
     <>
       {layout.paytable.length > 0 && <div className="rg-gem-paytable">
         {layout.paytable.map((p) => (
@@ -82,7 +86,36 @@ export function GemsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Boa
           );
         })}
       </div>
+    </>
+  );
+  const state: PickState = { kinds: Array.from({ length: 16 }, (_, i) => kindAt(i)), done, winGem: layout.winGem, open };
+
+  return (
+    <>
+      <Scene3D
+        state={state}
+        setup={(ctx) => buildPickScene(ctx, classicGems3D(gemImage))}
+        seed={seed}
+        reducedMotion={reducedMotion}
+        aspect={1.05}
+        fallback={flat}
+        label="Gems board"
+      />
+      {layout.paytable.length > 0 && (
+        <div className="rg3-paytable">
+          {layout.paytable.map((p) => (
+            <span key={p.gem} className={`rg3-pay ${done && p.gem === layout.winGem ? "is-hit" : ""}`}>
+              <Gem kind={p.gem} className="rg-slot-icon" />
+              <b>×3</b>
+              <span>{p.label}</span>
+            </span>
+          ))}
+        </div>
+      )}
       {prompt}
     </>
   );
 }
+
+/** The board's own gem, as a picture for the 3D board. */
+const gemImage = (kind: GemKind) => svgElementToImage(<Gem kind={kind} />);

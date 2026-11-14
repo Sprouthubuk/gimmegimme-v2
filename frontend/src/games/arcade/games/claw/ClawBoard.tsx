@@ -5,6 +5,9 @@ import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { CHUTE_X, useClaw } from "./useClaw";
 import { Splash } from "../../shell/Splash";
+import { Scene3D } from "../../three/Scene3D";
+import { buildClawScene, type ClawState } from "../../three/clawScene";
+import { CLASSIC_CLAW_3D } from "../../three/classicSkins";
 import "./claw.css";
 
 type Tone = "pink" | "cyan" | "yellow";
@@ -39,7 +42,7 @@ export function ClawBoard({ ticket, reducedMotion, onReveal }: BoardProps) {
     return () => window.clearTimeout(t);
   }, [phase, reducedMotion]);
 
-  return (
+  const flat = (
     <>
       <div className={`rg-claw-machine is-${phase}`}>
         <div className="rg-claw-top">
@@ -128,6 +131,32 @@ export function ClawBoard({ ticket, reducedMotion, onReveal }: BoardProps) {
             GRAB
           </button>
         </div>
+      </div>
+    </>
+  );
+  const state: ClawState = { x, phase, target, swing, cracked, label, steer: (pct: number) => move(pct - x) };
+
+  return (
+    <>
+      <Scene3D
+        state={state}
+        setup={(ctx) => buildClawScene(ctx, CLASSIC_CLAW_3D, PILE)}
+        seed={`claw:${ticket.ticketNumber}`}
+        reducedMotion={reducedMotion}
+        aspect={1.18}
+        fallback={flat}
+        label="Claw machine"
+      />
+      <div className="rg3-controls">
+        <button type="button" className="rg3-btn is-cyan rg3-arrow" aria-label="Move claw left" disabled={phase !== "aim"} onPointerDown={() => startHold(-1)} onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(-8)}>
+          ◀
+        </button>
+        <button type="button" className="rg3-btn is-yellow rg3-grab" onClick={grab} disabled={phase !== "aim"}>
+          GRAB
+        </button>
+        <button type="button" className="rg3-btn is-cyan rg3-arrow" aria-label="Move claw right" disabled={phase !== "aim"} onPointerDown={() => startHold(1)} onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(8)}>
+          ▶
+        </button>
       </div>
       {phase === "aim" ? (
         <GamePrompt title="Move the claw, then press GRAB" sub={RESULT_SET_NOTE} />
