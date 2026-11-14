@@ -18,7 +18,8 @@ export default defineConfig({
     launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox"] },
   },
   webServer: process.env.E2E_BASE_URL ? undefined : {
-    command: `GG_NO_DEV_TOOLBAR=1 npx astro dev --host 127.0.0.1 --port ${PORT}`,
+    // --ignore-lock keeps it in the foreground (Astro 7 backgrounds a dev server it thinks an AI agent started).
+    command: `GG_NO_DEV_TOOLBAR=1 npx astro dev --host 127.0.0.1 --port ${PORT} --ignore-lock`,
     url: `${baseURL}/dev/reveal-games`,
     reuseExistingServer: true,
     timeout: 120_000,

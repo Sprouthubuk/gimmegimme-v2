@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
@@ -14,10 +18,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements FilamentUser, HasName, MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasName, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, MustVerifyEmailTrait, Notifiable;
+
+    // Two-step sign-in for the admin panel (authenticator app + recovery codes), stored encrypted and never sent to the site.
+    use InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery;
 
     /** Fields a player fills once; after that only an admin changes them. */
     public const FILL_ONCE = ['first_name', 'last_name', 'date_of_birth', 'address_line1', 'address_line2', 'city', 'postcode'];
