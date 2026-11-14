@@ -65,7 +65,7 @@ class CompetitionResource extends Resource
                     ->helperText(fn (Get $get) => ($get('skin') ?? 'classic') !== 'classic' && $get('type') === 'instant' && $get('game') && ! GameIds::skinCovers($get('skin'), $get('game'))
                         ? 'This skin has no version of '.(self::GAMES[$get('game')] ?? $get('game')).': the classic look will play.'
                         : 'Changes how the reveal game looks, never the result.'),
-                FileUpload::make('image')->image()->disk('public')->directory('competitions')->imageEditor()->maxSize(4096)->required(),
+                FileUpload::make('image')->image()->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])->disk('public')->directory('competitions')->imageEditor()->maxSize(4096)->required(),
                 TextInput::make('subtitle')->maxLength(120)->helperText('Under the price, e.g. "£50 cash alternative". Leave empty for instant wins to show the number of prizes.'),
                 Toggle::make('featured')->helperText('Shown first on the home page.'),
                 TagsInput::make('tags'),

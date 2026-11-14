@@ -4,17 +4,17 @@ const site = Astro.locals.site;
 ---
 <footer class="ft"><div class="wrap stack g24">
   <div class="stack g16" style="align-items:center">
-    <img src="/logo.webp" alt="Gimme Gimme Prizes" style="height:64px;width:auto;display:block" width="96" height="64" loading="lazy">
+    <img src="/logo-sm.webp" alt="Gimme Gimme Prizes" style="height:64px;width:auto;display:block" width="96" height="64" loading="lazy">
     <div class="row g8">
       {site.socials.instagram && <a class="ib" href={site.socials.instagram} aria-label="Instagram" rel="noopener" target="_blank" style="border-color:#FF2DAA;color:#FF5CC0"><Icon name="ig" size={18} /></a>}
       {site.socials.facebook && <a class="ib" href={site.socials.facebook} aria-label="Facebook group" rel="noopener" target="_blank" style="border-color:#22E6FF;color:#22E6FF"><Icon name="fb" size={18} /></a>}
     </div>
   </div>
   <div class="ft-cols">
-    <div class="stack g8"><h4 style="color:#FF5CC0">Play</h4><a href="/competitions">All Competitions</a><a href="/competitions?type=instant">Instant Wins</a><a href="/competitions?type=draw">Live Draws</a><a href="/winners">Winners</a></div>
-    <div class="stack g8"><h4 style="color:#22E6FF">Help</h4><a href="/how-it-works">How It Works</a><a href="/faq">FAQs</a><a href="/contact">Contact Us</a><a href="/account">My Account</a></div>
-    <div class="stack g8"><h4 style="color:#FFF23A">The Rules</h4><a href="/legal/terms">Terms &amp; Conditions</a><a href="/free-entry">Free Postal Entry</a><a href="/legal/privacy">Privacy Policy</a><a href="/legal/cookies">Cookie Policy</a></div>
-    <div class="stack g8"><h4 style="color:#D8D0E2">Safer Play</h4><a href="/account/safer-play">Set Limits</a><a href="/account/safer-play">Take A Break</a><a href="/legal/complaints">Complaints</a></div>
+    <div class="stack g8"><h2 style="color:#FF5CC0">Play</h2><a href="/competitions">All Competitions</a><a href="/competitions?type=instant">Instant Wins</a><a href="/competitions?type=draw">Live Draws</a><a href="/winners">Winners</a></div>
+    <div class="stack g8"><h2 style="color:#22E6FF">Help</h2><a href="/how-it-works">How It Works</a><a href="/faq">FAQs</a><a href="/contact">Contact Us</a><a href="/account">My Account</a></div>
+    <div class="stack g8"><h2 style="color:#FFF23A">The Rules</h2><a href="/legal/terms">Terms &amp; Conditions</a><a href="/free-entry">Free Postal Entry</a><a href="/legal/privacy">Privacy Policy</a><a href="/legal/cookies">Cookie Policy</a></div>
+    <div class="stack g8"><h2 style="color:#D8D0E2">Safer Play</h2><a href="/account/safer-play">Set Limits</a><a href="/account/safer-play">Take A Break</a><a href="/legal/complaints">Complaints</a></div>
   </div>
   <div class="row wrapx g8" style="justify-content:center"><span class="tag tag-y">18+ UK only</span><span class="tag tag-c">Free postal entry</span><span class="tag tag-w">Visa · Mastercard</span><span class="tag tag-w">Secured by Cashflows</span></div>
   <p style="margin:0 auto;line-height:1.6;max-width:820px">Gimme Gimme Prizes is a prize competition operator in the United Kingdom. You must be 18 or over and a UK resident to enter. A free postal entry route is available on every competition. © {new Date().getFullYear()} Gimme Gimme Prizes is a trading name of GIMMEGIMMEPRIZES LTD, registered in England and Wales, company number 17496537. Registered office: 57 Oakhanger Drive, Bristol, BS11 0RJ.</p>

@@ -11,12 +11,18 @@ import { ukDateTime, ukShortDay } from "../lib/time";
 
 const { api, site } = Astro.locals;
 const filter = Astro.url.searchParams.get("filter") ?? "all";
+// The independent calls run side by side once the visitor has a session (see api.hasSession).
+const winnersCall = () => api.get<{ data: InstantWinnerRow[] }>("/api/winners/instant?limit=8");
+const early = api.hasSession() ? winnersCall() : null;
+early?.catch(() => undefined); // still rejects where it is awaited; this only stops an early failure crashing Node
 const { data: comps } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
 const instant = comps.filter((c) => c.type === "instant");
 const draws = comps.filter((c) => c.type === "draw");
 const featuredSlug = site.featuredSlug ?? comps.find((c) => c.featured)?.slug ?? instant[0]?.slug ?? null;
-const featured = featuredSlug ? await api.maybe<CompetitionDetail>(`/api/competitions/${featuredSlug}`) : null;
-const { data: winners } = await api.get<{ data: InstantWinnerRow[] }>("/api/winners/instant?limit=8");
+const [featured, { data: winners }] = await Promise.all([
+  featuredSlug ? api.maybe<CompetitionDetail>(`/api/competitions/${featuredSlug}`) : Promise.resolve(null),
+  early ?? winnersCall(),
+]);
 
 const FILTERS: [string, string, (c: CompetitionSummary) => boolean][] = [
   ["all", "All", () => true],
@@ -50,7 +56,7 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
         <div class="row g8 gg-rise gg-d5"><a class="btn btn-y btn-lg gg-cta" style="flex:1" href={`/competitions/${featured.slug}`}>{opensLater ? "See The Prizes" : `Play From ${formatPence(featured.pricePence)}`} <Icon name="arrow" size={18} stroke={3} /></a></div>
         <p class="hint gg-rise gg-d6" style="margin:0">18+ UK only · <a href="/free-entry">Free postal entry</a> · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
-      <HeroImage src={featured.image} alt={featured.title} float class="hero-top">
+      <HeroImage src={featured.image} srcset={featured.imageSrcset} alt={featured.title} float class="hero-top">
         {gameBadge(featured) && <span class="tag tag-y" style="position:absolute;top:14px;left:14px;background:rgba(7,5,11,.88)"><Icon name="bolt" size={11} stroke={3} /> {gameBadge(featured)}</span>}
         {prizesTotal > 0 && <span class="gg-pop gg-d6" style="position:absolute;right:10px;bottom:14px;background:rgba(7,5,11,.9);border:1px solid #22E6FF;border-radius:14px;padding:8px 12px;box-shadow:0 0 20px rgba(34,230,255,.35)"><span class="eyebrow" style="display:block">Still to win</span><span class="d nc" style="font-size:22px">{formatCount(prizesLeft)} prizes</span></span>}
       </HeroImage>

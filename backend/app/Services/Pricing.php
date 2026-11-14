@@ -55,7 +55,7 @@ final class Pricing
             };
             $line = $qty * $c->price_pence;
             $out[] = [
-                'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, 'image' => $c->imageUrl(), 'type' => $c->type,
+                'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, ...$c->pictureFields(), 'type' => $c->type,
                 'quantity' => $qty, 'unitPence' => $c->price_pence, 'linePence' => $line, 'maxQuantity' => $max, 'minQuantity' => (int) ($c->min_tickets ?: 1), 'problem' => $problem,
             ];
             $subtotal += $line;

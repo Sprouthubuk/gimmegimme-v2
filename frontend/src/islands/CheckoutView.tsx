@@ -68,7 +68,7 @@ export default function CheckoutView({ buy, walletPence, minCardPence }: { buy: 
       <div className="card gg-rise gg-d2" style={{ overflow: "hidden" }}>
         {priced.lines.map((l, i) => (
           <div key={l.competitionId} className="row g12" style={{ padding: "14px 16px", borderTop: i ? "1px solid rgba(255,255,255,.06)" : 0 }}>
-            <img src={l.image} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover" }} />
+            <img src={l.imageSmall} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover" }} />
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 900 }}>{l.title}</div><div className="hint">{l.quantity} × {formatPence(l.unitPence)} · {l.type === "draw" ? "live draw" : "instant win"}</div>{l.problem && <div className="err">{l.problem}</div>}</div>
             <b>{formatMoney(l.linePence)}</b>
           </div>

@@ -25,7 +25,7 @@ const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Sc
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {
-  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, prizeCount: type === "instant" ? 2516 : null, endPrize: null, maxTickets: type === "draw" ? 5000 : 100000, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], ...extra };
+  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, prizeCount: type === "instant" ? 2516 : null, endPrize: null, maxTickets: type === "draw" ? 5000 : 100000, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], ...extra };
 }
 const COMPS = [
   comp("c-bush", "bush-bucks-jungle-trial", "Bush Bucks – Jungle Trial", "instant", "claw_machine", "classic", "bush-lg", 25, 75000, 2, "2,516 wins", { featured: true }),
@@ -133,7 +133,7 @@ function price(lines, u, promoCode) {
     if (!c) { problems.push("A competition in your basket isn't available any more."); continue; }
     const max = (c.type === "draw" ? 100 : 2000) - (u ? u.tickets.filter((t) => t.competitionId === c.id).length : 0);
     const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
-    out.push({ competitionId: c.id, slug: c.slug, title: c.title, image: c.image, type: c.type, quantity: q, unitPence: c.pricePence, linePence: q * c.pricePence, maxQuantity: Math.max(0, max), minQuantity: 1, problem: q > max ? `You can have up to ${max} more tickets in this competition.` : null });
+    out.push({ competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, quantity: q, unitPence: c.pricePence, linePence: q * c.pricePence, maxQuantity: Math.max(0, max), minQuantity: 1, problem: q > max ? `You can have up to ${max} more tickets in this competition.` : null });
   }
   const sum = out.reduce((s, l) => s + l.linePence, 0);
   const promo = promoCode && String(promoCode).toUpperCase() === "GIMME10" ? { code: "GIMME10", discountPence: Math.floor(sum * 0.1) } : null;
@@ -163,7 +163,7 @@ function issue(u, order) {
 function orderJson(o, u) {
   return {
     number: o.number, status: o.status, needsAttention: false, totalPence: o.totalPence, cardPence: o.cardPence, walletPence: o.walletPence, paidAt: o.paidAt ?? null,
-    lines: o.lines.map((l) => { const c = byId.get(l.competitionId); return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, type: c.type, quantity: l.quantity, tickets: l.tickets ?? [], drawAt: c.drawAt }; }),
+    lines: o.lines.map((l) => { const c = byId.get(l.competitionId); return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, quantity: l.quantity, tickets: l.tickets ?? [], drawAt: c.drawAt }; }),
     toPlay: o.status === "paid" ? u.tickets.filter((t) => t.order === o.number && !t.played && byId.get(t.competitionId).type === "instant").length : 0,
   };
 }
@@ -228,7 +228,7 @@ route("GET", "/api/me/tickets", authed((req, res, { user, query }) => {
     const c = byId.get(ts[0].competitionId);
     const toPlay = c.type === "instant" ? ts.filter((t) => !t.played).length : 0;
     const wonPence = ts.filter((t) => t.played && t.prize).reduce((s, t) => s + t.prize.valuePence, 0);
-    return { competition: { id: c.id, slug: c.slug, title: c.title, type: c.type, image: c.image, drawAt: c.drawAt, closesAt: c.closesAt, status: c.status }, orderNumber: ts[0].order, tickets: ts.slice(0, 40).map((t) => ({ number: t.number, won: t.played && !!t.prize, played: t.played, prizeName: t.played && t.prize ? t.prize.name : null })), ticketCount: ts.length, toPlay, wonPence, status: toPlay ? "to_play" : c.type === "draw" ? "in_draw" : wonPence ? "won" : "no_win" };
+    return { competition: { id: c.id, slug: c.slug, title: c.title, type: c.type, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, drawAt: c.drawAt, closesAt: c.closesAt, status: c.status }, orderNumber: ts[0].order, tickets: ts.slice(0, 40).map((t) => ({ number: t.number, won: t.played && !!t.prize, played: t.played, prizeName: t.played && t.prize ? t.prize.name : null })), ticketCount: ts.length, toPlay, wonPence, status: toPlay ? "to_play" : c.type === "draw" ? "in_draw" : wonPence ? "won" : "no_win" };
   });
   const tab = query.get("tab");
   if (tab === "to-play") data = data.filter((g) => g.toPlay);

@@ -101,7 +101,7 @@ export default function OrderView({ number, initial }: { number: string; initial
 
       {instant.map((l) => (
         <div key={l.competitionId} className="card card-hot card-p stack g16 gg-rise gg-d2" data-testid="instant-line">
-          <div className="row g12"><img src={l.image} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover" }} /><div style={{ flex: 1 }}><div className="d" style={{ fontSize: 20 }}>{l.title}</div><div className="hint">{l.quantity} {l.quantity === 1 ? "game" : "games"}</div></div></div>
+          <div className="row g12"><img src={l.imageSmall} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover" }} /><div style={{ flex: 1 }}><div className="d" style={{ fontSize: 20 }}>{l.title}</div><div className="hint">{l.quantity} {l.quantity === 1 ? "game" : "games"}</div></div></div>
           <div className="stack g8"><span className="eyebrow">Your ticket numbers</span><div className="row wrapx g8">{l.tickets.slice(0, 60).map((t) => <span key={t} className="tn">#{t}</span>)}{l.tickets.length > 60 && <a className="tap" href="/account/tickets">+{formatCount(l.tickets.length - 60)} more in My Tickets</a>}</div></div>
         </div>
       ))}
@@ -129,7 +129,7 @@ export default function OrderView({ number, initial }: { number: string; initial
 
       {draws.map((l) => (
         <div key={l.competitionId} className="card card-cy card-p row g12 gg-rise gg-d3" data-testid="draw-line">
-          <img src={l.image} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover" }} />
+          <img src={l.imageSmall} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover" }} />
           <div style={{ flex: 1 }}><div className="d" style={{ fontSize: 20 }}>{l.title}</div><div className="hint">{l.quantity} tickets{l.drawAt ? ` · live draw ${ukDateTime(l.drawAt)}` : ""}</div><div className="row wrapx g8" style={{ marginTop: 8 }}>{l.tickets.slice(0, 12).map((t) => <span key={t} className="tn">#{t}</span>)}{l.tickets.length > 12 && <span className="hint">+{l.tickets.length - 12} more</span>}</div></div>
           <span className="tag tag-c">In The Draw</span>
         </div>

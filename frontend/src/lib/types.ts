@@ -21,6 +21,10 @@ export interface CompetitionSummary {
   gameLabel: string | null;
   skin: string;
   image: string;
+  /** A 400px WebP copy for thumbnails (the original when there are no copies). */
+  imageSmall: string;
+  /** "url 400w, url 800w, url 1200w" for srcset, or null when there are no copies. */
+  imageSrcset: string | null;
   pricePence: Pence;
   /** Instant wins: the biggest prize value. Draws: the prize value. */
   topPrizePence: Pence | null;
@@ -118,7 +122,7 @@ export interface WalletTransaction {
 }
 
 export interface TicketGroup {
-  competition: Pick<CompetitionSummary, "id" | "slug" | "title" | "type" | "image" | "drawAt" | "closesAt" | "status">;
+  competition: Pick<CompetitionSummary, "id" | "slug" | "title" | "type" | "image" | "imageSmall" | "imageSrcset" | "drawAt" | "closesAt" | "status">;
   orderNumber: string | null;
   /** A preview: the first 40 tickets plus every winning one. `ticketCount` is how many there are. */
   tickets: TicketRow[];
@@ -156,6 +160,8 @@ export interface PricedLine {
   slug: string;
   title: string;
   image: string;
+  imageSmall: string;
+  imageSrcset: string | null;
   type: CompetitionType;
   quantity: number;
   unitPence: Pence;
@@ -186,7 +192,7 @@ export interface OrderView {
   cardPence: Pence;
   walletPence: Pence;
   paidAt: string | null;
-  lines: { competitionId: string; slug: string; title: string; image: string; type: CompetitionType; quantity: number; tickets: number[]; drawAt: string | null }[];
+  lines: { competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null; type: CompetitionType; quantity: number; tickets: number[]; drawAt: string | null }[];
   /** Instant-win tickets in this order not yet revealed. */
   toPlay: number;
 }
