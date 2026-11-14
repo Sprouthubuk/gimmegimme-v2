@@ -1,5 +1,5 @@
 import gsap from "gsap";
-import { Container, Graphics, Sprite, type FederatedPointerEvent, type Texture, type Ticker } from "pixi.js";
+import { Container, Graphics, Sprite, Text, type FederatedPointerEvent, type Texture, type Ticker } from "pixi.js";
 import type { GameScene, ShellContext } from "../shell/Shell";
 import { capsuleTexture, fitPlayfield, glowSprite, prizePlate, showPlate } from "../shared/kit";
 import { glowTexture } from "../shared/textures";
@@ -63,6 +63,11 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     const chute = new Graphics().roundRect(CHUTE_X - 32, PILE_Y - 40, 64, 90, 10).fill({ color: 0x050407 }).stroke({ width: 1.5, color: hex(theme.neonA), alpha: 0.8 });
     const floor = new Graphics().roundRect(-W / 2 + 14, PILE_Y + 26, W - 28, 30, 10).fill({ color: 0x000000, alpha: 0.5 });
     cabinet.addChild(glowSprite(glow, theme.neonB, W * 1.6, H * 1.3, 0.18), frame, glass, shine, rail, floor, chute);
+    const chuteLabel = new Text({ text: "PRIZE\nCHUTE", style: { fontFamily: theme.fonts.ui, fontSize: 10, fontWeight: "800", fill: theme.neonA, align: "center", letterSpacing: 1.5, lineHeight: 13 } });
+    chuteLabel.anchor.set(0.5);
+    chuteLabel.position.set(CHUTE_X, PILE_Y + 22);
+    chuteLabel.alpha = 0.8;
+    cabinet.addChild(chuteLabel);
     // The pile: capsules in two loose rows to the right of the chute.
     capsules = [];
     for (let row = 0; row < 2; row++) {
