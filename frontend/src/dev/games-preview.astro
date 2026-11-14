@@ -1,0 +1,18 @@
+---
+// Development only: the premium games with mock results (src/dev/GamesPreview.tsx). Added by astro.config.mjs
+// only under `astro dev`, so none of it is in a production build.
+import "../styles.css";
+import GamesPreview from "./GamesPreview";
+---
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Premium Games Preview (Development Only)</title>
+  <style is:global>html,body{margin:0;height:100%;background:#000;overflow:hidden}</style>
+</head>
+<body>
+  <GamesPreview client:visible />
+</body>
+</html>

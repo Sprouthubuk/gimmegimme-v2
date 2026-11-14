@@ -1,0 +1,62 @@
+/* Game shell: dark glass panels with a 1px neon rim, gold for money only. Colours come from the theme as
+   custom properties set on .ggx. Phone first; a centred phone frame on wider screens. */
+.ggx{--a:#FF2DAA;--b:#22E6FF;--gold:#F5C542;--panel:rgba(18,14,26,.62);--rim:rgba(255,45,170,.55);--text:#fff;--muted:#9C93AD;--fd:'Lilita One',sans-serif;--fu:Nunito,system-ui,sans-serif;
+  position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg,#07070B);color:var(--text);font-family:var(--fu);overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+.ggx *{box-sizing:border-box}
+.ggx-frame{position:relative;width:100%;height:100%;overflow:hidden;isolation:isolate}
+@media (min-width:600px){.ggx-frame{width:min(430px,100%);height:min(900px,calc(100% - 32px));border-radius:44px;box-shadow:0 0 0 1px var(--rim),0 0 60px -10px var(--a),0 30px 80px rgba(0,0,0,.6)}}
+.ggx-canvas{position:absolute;inset:0;touch-action:none}
+.ggx-canvas canvas{display:block;width:100%;height:100%}
+.ggx-glass{background:var(--panel);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border:1px solid var(--rim);border-radius:22px;box-shadow:0 0 24px -8px var(--a),inset 0 1px 0 rgba(255,255,255,.06)}
+.ggx-top{position:absolute;left:10px;right:10px;top:max(10px,env(safe-area-inset-top));display:flex;align-items:center;gap:8px;padding:6px;z-index:3}
+.ggx-btn{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--text);font:800 15px var(--fu);cursor:pointer;padding:0 12px;text-decoration:none}
+.ggx-btn:focus-visible{outline:2px solid var(--b);outline-offset:2px}
+.ggx-icon{padding:0;width:44px}
+.ggx-icon svg{width:22px;height:22px}
+.ggx-title{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.1}
+.ggx-title b{font:400 17px var(--fd);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ggx-title span{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ggx-won{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05;padding-right:4px}
+.ggx-won span{font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ggx-won b{font:400 20px var(--fd);color:var(--gold);text-shadow:0 0 14px color-mix(in srgb,var(--gold) 60%,transparent)}
+.ggx-hint{position:absolute;left:50%;transform:translateX(-50%);z-index:3;min-height:44px;padding:0 18px;white-space:nowrap;border-radius:999px;font:900 12px var(--fu);letter-spacing:.14em;text-transform:uppercase;color:var(--text);cursor:pointer;transition:opacity .3s}
+.ggx-hint[hidden]{display:inline-flex;opacity:0;pointer-events:none}
+.ggx-bottom{position:absolute;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:3;padding:10px;display:flex;flex-direction:column;gap:10px}
+.ggx-strip{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.ggx-strip i{flex:1 1 0;max-width:28px;min-width:6px;height:8px;border-radius:99px;background:rgba(255,255,255,.12);transition:background .35s,box-shadow .35s,transform .35s}
+.ggx-strip i.on{background:var(--b);box-shadow:0 0 10px var(--b);transform:scaleY(1.3)}
+.ggx-strip i.won{background:var(--gold);box-shadow:0 0 12px var(--gold)}
+.ggx-strip i.lost{background:rgba(255,255,255,.28)}
+.ggx-actions{display:flex;gap:8px}
+.ggx-actions .ggx-btn{flex:1;border-color:var(--rim);background:rgba(255,255,255,.04);font-size:14px;letter-spacing:.04em}
+.ggx-actions .ggx-btn:disabled{opacity:.35;cursor:default}
+.ggx-layer{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.ggx-layer[hidden]{display:none}
+.ggx-loader{background:var(--bg,#07070B);gap:18px}
+.ggx-loader .ring{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.08);border-top-color:var(--a);border-right-color:var(--b);animation:ggx-spin 1s linear infinite;box-shadow:0 0 30px -6px var(--a)}
+.ggx-loader p{margin:0;font-weight:800;color:var(--muted);letter-spacing:.04em}
+@keyframes ggx-spin{to{transform:rotate(360deg)}}
+.ggx-win{gap:10px;pointer-events:auto}
+.ggx-win .k{font:900 12px var(--fu);letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.ggx-win .lbl{font:400 clamp(28px,9vw,40px)/1.05 var(--fd);max-width:16ch;text-shadow:0 2px 24px rgba(0,0,0,.6)}
+.ggx-win .val{font:400 clamp(44px,15vw,68px)/1 var(--fd);color:var(--gold);text-shadow:0 0 30px color-mix(in srgb,var(--gold) 70%,transparent),0 4px 0 var(--gold-deep,#B8861B)}
+.ggx-win .tk{font-size:13px;font-weight:800;color:var(--muted)}
+.ggx-win a.ver{font-size:13px;font-weight:800;color:var(--b);text-decoration:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 10px}
+.ggx-cta{min-height:52px;min-width:200px;border-radius:16px;border:0;background:linear-gradient(180deg,#FFE27A,var(--gold));color:#1A1206;font:400 20px var(--fd);cursor:pointer;box-shadow:0 0 30px -4px var(--gold),inset 0 -3px 0 rgba(0,0,0,.18);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:0 22px}
+.ggx-cta.alt{background:transparent;color:var(--text);border:1px solid var(--rim);box-shadow:none;font:800 16px var(--fu)}
+.ggx-cta:focus-visible{outline:2px solid var(--b);outline-offset:3px}
+.ggx-sum{background:color-mix(in srgb,var(--bg,#07070B) 86%,transparent);gap:14px;justify-content:flex-start;padding-top:max(56px,env(safe-area-inset-top))}
+.ggx-sum h2{margin:0;font:400 32px var(--fd)}
+.ggx-sum .sub{margin:0;font-weight:800;color:var(--muted)}
+.ggx-sum .tot{font:400 54px/1 var(--fd);color:var(--gold);text-shadow:0 0 30px color-mix(in srgb,var(--gold) 60%,transparent)}
+.ggx-sum .tot.none{color:var(--text);text-shadow:none;font-size:30px}
+.ggx-cards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;width:calc(100% + 48px);margin:0 -24px;padding:6px 24px 14px;scrollbar-width:none}
+.ggx-cards::-webkit-scrollbar{display:none}
+.ggx-card{flex:0 0 72%;scroll-snap-align:center;padding:18px;text-align:left;display:flex;flex-direction:column;gap:6px;border-color:color-mix(in srgb,var(--gold) 60%,transparent);box-shadow:0 0 26px -10px var(--gold)}
+.ggx-card .n{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ggx-card b{font:400 22px/1.1 var(--fd)}
+.ggx-card .v{font:400 28px var(--fd);color:var(--gold)}
+.ggx-card a{font-size:12px;font-weight:800;color:var(--b);text-decoration:none;margin-top:auto;min-height:44px;display:inline-flex;align-items:center}
+.ggx-sum .btns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:auto;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.ggx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.ggx-loader .ring{animation-duration:3s}.ggx-strip i{transition:none}}

@@ -1,7 +1,7 @@
 // The API contract between the Astro front end and the Laravel backend.
 // Every shape here is documented in docs/api.md. Money is always whole pence.
 // Dates are ISO 8601 strings in UTC; the front end shows them in UK time.
-import type { RevealOutcome } from "../games/types";
+import type { RevealOutcome, RevealTicket } from "../games/types";
 import type { RevealContext } from "../games/arcade/games/types";
 
 export type Pence = number;
@@ -204,7 +204,8 @@ export interface CheckoutResult {
 }
 
 export interface PlayResult {
-  outcome: RevealOutcome;
+  /** Each ticket also links to its competition's fairness record (`/verify/{ref}`), or null. */
+  outcome: RevealOutcome & { tickets: readonly (RevealTicket & { proofUrl: string | null })[] };
   context: RevealContext;
 }
 

@@ -297,7 +297,7 @@ route("POST", "/api/orders/:number/play", authed((req, res, { user, params }) =>
   for (const t of ts) { if (t.prize) credited += t.prize.valuePence; if (!t.played && t.prize) { user.winnings += t.prize.valuePence; user.tx.unshift({ id: crypto.randomUUID(), at: iso(Date.now()), description: `Instant win · ${t.prize.name}`, amountPence: t.prize.valuePence, direction: "in", bucket: "winnings" }); } t.played = true; }
   const context = {};
   for (const t of ts) { const c = byId.get(t.competitionId); context[c.id] = { game: c.game, isInstantWin: true, prizeLabels: ["£750", "£222.22", "£111.11", "£55.55", "£22.22", "£11.11", "£5.55", "£2.22", "£1.11", "50p"], inLiveDraw: false, skin: c.skin }; }
-  send(res, 200, { outcome: { purchaseId: o.number, tickets: ts.map((t) => ({ ticketNumber: t.number, competitionId: t.competitionId, competitionTitle: byId.get(t.competitionId).title, prize: t.prize })), totalWonPence: credited, creditedPence: credited, balanceAfterPence: total(user) }, context });
+  send(res, 200, { outcome: { purchaseId: o.number, tickets: ts.map((t) => ({ ticketNumber: t.number, competitionId: t.competitionId, competitionTitle: byId.get(t.competitionId).title, prize: t.prize, proofUrl: byId.get(t.competitionId).verifyUrl ?? null })), totalWonPence: credited, creditedPence: credited, balanceAfterPence: total(user) }, context });
 }));
 
 // The fake payment page Cashflows would show.

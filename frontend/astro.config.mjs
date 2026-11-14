@@ -21,7 +21,10 @@ const devOnlyPages = {
   name: "gg-dev-only-pages",
   hooks: {
     "astro:config:setup": ({ command, injectRoute }) => {
-      if (command === "dev") injectRoute({ pattern: "/dev/reveal-games", entrypoint: "./src/dev/reveal-games.astro" });
+      if (command === "dev") {
+        injectRoute({ pattern: "/dev/reveal-games", entrypoint: "./src/dev/reveal-games.astro" });
+        injectRoute({ pattern: "/games-preview", entrypoint: "./src/dev/games-preview.astro" });
+      }
     },
   },
 };
