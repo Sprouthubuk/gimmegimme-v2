@@ -249,6 +249,7 @@ export function buildSmashScene(ctx: SceneCtx<SmashState>): SceneHandle {
             } else {
               pl.result = labelSprite("No win", 0.2, { fill: "#d8d0e8", stroke: "#141414" });
             }
+            pl.result.userData.base = pl.result.scale.clone();
             pl.result.position.set(XS[i], SHELF_Y + 0.35, 0.3);
             world.add(pl.result);
             pl.resultAt = t;
@@ -256,7 +257,7 @@ export function buildSmashScene(ctx: SceneCtx<SmashState>): SceneHandle {
         }
         if (pl.result) {
           const k = reducedMotion ? 1 : ease.outBack(clamp01((t - pl.resultAt) / 0.45), 2);
-          pl.result.scale.setScalar(Math.max(0.01, k));
+          pl.result.scale.copy(pl.result.userData.base as THREE.Vector3).multiplyScalar(Math.max(0.01, k));
           pl.result.position.y = SHELF_Y + 0.35 + k * 0.2 + (reducedMotion ? 0 : Math.sin(t * 3 + i) * 0.02);
           if (pl.result instanceof THREE.Group) pl.result.rotation.y = reducedMotion ? 0 : Math.max(0, 1 - (t - pl.resultAt)) * 8 + Math.sin(t * 2) * 0.2;
           // Cleared when the next jar comes in.
