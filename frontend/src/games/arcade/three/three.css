@@ -1,0 +1,68 @@
+/* The 3D stage fills the board's width; its height follows the board's aspect. */
+.rg3-stage {
+  position: relative;
+  width: min(100%, 400px);
+  border-radius: 26px;
+  overflow: hidden;
+  background: #0d0812;
+  box-shadow: 0 0 0 3px var(--rg-ink, #141414), 0 8px 0 var(--rg-ink, #141414), 0 18px 40px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.rg3-stage.is-ready { opacity: 1; }
+.rg3-canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+/* Layers over the canvas: labels and buttons stay real HTML so they are sharp and accessible. */
+.rg3-layer { position: absolute; inset: 0; pointer-events: none; }
+.rg3-layer > * { pointer-events: auto; }
+.rg3-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: min(100%, 400px);
+  margin-top: 14px;
+}
+.rg3-btn {
+  min-width: 140px;
+  min-height: 56px;
+  padding: 6px 26px;
+  border: var(--rg-outline, 3px solid #141414);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff6bbd 0%, #ff2d95 55%, #d4006f 100%);
+  color: #fff;
+  font-family: var(--rg-font-display, "Lilita One", system-ui);
+  font-size: 24px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 0 rgba(20, 20, 20, 0.45);
+  box-shadow: 0 6px 0 var(--rg-ink, #141414), inset 0 3px 0 rgba(255, 255, 255, 0.45), inset 0 -5px 0 rgba(120, 0, 60, 0.35);
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s, filter 0.2s;
+}
+.rg3-btn.is-yellow { background: linear-gradient(180deg, #fff59a 0%, #ffe11a 55%, #e0b800 100%); color: #141414; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
+.rg3-btn.is-cyan { background: linear-gradient(180deg, #8fe6ff 0%, #1fc4f4 55%, #0090c0 100%); }
+.rg3-btn.is-gold { background: linear-gradient(180deg, #fff3b0 0%, #ffd23f 55%, #c98a00 100%); color: #141414; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
+.rg3-btn:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 1px 0 var(--rg-ink, #141414), inset 0 3px 0 rgba(255, 255, 255, 0.45); }
+.rg3-btn:disabled { cursor: default; filter: saturate(0.4) brightness(0.85); }
+.rg3-btn:not(:disabled) { animation: rg3-ready 1.6s ease-in-out infinite; }
+@keyframes rg3-ready { 50% { box-shadow: 0 6px 0 var(--rg-ink, #141414), inset 0 3px 0 rgba(255, 255, 255, 0.45), 0 0 0 7px rgba(255, 255, 255, 0.18); } }
+.is-reduced-motion .rg3-btn { animation: none; }
+.rg3-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  translate: -50% 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(13, 8, 18, 0.72);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+.rg3-arrow { min-width: 64px; padding: 6px 12px; font-size: 22px; }
+.rg3-grab { min-width: 150px; }
