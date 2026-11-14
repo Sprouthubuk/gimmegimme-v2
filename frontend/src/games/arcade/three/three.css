@@ -84,3 +84,6 @@
 .rg3-pay.is-hit { background: linear-gradient(180deg, #fff59a, #ffd23f); animation: rg3-hit 0.5s ease-in-out 3; }
 @keyframes rg3-hit { 50% { transform: scale(1.12); } }
 .rg3-spin { min-width: 200px; }
+.rg-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.rg3-stage .rg3-sticker { position: absolute; top: 10px; left: 10px; z-index: 2; pointer-events: none; }
+.rg3-stage .rg3-sticker { padding: 3px 10px; border: 3px solid #141414; border-radius: 10px; background: #ff2d95; color: #fff; font-family: "Lilita One", sans-serif; font-size: 15px; transform: rotate(-4deg); box-shadow: 0 3px 0 #141414; }
