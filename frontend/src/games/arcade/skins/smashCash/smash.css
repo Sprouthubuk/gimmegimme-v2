@@ -254,3 +254,6 @@
   .rg-smash-place { max-height: 21vh; }
   .rg-smash-latest { min-height: 62px; }
 }
+/* Under the 3D shelf: the latest result and the panel, without the 2D cabinet around them. */
+.rg-smash.rg3-smash-below { margin-top: 12px; padding-top: 0; background: none; border: 0; box-shadow: none; }
+.rg-smash.rg3-smash-below::before, .rg-smash.rg3-smash-below::after { display: none; }
