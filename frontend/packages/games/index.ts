@@ -12,6 +12,7 @@ export const PREMIUM_GAMES = {
   slots: () => import("./slots"),
   claw_machine: () => import("./claw-machine"),
   coin_drop: () => import("./coin-drop"),
+  hook_a_duck: () => import("./hook-a-duck"),
 } as const;
 
 export type PremiumGameId = keyof typeof PREMIUM_GAMES;
