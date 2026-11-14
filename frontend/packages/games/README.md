@@ -27,7 +27,7 @@ Losing boards are random, never arranged to look close, and miss lines are neutr
 ## Using a game
 
 ```ts
-import { mountPremiumGame, fromRevealOutcome } from "@/../packages/games";
+import { mountPremiumGame, fromRevealOutcome } from "../../packages/games"; // from src/islands
 const game = await mountPremiumGame("coin_drop", el, {
   tickets: fromRevealOutcome(play, competitionId), // already decided on the server
   theme: "christmas",                              // or "default"

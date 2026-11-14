@@ -43,7 +43,11 @@ export function createGems(ctx: ShellContext): GameScene {
   };
   stage.app.ticker.add(shimmer);
 
-  const pick = async (i: number, fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const pick = (i: number, fast: boolean) => (running ??= pickOnce(i, fast));
+  const pickOnce = async (i: number, fast: boolean) => {
     if (picked || !ticket) return;
     picked = true;
     const g = gems[i];
@@ -77,6 +81,7 @@ export function createGems(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       picked = false;
       onRevealed = revealed;
@@ -112,7 +117,7 @@ export function createGems(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!picked) await pick(lookPick(gems.length), fast);
+      await (running ?? pick(lookPick(gems.length), fast));
     },
 
     async celebrate(_t, fast) {

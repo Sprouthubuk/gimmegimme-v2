@@ -120,7 +120,11 @@ export function createSpinWheel(ctx: ShellContext): GameScene {
     return frame;
   };
 
-  const spin = async (fast: boolean, strength = 1) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const spin = (fast: boolean, strength = 1) => (running ??= spinOnce(fast, strength));
+  const spinOnce = async (fast: boolean, strength = 1) => {
     if (spun || !wheel || !ticket) return;
     spun = true;
     const options = landingSegments(ticket, segs);
@@ -157,6 +161,7 @@ export function createSpinWheel(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       onRevealed = revealed;
       spun = false;
@@ -167,7 +172,7 @@ export function createSpinWheel(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!plate) await spin(fast);
+      await spin(fast); // returns the reveal already under way, if any
     },
 
     async celebrate(_t, fast) {

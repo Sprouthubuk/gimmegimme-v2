@@ -41,7 +41,11 @@ export function createBalloonPop(ctx: ShellContext): GameScene {
   };
   stage.app.ticker.add(bob);
 
-  const pop = async (i: number, fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const pop = (i: number, fast: boolean) => (running ??= popOnce(i, fast));
+  const popOnce = async (i: number, fast: boolean) => {
     if (picked || !ticket) return;
     picked = true;
     const b = balloons[i];
@@ -71,6 +75,7 @@ export function createBalloonPop(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       picked = false;
       onRevealed = revealed;
@@ -93,7 +98,7 @@ export function createBalloonPop(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!picked) await pop(lookPick(balloons.length), fast);
+      await (running ?? pop(lookPick(balloons.length), fast));
     },
 
     async celebrate(_t, fast) {

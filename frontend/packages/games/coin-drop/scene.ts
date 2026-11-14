@@ -95,7 +95,11 @@ export function createCoinDrop(ctx: ShellContext): GameScene {
     if (!reducedMotion) bob = gsap.to(coin, { x: 6, duration: 0.6, yoyo: true, repeat: -1, ease: "sine.inOut" });
   };
 
-  const drop = async (fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const drop = (fast: boolean) => (running ??= dropOnce(fast));
+  const dropOnce = async (fast: boolean) => {
     if (busy || !coin || !ticket || plate) return;
     busy = true;
     bob?.kill();
@@ -145,6 +149,7 @@ export function createCoinDrop(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       onRevealed = revealed;
       busy = false;
@@ -154,7 +159,7 @@ export function createCoinDrop(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!plate) await drop(fast);
+      await drop(fast); // returns the reveal already under way, if any
     },
 
     async celebrate(_t, fast) {

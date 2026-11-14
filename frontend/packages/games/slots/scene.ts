@@ -170,7 +170,11 @@ export function createSlots(ctx: ShellContext): GameScene {
     return inner;
   };
 
-  const spin = async (fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const spin = (fast: boolean) => (running ??= spinOnce(fast));
+  const spinOnce = async (fast: boolean) => {
     if (spun || !ticket || plate) return;
     spun = true;
     audio.play("button");
@@ -213,6 +217,7 @@ export function createSlots(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       onRevealed = revealed;
       spun = false;
@@ -226,7 +231,7 @@ export function createSlots(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!plate) await spin(fast);
+      await spin(fast); // returns the reveal already under way, if any
     },
 
     async celebrate(_t, fast) {

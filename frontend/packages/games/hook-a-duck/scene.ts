@@ -62,7 +62,11 @@ export function createHookADuck(ctx: ShellContext): GameScene {
   };
   stage.app.ticker.add(swim);
 
-  const hook = async (d: (typeof ducks)[number], fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const hook = (d: (typeof ducks)[number], fast: boolean) => (running ??= hookOnce(d, fast));
+  const hookOnce = async (d: (typeof ducks)[number], fast: boolean) => {
     if (hooked || !ticket || !pond) return;
     hooked = true;
     d.s.zIndex = 9;
@@ -98,6 +102,7 @@ export function createHookADuck(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       onRevealed = revealed;
       hooked = false;
@@ -137,7 +142,7 @@ export function createHookADuck(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (hooked) return;
+      if (running) return running;
       const visible = ducks.filter((d) => Math.abs(d.s.x) < W / 2 - 40);
       await hook(visible[lookPick(visible.length)] ?? ducks[0], fast);
     },

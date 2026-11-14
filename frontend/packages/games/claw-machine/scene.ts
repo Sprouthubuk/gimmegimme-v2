@@ -100,7 +100,11 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     holder.addChild(cabinet);
   };
 
-  const drop = async (fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const drop = (fast: boolean) => (running ??= dropOnce(fast));
+  const dropOnce = async (fast: boolean) => {
     if (busy || !claw || !ticket || plate) return;
     busy = true;
     audio.play("button");
@@ -141,6 +145,7 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       onRevealed = revealed;
       busy = false;
@@ -151,7 +156,7 @@ export function createClawMachine(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!plate) await drop(fast);
+      await drop(fast); // returns the reveal already under way, if any
     },
 
     async celebrate(_t, fast) {

@@ -264,7 +264,9 @@ export function createScratchCard(ctx: ShellContext): GameScene {
   stage.app.stage.on("pointerup", up);
   stage.app.stage.on("pointerupoutside", up);
 
-  const dissolve = (fast: boolean) => new Promise<void>((resolve) => {
+  let dissolving: Promise<void> | null = null;
+  const dissolve = (fast: boolean) => (dissolving ??= dissolveOnce(fast));
+  const dissolveOnce = (fast: boolean) => new Promise<void>((resolve) => {
     if (!foilSprite || !card) return resolve();
     up();
     audio.play("reveal");
@@ -299,6 +301,7 @@ export function createScratchCard(ctx: ShellContext): GameScene {
     },
 
     async present(t, index, total, revealed) {
+      dissolving = null;
       card = buildCard(t, index, total);
       covered = new Uint8Array(GRID_X * GRID_Y);
       clearedCells = 0;
@@ -314,12 +317,12 @@ export function createScratchCard(ctx: ShellContext): GameScene {
 
     async revealNow(fast) {
       done = true;
-      if (foilSprite && foilSprite.alpha > 0) await dissolve(fast);
+      if (dissolving || (foilSprite && foilSprite.alpha > 0)) await dissolve(fast);
     },
 
     async celebrate(_t, fast) {
       if (!card) return;
-      if (foilSprite && foilSprite.alpha > 0) await dissolve(fast);
+      if (dissolving || (foilSprite && foilSprite.alpha > 0)) await dissolve(fast);
       if (winGlow) gsap.to(winGlow, { alpha: 0.85, duration: fast ? 0.15 : 0.4 });
       if (reducedMotion || fast) return;
       const tl = gsap.timeline();

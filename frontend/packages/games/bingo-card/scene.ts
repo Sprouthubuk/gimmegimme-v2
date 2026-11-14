@@ -76,7 +76,11 @@ export function createBingoCard(ctx: ShellContext): GameScene {
     holder.addChild(card);
   };
 
-  const call = async (fast: boolean) => {
+  // The reveal in progress, shared by the player's tap and the shell's revealNow so it never runs twice
+  // or gets dismissed half way through.
+  let running: Promise<void> | null = null;
+  const call = (fast: boolean) => (running ??= callOnce(fast));
+  const callOnce = async (fast: boolean) => {
     if (busy || done || !board || !card || !tray || !ticket) return;
     busy = true;
     const quick = fast || reducedMotion;
@@ -141,6 +145,7 @@ export function createBingoCard(ctx: ShellContext): GameScene {
     async load() { fit(); },
 
     async present(t, _i, _n, revealed) {
+      running = null;
       ticket = t;
       onRevealed = revealed;
       busy = done = false;
@@ -150,7 +155,7 @@ export function createBingoCard(ctx: ShellContext): GameScene {
     },
 
     async revealNow(fast) {
-      if (!done) await call(fast);
+      await call(fast); // returns the reveal already under way, if any
     },
 
     async celebrate(_t, fast) {
