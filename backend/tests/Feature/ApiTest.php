@@ -136,6 +136,7 @@ class ApiTest extends TestCase
         $this->assertSame(200, $play['outcome']['totalWonPence']);
         $this->assertSame(200, $play['outcome']['creditedPence']);
         $this->assertSame(['scratch_card', true], [$play['context'][$c->id]['game'], $play['context'][$c->id]['isInstantWin']]);
+        $this->assertSame('/verify/'.$c->refresh()->verity_ref, $play['outcome']['tickets'][0]['proofUrl'], 'each ticket links to its fairness record');
         $this->assertSame($play['outcome'], $this->postJson("/api/orders/{$number}/play")->json('outcome'), 'same result again');
         $this->getJson('/api/me')->assertJsonPath('gamesWaiting', 0)->assertJsonPath('wallet.winningsPence', 200);
         $this->assertSame(200, $this->getJson('/api/me/tickets?tab=won')->json('data.0.wonPence'));

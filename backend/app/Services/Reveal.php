@@ -37,7 +37,9 @@ final class Reveal
                 $w = $wins[$n] ?? null;
                 $type = $w ? ($types[$w['key']] ?? 'site_credit') : null;
                 $tickets[] = ['ticketNumber' => $n, 'competitionId' => $c->id, 'competitionTitle' => $c->title,
-                    'prize' => $w ? ['name' => $w['name'], 'valuePence' => $w['value'], 'type' => $type] : null];
+                    'prize' => $w ? ['name' => $w['name'], 'valuePence' => $w['value'], 'type' => $type] : null,
+                    // The competition's public fairness record (the same page the competition links to).
+                    'proofUrl' => $c->verity_ref ? '/verify/'.$c->verity_ref : null];
                 if ($w) {
                     $total += $w['value'];
                     $credited += $type === 'physical' ? 0 : $w['value'];

@@ -80,6 +80,8 @@ on a closed order is still confirmed.
 fulfilment plays every instant-win entry with Verity (`playGroup`) and credits cash and site-credit
 prizes to winnings in the same transaction. This endpoint only reports the stored outcome for this
 order's tickets, and marks them watched. Calling again returns the same result and pays nothing.
+Each ticket carries `proofUrl`: the competition's public fairness record (`/verify/{ref}`). The premium
+games (`frontend/packages/games`) read this response through `fromRevealOutcome` and only present it.
 
 `POST /api/webhooks/cashflows` — `{ paymentJobReference }`. Nothing in the message is trusted: the
 order is found **only** by the stored job reference, then confirmed through the same path as `/return`
