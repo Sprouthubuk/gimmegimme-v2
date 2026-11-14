@@ -1,0 +1,19 @@
+{
+  "about": "Art and sound that can replace the built-in (drawn in code) versions. Pass any of these in GameConfig.assets as { key: url }; anything missing falls back to the built-in version, so every game works with none of them. URLs must be on our own site (the CSP allows 'self', data: and blob: only).",
+  "assets": [
+    { "key": "background-scene", "kind": "image", "games": "all", "size": "1170x2532 (portrait) or 2560x1440, JPG/WebP under 300 KB", "fallback": "neon bokeh, perspective grid and spotlight" },
+    { "key": "card-art", "kind": "image", "games": ["scratch_card"], "size": "600x820 PNG/WebP; leave the prize window (48,284 to 552,648) plain", "fallback": "drawn card face with barcode footer" },
+    { "key": "foil-texture", "kind": "image", "games": ["scratch_card"], "size": "504x364 PNG/WebP", "fallback": "drawn foil with the scratch hint" },
+    { "key": "sound-scratch-loop", "kind": "audio", "games": ["scratch_card"], "size": "short seamless loop, MP3/OGG under 60 KB", "fallback": "synthesised noise" },
+    { "key": "sound-reveal", "kind": "audio", "games": "all", "size": "under 1 s", "fallback": "synthesised chime" },
+    { "key": "sound-win-small", "kind": "audio", "games": "all", "size": "under 2 s", "fallback": "synthesised arpeggio" },
+    { "key": "sound-win-big", "kind": "audio", "games": "all", "size": "under 3 s", "fallback": "synthesised fanfare" },
+    { "key": "sound-lose", "kind": "audio", "games": "all", "size": "under 1 s, soft and neutral", "fallback": "synthesised soft tone" },
+    { "key": "sound-button", "kind": "audio", "games": "all", "size": "under 0.2 s", "fallback": "synthesised tick" }
+  ],
+  "rules": [
+    "Sounds stay off until the player turns them on.",
+    "No real people, no other companies' characters or logos.",
+    "A no-win sound must be neutral and never urge another go."
+  ]
+}
