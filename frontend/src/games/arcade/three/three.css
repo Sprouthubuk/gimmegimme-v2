@@ -87,3 +87,25 @@
 .rg-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .rg3-stage .rg3-sticker { position: absolute; top: 10px; left: 10px; z-index: 2; pointer-events: none; }
 .rg3-stage .rg3-sticker { padding: 3px 10px; border: 3px solid #141414; border-radius: 10px; background: #ff2d95; color: #fff; font-family: "Lilita One", sans-serif; font-size: 15px; transform: rotate(-4deg); box-shadow: 0 3px 0 #141414; }
+/* A 3D backdrop behind an HTML board (the scratch cards): the canvas fills the frame, the card sits on top. */
+.rg3-backdrop-wrap {
+  position: relative;
+  width: min(100%, 400px);
+  padding: 92px 14px 16px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #1a0828;
+  box-shadow: 0 0 0 3px var(--rg-ink, #141414), 0 8px 0 var(--rg-ink, #141414), 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+.rg3-backdrop-wrap > .rg3-stage.rg3-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  touch-action: auto;
+}
+.rg3-backdrop-wrap > .rg3-stage.rg3-backdrop .rg3-canvas { cursor: default; }
+.rg3-backdrop-content { position: relative; z-index: 1; }
+.rg3-backdrop-content > * { margin-left: auto; margin-right: auto; }

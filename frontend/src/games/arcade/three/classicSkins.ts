@@ -124,3 +124,18 @@ export const CLASSIC_WHEEL_3D: WheelSkin3D = {
     ]),
   decor: (g) => bubbles(g),
 };
+
+/** The classic scratch card's stage. */
+export const CLASSIC_SCRATCH_3D: import("./stageScene").StageSkin3D = {
+  bg: [
+    [0, "#2a0a3e"],
+    [0.55, "#4a0f5c"],
+    [1, "#12041c"],
+  ],
+  sign: [
+    { text: "SCRATCH", size: 0.34, fill: ["#fffbd0", "#ffe11a", "#e0a800"], y: 0.3 },
+    { text: "& WIN!", size: 0.42, fill: ["#ffd0ea", "#ff4fa8", "#c40066"], y: 0.72 },
+  ],
+  rays: 0xff4fa8,
+  floaters: "coins",
+};

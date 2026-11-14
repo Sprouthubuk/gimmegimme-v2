@@ -62,6 +62,8 @@ interface Scene3DProps<S> {
   label: string;
   /** Extra layers drawn over the canvas (labels, buttons). */
   children?: ReactNode;
+  /** Fill the parent's height instead of following aspect (a backdrop behind HTML). */
+  fill?: boolean;
 }
 
 let webglChecked: boolean | null = null;
@@ -77,7 +79,7 @@ export function canUseWebGL(): boolean {
   return webglChecked;
 }
 
-export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, className = "", bloom = false, fallback, label, children }: Scene3DProps<S>) {
+export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, className = "", bloom = false, fallback, label, children, fill = false }: Scene3DProps<S>) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -127,10 +129,10 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
     const size = { w: 1, h: 1 };
     const resize = () => {
       const w = Math.max(1, host.clientWidth);
-      const h = Math.max(1, Math.round(w * aspect));
+      const h = Math.max(1, fill ? host.clientHeight : Math.round(w * aspect));
       size.w = w;
       size.h = h;
-      host.style.height = `${h}px`;
+      if (!fill) host.style.height = `${h}px`;
       renderer.setSize(w, h, false);
       renderer.domElement.style.width = `${w}px`;
       renderer.domElement.style.height = `${h}px`;

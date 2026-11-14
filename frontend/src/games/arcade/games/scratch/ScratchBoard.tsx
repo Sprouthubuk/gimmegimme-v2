@@ -6,6 +6,9 @@ import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { formatTicketNumber } from "../../money";
 import { pluralLabel, scratchProgress, useScratchSurface, type PaintCover } from "./useScratchSurface";
 import "./scratch.css";
+import { Scene3D } from "../../three/Scene3D";
+import { buildStageScene, type StageState } from "../../three/stageScene";
+import { CLASSIC_SCRATCH_3D } from "../../three/classicSkins";
 
 /** Silver foil with diagonal sheen, like the printed card. */
 const paintFoil: PaintCover = (c, width, height) => {
@@ -47,6 +50,7 @@ export function ScratchBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
     return () => clearTimeout(t);
   }, [allRevealed, onReveal, reducedMotion, layout.winningCells.length]);
 
+  const stage: StageState = { done: allRevealed, won: layout.winningCells.length > 0 };
   const progress = scratchProgress(layout, revealed, started);
   let prompt: React.ReactNode;
   if (progress.kind === "done") prompt = <GamePrompt title={progress.won ? "Match 3!" : "No match this time"} tone={progress.won ? "pink" : "ink"} />;
@@ -57,36 +61,50 @@ export function ScratchBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
 
   return (
     <>
-      <div className="rg-scratch-card">
-        <div className="rg-scratch-sheen" />
-        <div className="rg-scratch-head">
-          <div className="rg-scratch-title">MATCH 3 TO WIN</div>
-          <div className="rg-scratch-sub">Find three the same and it's yours</div>
-        </div>
-        <div className="rg-scratch-play" ref={wrapRef}>
-          <div className="rg-scratch-grid">
-            {layout.cells.map((s, i) => {
-              const win = allRevealed && layout.winningCells.includes(i);
-              const dim = allRevealed && layout.winningCells.length > 0 && !win;
-              return (
-                <div
-                  key={i}
-                  ref={(el) => {
-                    cellRefs.current[i] = el;
-                  }}
-                  className={`rg-scratch-cell ${win ? "is-winning" : ""} ${dim ? "is-dim" : ""}`}
-                  aria-label={revealed[i] ? (s.kind === "icon" ? s.icon : s.label) : "Hidden"}
-                >
-                  {s.kind === "icon" ? <Coin icon={s.icon} /> : <Coin label={s.label} />}
-                </div>
-              );
-            })}
+      <div className="rg3-backdrop-wrap">
+        <Scene3D
+          state={stage}
+          setup={(ctx) => buildStageScene(ctx, CLASSIC_SCRATCH_3D)}
+          seed={`scratch:${ticket.ticketNumber}`}
+          reducedMotion={reducedMotion}
+          fill
+          className="rg3-backdrop"
+          fallback={null}
+          label="Scratch card stage"
+        />
+        <div className="rg3-backdrop-content">
+  <div className="rg-scratch-card">
+          <div className="rg-scratch-sheen" />
+          <div className="rg-scratch-head">
+            <div className="rg-scratch-title">MATCH 3 TO WIN</div>
+            <div className="rg-scratch-sub">Find three the same and it's yours</div>
           </div>
-          <canvas ref={canvasRef} className={`rg-scratch-foil ${allRevealed ? "is-gone" : ""}`} {...canvasHandlers} aria-hidden="true" />
+          <div className="rg-scratch-play" ref={wrapRef}>
+            <div className="rg-scratch-grid">
+              {layout.cells.map((s, i) => {
+                const win = allRevealed && layout.winningCells.includes(i);
+                const dim = allRevealed && layout.winningCells.length > 0 && !win;
+                return (
+                  <div
+                    key={i}
+                    ref={(el) => {
+                      cellRefs.current[i] = el;
+                    }}
+                    className={`rg-scratch-cell ${win ? "is-winning" : ""} ${dim ? "is-dim" : ""}`}
+                    aria-label={revealed[i] ? (s.kind === "icon" ? s.icon : s.label) : "Hidden"}
+                  >
+                    {s.kind === "icon" ? <Coin icon={s.icon} /> : <Coin label={s.label} />}
+                  </div>
+                );
+              })}
+            </div>
+            <canvas ref={canvasRef} className={`rg-scratch-foil ${allRevealed ? "is-gone" : ""}`} {...canvasHandlers} aria-hidden="true" />
+          </div>
+          <div className="rg-scratch-foot">
+            <span className="rg-scratch-ticket">Ticket {formatTicketNumber(ticket.ticketNumber)}</span>
+            <span className="rg-scratch-brand">GIMME GIMME</span>
+          </div>
         </div>
-        <div className="rg-scratch-foot">
-          <span className="rg-scratch-ticket">Ticket {formatTicketNumber(ticket.ticketNumber)}</span>
-          <span className="rg-scratch-brand">GIMME GIMME</span>
         </div>
       </div>
       {prompt}
