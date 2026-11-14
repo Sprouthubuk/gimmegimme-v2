@@ -37,6 +37,11 @@ export interface GameConfig {
   theme?: string | Partial<import("./theme").Theme>;
   /** Shown in the top bar, e.g. "Scratch Card". Defaults to the theme's title. */
   title?: string;
+  /**
+   * The competition's real prize names (largest first), for games that show a prize board (wheel segments,
+   * slot symbols). Never invented: leave it out and games show their own neutral board.
+   */
+  prizeLabels?: readonly string[];
   /** Printed on each card, e.g. the competition name. */
   competitionTitle?: string;
   links?: GameLinks;

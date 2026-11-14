@@ -229,7 +229,11 @@ export function createScratchCard(ctx: ShellContext): GameScene {
       const p = stage.root.toLocal(g);
       particles.burst({ x: p.x, y: p.y, count: 2, texture: sparkle, tints: [0xffffff, hex(theme.foilHighlight)], speed: [0.5, 2.5], size: [4, 9], life: [14, 28], gravity: 0.05, additive: true });
     }
-    if (!done && clearedCells / covered.length >= AUTO_REVEAL) { done = true; up(); onRevealed?.(); }
+    if (!done && clearedCells / covered.length >= AUTO_REVEAL) {
+      done = true;
+      up();
+      void dissolve(false).then(() => onRevealed?.()); // the rest of the foil shimmers away, win or not
+    }
   };
   const move = (e: FederatedPointerEvent) => {
     if (!scratching || done) return;
@@ -305,9 +309,12 @@ export function createScratchCard(ctx: ShellContext): GameScene {
       else await gsap.fromTo(card, { x: 340, rotation: 0.12, alpha: 0 }, { x: 0, rotation: 0, alpha: 1, duration: 0.5, ease: "power3.out" });
     },
 
+    title: "Scratch Card",
+    hint: undefined,
+
     async revealNow(fast) {
       done = true;
-      await dissolve(fast);
+      if (foilSprite && foilSprite.alpha > 0) await dissolve(fast);
     },
 
     async celebrate(_t, fast) {

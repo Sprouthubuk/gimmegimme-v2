@@ -6,6 +6,8 @@ import type { GameConfig, MountedGame } from "./shared/types";
 
 export const PREMIUM_GAMES = {
   scratch_card: () => import("./scratch-card"),
+  balloon_pop: () => import("./balloon-pop"),
+  gems: () => import("./gems"),
 } as const;
 
 export type PremiumGameId = keyof typeof PREMIUM_GAMES;

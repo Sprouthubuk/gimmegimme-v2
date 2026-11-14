@@ -15,6 +15,10 @@ import { GameSession, type SessionSnapshot } from "./state";
  * draws one ticket at a time and tells the shell when the player has revealed it.
  */
 export interface GameScene {
+  /** The game's name in the top bar when the config gives none. */
+  readonly title?: string;
+  /** The words on the hint button (also a one-tap "do it for me"). Defaults to the theme's scratch hint. */
+  readonly hint?: string;
   /** Build textures etc. before the session starts. */
   load(): Promise<void>;
   /** Bring this ticket's card on stage; resolve `revealed` when the player has uncovered it. */
@@ -93,6 +97,7 @@ export async function runShell(host: HTMLElement, config: GameConfig, makeScene:
   stage.fx.addChild(particles.view);
   const scene = makeScene({ stage, theme, config, reducedMotion, audio, particles, sparkle });
   await scene.load();
+  const hintText = scene.hint ?? theme.labels.scratchHint;
   if (!alive) return { destroy() {} };
 
   // ---- Top bar ----
@@ -102,7 +107,7 @@ export async function runShell(host: HTMLElement, config: GameConfig, makeScene:
   back.setAttribute("aria-label", theme.labels.back);
   back.href = safeHref(config.links?.back) ?? "/";
   const title = el("div", "ggx-title");
-  const titleB = el("b", undefined, config.title ?? theme.title);
+  const titleB = el("b", undefined, config.title ?? scene.title ?? theme.title);
   const count = el("span");
   title.append(titleB, count);
   const won = el("div", "ggx-won");
@@ -120,8 +125,9 @@ export async function runShell(host: HTMLElement, config: GameConfig, makeScene:
   top.append(back, title, won, sound);
 
   // ---- Hint (also the single-tap reveal button) ----
-  const hint = el("button", "ggx-hint ggx-glass", theme.labels.scratchHint);
+  const hint = el("button", "ggx-hint ggx-glass");
   hint.type = "button";
+  hint.textContent = hintText;
   const placeHint = () => { hint.style.top = `${stage.focus.hintY * (stage.app.screen.width / 390)}px`; };
   stage.onResize(placeHint);
   placeHint();

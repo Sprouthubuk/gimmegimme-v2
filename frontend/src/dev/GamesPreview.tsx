@@ -16,7 +16,7 @@ export const MOCK_TICKETS: GameTicket[] = [
   { ticketNumber: 1050, result: "win", prize: { label: "£500 Cash", value: 500, tier: "big" }, proofUrl: "/verify/VTY-DEMO01" },
 ];
 
-const GAMES = ["scratch_card"];
+const GAMES = ["scratch_card", "balloon_pop", "gems"];
 
 export default function GamesPreview() {
   const [game, setGame] = useState(GAMES[0]);
