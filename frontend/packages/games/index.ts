@@ -8,6 +8,7 @@ export const PREMIUM_GAMES = {
   scratch_card: () => import("./scratch-card"),
   balloon_pop: () => import("./balloon-pop"),
   gems: () => import("./gems"),
+  spin_wheel: () => import("./spin-wheel"),
 } as const;
 
 export type PremiumGameId = keyof typeof PREMIUM_GAMES;

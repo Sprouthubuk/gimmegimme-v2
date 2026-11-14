@@ -16,7 +16,10 @@ export const MOCK_TICKETS: GameTicket[] = [
   { ticketNumber: 1050, result: "win", prize: { label: "£500 Cash", value: 500, tier: "big" }, proofUrl: "/verify/VTY-DEMO01" },
 ];
 
-const GAMES = ["scratch_card", "balloon_pop", "gems"];
+/** The mock competition's prize list (largest first), as the server sends it in the play context. */
+export const MOCK_PRIZES = ["£500 Cash", "£10 Site Credit", "£5 Site Credit", "£1 Site Credit"];
+
+const GAMES = ["scratch_card", "balloon_pop", "gems", "spin_wheel"];
 
 export default function GamesPreview() {
   const [game, setGame] = useState(GAMES[0]);
@@ -32,7 +35,7 @@ export default function GamesPreview() {
         <button data-testid="pv-restart" type="button" onClick={() => setRun((r) => r + 1)} style={{ ...sel, background: "#FFF23A", color: "#000" }}>Restart</button>
       </div>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <GameIsland key={`${game}-${theme}-${reduced}-${run}`} game={game} theme={theme} reducedMotion={reduced} tickets={MOCK_TICKETS} competitionTitle={theme === "christmas" ? "Scrooge's Secret Stash" : "The Great Cash Escape"} links={{ back: "/games-preview", playAgain: "/games-preview", wallet: "/games-preview" }} height="100%" />
+        <GameIsland key={`${game}-${theme}-${reduced}-${run}`} game={game} theme={theme} reducedMotion={reduced} tickets={MOCK_TICKETS} prizeLabels={MOCK_PRIZES} competitionTitle={theme === "christmas" ? "Scrooge's Secret Stash" : "The Great Cash Escape"} links={{ back: "/games-preview", playAgain: "/games-preview", wallet: "/games-preview" }} height="100%" />
       </div>
     </div>
   );

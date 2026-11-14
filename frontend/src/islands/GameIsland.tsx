@@ -15,6 +15,8 @@ interface Props {
   competitionTitle?: string;
   links?: GameLinks;
   tickets?: GameTicket[];
+  /** The competition's real prize names, largest first (from the play context when an order is given). */
+  prizeLabels?: string[];
   orderNumber?: string;
   /** Only this competition's tickets from the order. */
   competitionId?: string;
@@ -35,13 +37,17 @@ export default function GameIsland(p: Props) {
         const lib = await import("../../packages/games");
         if (!lib.isPremiumGame(p.game)) throw new Error(`Unknown game ${p.game}`);
         let tickets = p.tickets ?? [];
+        let prizeLabels = p.prizeLabels;
         if (p.orderNumber) {
           const play = await api<PlayResult>(`/api/orders/${encodeURIComponent(p.orderNumber)}/play`, { json: {} });
           tickets = lib.fromRevealOutcome(play, p.competitionId);
+          const cid = p.competitionId ?? play.outcome.tickets[0]?.competitionId;
+          prizeLabels = cid ? [...(play.context[cid]?.prizeLabels ?? [])] : undefined;
         }
         if (cancelled || !host.current || !tickets.length) return;
         game = await lib.mountPremiumGame(p.game, host.current, {
           tickets,
+          prizeLabels,
           theme: p.theme,
           title: p.title,
           competitionTitle: p.competitionTitle,
