@@ -197,19 +197,24 @@ export function studioLights(scene: THREE.Scene, { key = 0xfff1e0, rim = 0x8fd8f
 }
 
 /** Rounded box, for cabinets and panels. */
-export function roundedBox(w: number, h: number, d: number, r = 0.08, seg = 4): THREE.BufferGeometry {
+export function roundedBox(W: number, H: number, d: number, r = 0.08, seg = 4): THREE.BufferGeometry {
+  // The bevel adds r on every side, so the outline is drawn r smaller: the finished box is W x H x d.
+  r = Math.min(r, W / 2 - 0.001, H / 2 - 0.001, d / 2 - 0.001);
+  const w = W - r * 2;
+  const h = H - r * 2;
+  const rr = Math.min(r, w / 2, h / 2);
   const shape = new THREE.Shape();
   const x = -w / 2;
   const y = -h / 2;
-  shape.moveTo(x + r, y);
-  shape.lineTo(x + w - r, y);
-  shape.quadraticCurveTo(x + w, y, x + w, y + r);
-  shape.lineTo(x + w, y + h - r);
-  shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  shape.lineTo(x + r, y + h);
-  shape.quadraticCurveTo(x, y + h, x, y + h - r);
-  shape.lineTo(x, y + r);
-  shape.quadraticCurveTo(x, y, x + r, y);
+  shape.moveTo(x + rr, y);
+  shape.lineTo(x + w - rr, y);
+  shape.quadraticCurveTo(x + w, y, x + w, y + rr);
+  shape.lineTo(x + w, y + h - rr);
+  shape.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  shape.lineTo(x + rr, y + h);
+  shape.quadraticCurveTo(x, y + h, x, y + h - rr);
+  shape.lineTo(x, y + rr);
+  shape.quadraticCurveTo(x, y, x + rr, y);
   const geo = new THREE.ExtrudeGeometry(shape, { depth: d - r * 2, bevelEnabled: true, bevelSize: r, bevelThickness: r, bevelSegments: seg, curveSegments: seg * 2 });
   geo.translate(0, 0, -(d - r * 2) / 2);
   geo.computeVertexNormals();

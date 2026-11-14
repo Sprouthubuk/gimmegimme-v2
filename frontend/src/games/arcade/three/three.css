@@ -66,3 +66,21 @@
 }
 .rg3-arrow { min-width: 64px; padding: 6px 12px; font-size: 22px; }
 .rg3-grab { min-width: 150px; }
+.rg3-paytable { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: min(100%, 400px); margin-top: 12px; }
+.rg3-pay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px 4px 8px;
+  border: var(--rg-outline, 3px solid #141414);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fffdf5, #f1e9ff);
+  color: #141414;
+  font-weight: 900;
+  font-size: 15px;
+  box-shadow: 0 3px 0 var(--rg-ink, #141414);
+}
+.rg3-pay .rg-slot-icon { width: 26px; height: 26px; }
+.rg3-pay.is-hit { background: linear-gradient(180deg, #fff59a, #ffd23f); animation: rg3-hit 0.5s ease-in-out 3; }
+@keyframes rg3-hit { 50% { transform: scale(1.12); } }
+.rg3-spin { min-width: 200px; }
