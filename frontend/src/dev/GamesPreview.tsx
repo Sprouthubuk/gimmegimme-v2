@@ -19,7 +19,7 @@ export const MOCK_TICKETS: GameTicket[] = [
 /** The mock competition's prize list (largest first), as the server sends it in the play context. */
 export const MOCK_PRIZES = ["£500 Cash", "£10 Site Credit", "£5 Site Credit", "£1 Site Credit"];
 
-const GAMES = ["scratch_card", "balloon_pop", "gems", "spin_wheel", "slots"];
+const GAMES = ["scratch_card", "balloon_pop", "gems", "spin_wheel", "slots", "claw_machine"];
 
 export default function GamesPreview() {
   const [game, setGame] = useState(GAMES[0]);
