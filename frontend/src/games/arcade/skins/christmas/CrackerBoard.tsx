@@ -8,6 +8,8 @@ import { crackerColours, initState, makeReducer, type Colour } from "./crackerSt
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "./cracker.css";
+import { Scene3D } from "../../three/Scene3D";
+import { buildCrackerScene, type CrackerState3D } from "./cracker3d";
 
 /** Wobble, then the snap. */
 const SNAP_MS = 380;
@@ -139,7 +141,7 @@ export function CrackerBoard({ tickets, seed, reducedMotion, onProgress, onRevea
   const latest = state.latest;
   const joke = latest && !latest.ticket.prize ? crackerJoke(seed, latest.order) : null;
 
-  return (
+  const flat = (
     <>
       <div className="rg-cracker-box">
         <div className="rg-cracker-top">
@@ -188,6 +190,85 @@ export function CrackerBoard({ tickets, seed, reducedMotion, onProgress, onRevea
           })}
         </div>
 
+        <div className="rg-cracker-latest" aria-live="polite">
+          {!latest ? (
+            <span className="rg-cracker-latest-empty">Each cracker holds a ticket's result</span>
+          ) : latest.ticket.prize ? (
+            <div className="rg-cracker-latest-win">
+              <Coin tone="yellow" label={prizeShortLabel(latest.ticket.prize)} />
+              <div>
+                <strong>{isCredited(latest.ticket.prize) ? `+${formatPence(latest.ticket.prize.valuePence)}` : latest.ticket.prize.name}</strong>
+                <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
+              </div>
+            </div>
+          ) : (
+            <div className="rg-cracker-latest-joke">
+              <small>
+                No win this time · Ticket {formatTicketNumber(latest.ticket.ticketNumber)}
+              </small>
+              <p>{joke!.q}</p>
+              <p className="rg-cracker-answer">{joke!.a}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="rg-cracker-panel">
+          <div className="rg-cracker-stats">
+            <div>
+              <strong>{state.pulled.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} pulled
+            </div>
+            <div className="rg-cracker-tray">
+              {wins.length === 0 ? (
+                <span className="rg-cracker-tray-empty">Prizes you find land here</span>
+              ) : (
+                <>
+                  {wins.slice(-3).map((t) => (
+                    <Coin key={t.ticketNumber} tone="yellow" label={prizeShortLabel(t.prize!)} />
+                  ))}
+                  <span className="rg-cracker-total">
+                    {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <button type="button" className="rg-cracker-all" onClick={handlePullAll} disabled={done || pullAll}>
+            PULL ALL
+          </button>
+        </div>
+      </div>
+      {done ? (
+        <GamePrompt title="All pulled!" tone="pink" />
+      ) : state.pulled === 0 ? (
+        <GamePrompt title="Tap a cracker to pull it" sub={RESULT_SET_NOTE} />
+      ) : (
+        <GamePrompt title={`${left.toLocaleString("en-GB")} left to pull`} />
+      )}
+      <SoundToggle />
+    </>
+  );
+
+  const state3d: CrackerState3D = {
+    slots: state.slots,
+    snaps: state.snaps,
+    colours,
+    labelFor: (snap) => (snap.ticket.prize ? prizeShortLabel(snap.ticket.prize) : null),
+    pull: (slot) => !pullAll && pullSlot(slot),
+    done,
+  };
+
+  return (
+    <>
+      <Scene3D
+        state={state3d}
+        setup={(ctx) => buildCrackerScene(ctx)}
+        seed={seed}
+        reducedMotion={reducedMotion}
+        aspect={1.0}
+        fallback={flat}
+        label="Chris Cracker's Cash Bang: crackers on a market stall"
+      />
+      <div className="rg-cracker-box rg3-cracker-below">
         <div className="rg-cracker-latest" aria-live="polite">
           {!latest ? (
             <span className="rg-cracker-latest-empty">Each cracker holds a ticket's result</span>
