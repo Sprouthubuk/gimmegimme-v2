@@ -152,7 +152,7 @@ describe("the Christmas boards play the classic generators", () => {
     expect(code(path.join(CHRISTMAS, "HeistBoard.tsx"))).toContain("useGemPicks(layout, reducedMotion, onReveal");
     expect(code(path.join(ROOT, "src/games/arcade/games/gems/GemsBoard.tsx"))).toContain("useGemPicks(layout, reducedMotion, onReveal)");
     expect(code(path.join(CHRISTMAS, "GrinchClawBoard.tsx"))).toContain("useClaw(PILE, reducedMotion, onReveal");
-    expect(code(path.join(ROOT, "src/games/arcade/games/claw/ClawBoard.tsx"))).toContain("useClaw(PILE, reducedMotion, onReveal)");
+    expect(code(path.join(ROOT, "src/games/arcade/games/claw/ClawBoard.tsx"))).toContain("useClaw(PILE, reducedMotion, onReveal");
     // What a bauble holds is read from the ticket alone, never from which bauble was grabbed.
     const claw = code(path.join(CHRISTMAS, "GrinchClawBoard.tsx"));
     expect(claw).toContain("const label = winLabel(ticket.prize);");

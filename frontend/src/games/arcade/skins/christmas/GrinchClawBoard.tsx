@@ -1,9 +1,10 @@
-import { useEffect, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { BoardProps } from "../../games/types";
 import { winLabel } from "../../games/symbols";
-import { useClaw, type ClawItem } from "../../games/claw/useClaw";
+import { CHUTE_X, useClaw, type ClawItem } from "../../games/claw/useClaw";
 import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
+import { Splash } from "../../shell/Splash";
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "../../games/claw/claw.css";
@@ -127,20 +128,33 @@ function Pine({ side }: { side: "left" | "right" }) {
 
 export function GrinchClawBoard({ ticket, reducedMotion, onReveal }: BoardProps) {
   const label = winLabel(ticket.prize);
-  const { x, phase, target, tilt, glassRef, move, startHold, stopHold, grab, onGlassPointer, carrying, len, closed } = useClaw(PILE, reducedMotion, onReveal, 1600);
+  const { x, phase, target, tilt, swing, glassRef, move, startHold, stopHold, grab, onGlassPointer, jostled, carrying, released, len, closed } = useClaw(PILE, reducedMotion, onReveal, 2200);
   const held = target != null ? PILE[target] : null;
+  /** Centre stage, the bauble lands and wobbles before it cracks open. */
+  const [cracked, setCracked] = useState(false);
+  useEffect(() => {
+    if (phase !== "open") return;
+    const t = window.setTimeout(() => setCracked(true), reducedMotion ? 0 : 650);
+    return () => window.clearTimeout(t);
+  }, [phase, reducedMotion]);
 
   useEffect(() => {
     if (phase === "close") playSound("bells");
+    if (phase === "drop" && !reducedMotion) navigator.vibrate?.(18);
     if (phase !== "open") return;
-    playSound("crack");
-    if (!label) return;
-    const t = window.setTimeout(() => {
+    // The bauble lands centre stage, wobbles, then cracks open.
+    const t1 = window.setTimeout(() => playSound("crack"), reducedMotion ? 0 : 650);
+    if (!label) return () => window.clearTimeout(t1);
+    const t2 = window.setTimeout(() => {
       playSound("chime");
       playSound("clink");
-    }, 260);
-    return () => window.clearTimeout(t);
-  }, [phase, label]);
+      if (!reducedMotion) navigator.vibrate?.([30, 40, 60]);
+    }, reducedMotion ? 0 : 900);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [phase, label, reducedMotion]);
 
   const press = () => {
     if (phase === "aim" && !reducedMotion) navigator.vibrate?.(12);
@@ -162,14 +176,16 @@ export function GrinchClawBoard({ ticket, reducedMotion, onReveal }: BoardProps)
           <span className="rg-grinch-drift" aria-hidden="true" />
           <div className="rg-claw-rail" />
           {PILE.map((c, i) =>
-            i === target && carrying ? null : (
-              <span key={i} className="rg-capsule-slot rg-bauble-slot" style={{ left: `${c.x}%`, top: `${c.y}%`, zIndex: Math.round(c.y) }}>
+            i === target && (carrying || released) ? null : (
+              <span key={i} className={`rg-capsule-slot rg-bauble-slot ${jostled(i) ? "is-jostled" : ""}`} style={{ left: `${c.x}%`, top: `${c.y}%`, zIndex: Math.round(c.y) }}>
                 <Bauble tone={c.tone} turn={c.turn} />
               </span>
             ),
           )}
-          <div className="rg-claw-rig" style={{ left: `${x}%`, "--len": len } as CSSProperties}>
+          {phase === "aim" && <span className="rg-claw-aim" style={{ left: `${x}%` }} aria-hidden="true" />}
+          <div className="rg-claw-rig" style={{ left: `${x}%`, "--len": len, "--swing": swing } as CSSProperties}>
             <span className="rg-claw-carriage" />
+            <span className="rg-claw-arm">
             <span className="rg-claw-cable" />
             <span className={`rg-claw-head ${closed ? "is-closed" : ""}`}>
               <svg viewBox="0 0 60 50" aria-hidden="true">
@@ -181,26 +197,29 @@ export function GrinchClawBoard({ ticket, reducedMotion, onReveal }: BoardProps)
               </svg>
               {held && carrying && (
                 <span className="rg-claw-held">
-                  <Bauble tone={held.tone} open={phase === "open"} />
-                  {phase === "open" &&
-                    (label ? (
-                      <>
-                        {!reducedMotion && (
-                          <span className="rg-grinch-burst" aria-hidden="true">
-                            {Array.from({ length: 10 }, (_, k) => (
-                              <i key={k} style={{ "--a": `${k * 36}deg`, "--d": `${34 + (k % 3) * 9}px` } as CSSProperties} />
-                            ))}
-                          </span>
-                        )}
-                        <Coin label={label} tone="yellow" className="rg-claw-prize" />
-                      </>
-                    ) : (
-                      <span className="rg-claw-empty">Empty bauble</span>
-                    ))}
+                  <Bauble tone={held.tone} />
                 </span>
               )}
             </span>
+            </span>
           </div>
+          {held && phase === "drop" && (
+            <span className="rg-claw-falling" style={{ left: `${CHUTE_X}%` }} aria-hidden="true">
+              <Bauble tone={held.tone} />
+            </span>
+          )}
+          {held && phase === "open" && (
+            <div className={`rg-claw-stage ${label ? "is-win" : "is-empty"}`}>
+              <span className="rg-claw-stage-rays" aria-hidden="true" />
+              <span className="rg-claw-stage-item">
+                {cracked && label && <Splash reducedMotion={reducedMotion} className="rg-claw-stage-splash" size={1.15} />}
+                <span className="rg-claw-stage-bauble">
+                  <Bauble tone={held.tone} open={cracked} />
+                </span>
+                {cracked && (label ? <Coin label={label} tone="yellow" className="rg-claw-prize" /> : <span className="rg-claw-empty">Empty bauble</span>)}
+              </span>
+            </div>
+          )}
         </div>
         <div className="rg-claw-panel rg-grinch-panel">
           <div className="rg-joystick" aria-label="Move the claw">
@@ -229,7 +248,7 @@ export function GrinchClawBoard({ ticket, reducedMotion, onReveal }: BoardProps)
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(8)}
             />
           </div>
-          <div className="rg-claw-chute">GOLD</div>
+          <div className={`rg-claw-chute ${phase === "drop" ? "is-catching" : ""}`}>GOLD</div>
           <button type="button" className="rg-grab" onClick={press} disabled={phase !== "aim"}>
             GRAB
           </button>
@@ -237,8 +256,12 @@ export function GrinchClawBoard({ ticket, reducedMotion, onReveal }: BoardProps)
       </div>
       {phase === "aim" ? (
         <GamePrompt title="Steer, then press GRAB" sub={RESULT_SET_NOTE} />
+      ) : phase === "open" && !cracked ? (
+        <GamePrompt title="Cracking it open…" tone="cyan" />
       ) : phase === "open" ? (
         <GamePrompt title={label ? `${label}!` : "Empty bauble"} tone={label ? "pink" : "ink"} />
+      ) : phase === "carry" || phase === "drop" ? (
+        <GamePrompt title="Into the chute…" tone="cyan" />
       ) : carrying ? (
         <GamePrompt title="Got a bauble!" tone="cyan" sub="Lifting it out…" />
       ) : (
