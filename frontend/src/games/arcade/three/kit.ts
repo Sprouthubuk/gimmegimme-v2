@@ -157,20 +157,19 @@ function coinFace(label: string, tone: "gold" | "pink" | "cyan" = "gold"): THREE
 /** A chunky coin with the prize printed on both faces. */
 export function coinMesh(label: string, radius = 0.32, tone: "gold" | "pink" | "cyan" = "gold"): THREE.Group {
   const g = new THREE.Group();
-  // The cylinder is turned to face the camera, so each cap's picture is turned back upright.
-  const front = coinFace(label, tone);
-  front.center.set(0.5, 0.5);
-  front.rotation = Math.PI / 2;
-  const back = coinFace(label, tone);
-  back.center.set(0.5, 0.5);
-  back.rotation = -Math.PI / 2;
-  back.repeat.set(-1, 1);
-  back.wrapS = THREE.RepeatWrapping;
+  // A rim (short cylinder) and two flat faces, so the prize reads the right way round on both sides.
+  const tex = coinFace(label, tone);
   const rim = tone === "gold" ? metal(GOLD, 0.18) : glossy(tone === "pink" ? 0xff2d95 : 0x1fc4f4);
-  const faceMat = (map: THREE.Texture) => new THREE.MeshStandardMaterial({ map, roughness: 0.45, metalness: 0.2, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.35, envMapIntensity: 0.6 });
-  const geo = new THREE.CylinderGeometry(radius, radius, radius * 0.22, 56);
-  const coin = new THREE.Mesh(geo, [rim, faceMat(front), faceMat(back)]);
+  const faceMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, metalness: 0.2, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.35, envMapIntensity: 0.6 });
+  const depth = radius * 0.22;
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, depth, 56), rim);
   coin.rotation.x = Math.PI / 2;
+  const front = new THREE.Mesh(new THREE.CircleGeometry(radius * 0.995, 56), faceMat);
+  front.position.z = depth / 2 + 0.001;
+  const back = new THREE.Mesh(new THREE.CircleGeometry(radius * 0.995, 56), faceMat);
+  back.position.z = -depth / 2 - 0.001;
+  back.rotation.y = Math.PI;
+  g.add(front, back);
   outline(coin, radius * 0.06);
   g.add(coin);
   return g;
