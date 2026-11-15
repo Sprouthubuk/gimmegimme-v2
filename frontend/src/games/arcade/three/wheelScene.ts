@@ -232,6 +232,18 @@ export function buildWheelScene(ctx: SceneCtx<WheelState>, skin: WheelSkin3D, la
   let spinAt = -1;
   let landedAt = -1;
   let angle = 0; // radians, clockwise positive
+  // Grab the wheel and wind it with a finger; letting go (or a plain tap) spins it.
+  let grab: { start: number; offset: number; last: number; lastAt: number; vel: number } | null = null;
+  let release = 0;
+  let spinFrom = 0;
+  const centre = new THREE.Vector3();
+  const fingerAngle = (e: { clientX: number; clientY: number }) => {
+    wheel.getWorldPosition(centre).project(ctx.camera);
+    const r = ctx.renderer.domElement.getBoundingClientRect();
+    const cx = r.left + ((centre.x + 1) / 2) * r.width;
+    const cy = r.top + ((1 - centre.y) / 2) * r.height;
+    return Math.atan2(e.clientX - cx, -(e.clientY - cy)); // clockwise from the top
+  };
   let lastSeg = 0;
   let flap = 0;
   let coin: THREE.Group | null = null;
@@ -256,12 +268,16 @@ export function buildWheelScene(ctx: SceneCtx<WheelState>, skin: WheelSkin3D, la
       if (decorTick) decorTick(t);
       if (s.phase !== phase) {
         phase = s.phase;
-        if (phase === "spinning") spinAt = t;
+        if (phase === "spinning") {
+          spinAt = t;
+          spinFrom = angle;
+        }
         if (phase === "landed") landedAt = t;
       }
       const target = THREE.MathUtils.degToRad(s.rotation);
-      if (phase === "ready") angle = reducedMotion ? 0 : Math.sin(t * 0.8) * 0.02;
-      else if (phase === "spinning") angle = reducedMotion ? target : target * bez(clamp01((t - spinAt) / (s.spinMs / 1000)));
+      if (!grab) release = damp(release, 0, 6, dt);
+      if (phase === "ready") angle = (reducedMotion ? 0 : Math.sin(t * 0.8) * 0.02) + (grab ? grab.offset : release);
+      else if (phase === "spinning") angle = reducedMotion ? target : spinFrom + (target - spinFrom) * bez(clamp01((t - spinAt) / (s.spinMs / 1000)));
       else angle = target;
       wheel.rotation.z = -angle;
       // The pointer flicks each time a peg passes it.
@@ -331,9 +347,30 @@ export function buildWheelScene(ctx: SceneCtx<WheelState>, skin: WheelSkin3D, la
       camera.lookAt(look);
     },
     pointer(kind, e) {
-      if (kind !== "down") return;
       const s = ctx.get();
-      if (s.phase === "ready" && ctx.pick([wheel], e)) s.spin();
+      if (s.phase !== "ready") {
+        grab = null;
+        return;
+      }
+      if (kind === "down") {
+        if (!ctx.pick([wheel], e)) return;
+        const a = fingerAngle(e);
+        grab = { start: a, offset: 0, last: a, lastAt: performance.now(), vel: 0 };
+      } else if (kind === "move" && grab) {
+        const a = fingerAngle(e);
+        let d = a - grab.last;
+        if (d > Math.PI) d -= Math.PI * 2;
+        if (d < -Math.PI) d += Math.PI * 2;
+        const now = performance.now();
+        grab.vel = d / Math.max(0.008, (now - grab.lastAt) / 1000);
+        grab.offset = THREE.MathUtils.clamp(grab.offset + d, -1.2, 1.2);
+        grab.last = a;
+        grab.lastAt = now;
+      } else if (kind === "up" && grab) {
+        release = grab.offset;
+        grab = null;
+        s.spin(); // a tap, a drag or a flick all spin: where it stops was fixed before the board appeared
+      }
     },
   };
 }

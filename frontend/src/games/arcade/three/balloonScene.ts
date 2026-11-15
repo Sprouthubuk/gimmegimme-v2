@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { BalloonColour, BalloonLook } from "../games/generators";
 import type { SceneCtx, SceneHandle } from "./Scene3D";
 import { BRAND } from "./fx";
-import { clamp01, coinMesh, ease, glossy, gradientTexture, halo, labelSprite, metal, outline, studioLights } from "./kit";
+import { clamp01, coinMesh, damp, ease, glossy, gradientTexture, halo, labelSprite, metal, outline, studioLights } from "./kit";
 import { PINK_FILL, YELLOW_FILL, signTexture } from "./signs";
 
 /**
@@ -98,6 +98,24 @@ export function buildBalloonScene(ctx: SceneCtx<BalloonState>): SceneHandle {
   fin.rotation.x = Math.PI;
   dartGeo.add(tip, shaft, fin);
 
+  // A sight that follows the finger; the balloon under it wobbles, ready to pop.
+  const sight = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.014, 8, 40), new THREE.MeshBasicMaterial({ color: BRAND.pink, transparent: true, opacity: 0.9, toneMapped: false }));
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.02, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
+  sight.add(ring, dot);
+  for (let k = 0; k < 4; k++) {
+    const tick = new THREE.Mesh(new THREE.PlaneGeometry(0.012, 0.07), ring.material);
+    tick.position.set(Math.sin((k * Math.PI) / 2) * 0.2, Math.cos((k * Math.PI) / 2) * 0.2, 0);
+    tick.rotation.z = (-k * Math.PI) / 2;
+    sight.add(tick);
+  }
+  sight.position.z = 0.5;
+  sight.visible = false;
+  world.add(sight);
+  const aimPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.5);
+  const aimAt = new THREE.Vector3();
+  let aiming = false;
+
   interface LaneView {
     serial: number | null;
     obj: THREE.Group | null;
@@ -112,6 +130,11 @@ export function buildBalloonScene(ctx: SceneCtx<BalloonState>): SceneHandle {
 
   return {
     update(dt, t) {
+      sight.visible = aiming && !reducedMotion;
+      if (sight.visible) {
+        sight.rotation.z = t * 1.5;
+        ring.scale.setScalar(1 + Math.sin(t * 6) * 0.05);
+      }
       const s = ctx.get();
       s.lanes.forEach((lane, i) => {
         const v = lanes[i];
@@ -138,7 +161,9 @@ export function buildBalloonScene(ctx: SceneCtx<BalloonState>): SceneHandle {
             const y = reducedMotion ? (i < 5 ? 0.6 : -0.6) : BOTTOM + (TOP - BOTTOM) * p;
             const x = (COLUMNS[i] / 100 - 0.5) * SKY_W + (reducedMotion ? 0 : Math.sin(t * 1.3 + i) * look.sway * 0.004);
             v.obj.position.set(x, y, (i % 3) * 0.12 - 0.12);
-            v.obj.rotation.z = reducedMotion ? 0 : Math.sin(t * 1.1 + i * 2) * 0.12;
+            const under = aiming && Math.hypot(x - sight.position.x, y - sight.position.y) < 0.3;
+            v.obj.rotation.z = reducedMotion ? 0 : Math.sin(t * 1.1 + i * 2) * 0.12 + (under ? Math.sin(t * 22) * 0.08 : 0);
+            v.obj.scale.setScalar(damp(v.obj.scale.x, (look.size === "s" ? 0.8 : look.size === "l" ? 1.15 : 1) * (under ? 1.08 : 1), 12, dt));
             v.pos.copy(v.obj.position);
           } else {
             if (v.hitAt < 0) {
@@ -200,6 +225,11 @@ export function buildBalloonScene(ctx: SceneCtx<BalloonState>): SceneHandle {
       }
     },
     pointer(kind, e) {
+      if (kind === "up") aiming = e.pointerType === "mouse";
+      if (kind !== "up" && ctx.ray(e).intersectPlane(aimPlane, aimAt)) {
+        aiming = true;
+        sight.position.set(aimAt.x, aimAt.y, 0.5);
+      }
       if (kind !== "down") return;
       const s = ctx.get();
       const hit = ctx.pick(lanes.map((l) => l.obj).filter((o): o is THREE.Group => !!o && o.visible), e);

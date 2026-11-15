@@ -150,6 +150,23 @@ export function buildDuckScene(ctx: SceneCtx<DuckState>): SceneHandle {
   let hookY = 0.85;
   let tag: THREE.Object3D | null = null;
   let celebrated = false;
+  // Before a hook: the hook follows the finger along the channel and the duck under it lifts slightly.
+  let aimX: number | null = null;
+  let near = -1;
+  const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.05);
+  const hitP = new THREE.Vector3();
+  const nearest = (x: number) => {
+    let best = -1;
+    let bd = Infinity;
+    ducks.forEach((dk, i) => {
+      const d = Math.abs(dk.d.position.x - x) + (dk.home.z > 0 ? 0 : 0.02);
+      if (d < bd) {
+        bd = d;
+        best = i;
+      }
+    });
+    return bd < 0.5 ? best : -1;
+  };
   const dur: Record<DuckPhase, number> = { ready: 0, hooking: 0.75, lifting: 0.95, tagged: 1.3 };
 
   return {
@@ -164,7 +181,9 @@ export function buildDuckScene(ctx: SceneCtx<DuckState>): SceneHandle {
         const chosen = s.chosen === i;
         if (chosen && phase !== "ready") return;
         const drift = reducedMotion ? 0 : Math.sin(t * 0.5 + dk.off * 4) * 0.12;
-        dk.d.position.set(dk.home.x + drift, dk.home.y + (reducedMotion ? 0 : Math.sin(t * 2.4 + dk.off * 5) * 0.025), dk.home.z);
+        const lift = phase === "ready" && near === i ? 0.06 : 0;
+        dk.d.userData.lift = damp((dk.d.userData.lift as number) ?? 0, lift, 10, dt);
+        dk.d.position.set(dk.home.x + drift, dk.home.y + (dk.d.userData.lift as number) + (reducedMotion ? 0 : Math.sin(t * 2.4 + dk.off * 5) * 0.025), dk.home.z);
         dk.d.rotation.set(reducedMotion ? 0 : Math.sin(t * 1.8 + i) * 0.06, (i % 2 ? -0.4 : 0.4) + (reducedMotion ? 0 : Math.sin(t * 0.5 + dk.off * 4) * 0.3), reducedMotion ? 0 : Math.sin(t * 2 + i) * 0.05);
       });
       const c = s.chosen != null ? ducks[s.chosen] : null;
@@ -182,7 +201,7 @@ export function buildDuckScene(ctx: SceneCtx<DuckState>): SceneHandle {
           c.d.position.z = damp(c.d.position.z, 0.6, 3, dt);
         }
       } else {
-        hookX = damp(hookX, 0.9, 4, dt);
+        hookX = damp(hookX, aimX ?? 0.9, aimX == null ? 4 : 14, dt);
         hookY = damp(hookY, 0.85 + (reducedMotion ? 0 : Math.sin(t * 1.4) * 0.03), 4, dt);
       }
       line.position.set(hookX, (hookTop + hookY) / 2, c ? c.d.position.z : 0.2);
@@ -215,12 +234,18 @@ export function buildDuckScene(ctx: SceneCtx<DuckState>): SceneHandle {
       camera.lookAt(look);
     },
     pointer(kind, e) {
-      if (kind !== "down") return;
       const s = ctx.get();
       if (s.phase !== "ready") return;
+      if (ctx.ray(e).intersectPlane(plane, hitP)) {
+        aimX = THREE.MathUtils.clamp(hitP.x, -1.3, 1.3);
+        near = nearest(aimX);
+      }
+      if (kind !== "up") return;
+      // Let go over a duck to hook it (a tap works the same way).
       const hit = ctx.pick(ducks.map((d) => d.d), e);
       const i = hit?.object.userData.duck;
       if (typeof i === "number") s.hook(i);
+      else if (near >= 0) s.hook(near);
     },
   };
 }

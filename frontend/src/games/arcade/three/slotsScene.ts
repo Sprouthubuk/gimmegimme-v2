@@ -206,6 +206,9 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
   const coins: { g: THREE.Group; v: THREE.Vector3; w: number }[] = [];
   let phase: SlotsPhase = "ready";
   let pulledAt = -10;
+  // Drag the lever down with a finger; past halfway it pulls. A tap on the machine still pulls too.
+  let drag: { y0: number; amount: number } | null = null;
+  let dragShown = 0;
   let landedAt = -1;
   let celebrated = false;
 
@@ -219,7 +222,13 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
       }
       // Lever: pulled down and springs back.
       const lp = t - pulledAt;
-      leverPivot.rotation.x = lp < 0.6 ? (lp < 0.18 ? (lp / 0.18) * 1.1 : 1.1 * (1 - ease.outElastic(clamp01((lp - 0.18) / 0.42)))) : reducedMotion ? 0 : Math.sin(t * 2) * 0.02;
+      dragShown = drag ? drag.amount : damp(dragShown, 0, 10, dt);
+      leverPivot.rotation.x =
+        lp < 0.6
+          ? lp < 0.18
+            ? Math.max(dragShown, lp / 0.18) * 1.1
+            : 1.1 * (1 - ease.outElastic(clamp01((lp - 0.18) / 0.42)))
+          : dragShown * 1.1 + (reducedMotion ? 0 : Math.sin(t * 2) * 0.02);
       // Drums.
       reels.forEach((rl, r) => {
         if (phase === "ready") return;
@@ -282,10 +291,31 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
       camera.lookAt(look);
     },
     pointer(kind, e) {
-      if (kind !== "down") return;
       const s = ctx.get();
-      if (s.phase !== "ready") return;
-      if (ctx.pick([machine], e)) s.pull();
+      if (s.phase !== "ready") {
+        drag = null;
+        return;
+      }
+      const h = ctx.renderer.domElement.getBoundingClientRect().height;
+      if (kind === "down") {
+        const onLever = ctx.pick([leverPivot], e);
+        if (onLever) {
+          drag = { y0: e.clientY, amount: 0 };
+          return;
+        }
+        if (ctx.pick([machine], e)) s.pull();
+      } else if (kind === "move" && drag) {
+        drag.amount = clamp01((e.clientY - drag.y0) / (h * 0.25));
+        if (drag.amount >= 0.55) {
+          drag = null;
+          dragShown = 1;
+          s.pull();
+        }
+      } else if (kind === "up" && drag) {
+        const pulled = drag.amount > 0.2 || Math.abs(e.clientY - drag.y0) < 6; // a short drag or a tap on the knob
+        drag = null;
+        if (pulled) s.pull();
+      }
     },
   };
 }

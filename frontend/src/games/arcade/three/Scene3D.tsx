@@ -34,8 +34,10 @@ export interface SceneCtx<S> {
   pick: (objects: THREE.Object3D[], e: { clientX: number; clientY: number }) => THREE.Intersection | null;
   /** A pointer event as a ray from the camera. */
   ray: (e: { clientX: number; clientY: number }) => THREE.Ray;
-  /** Shake the camera (wins, impacts). Skipped with reduced motion. */
+  /** Shake the camera (wins, impacts) with a buzz on phones. Skipped with reduced motion. */
   shake: (strength?: number, ms?: number) => void;
+  /** A short buzz on phones that support it. Skipped with reduced motion. */
+  haptic: (ms?: number | number[]) => void;
   bloom: UnrealBloomPass | null;
 }
 
@@ -64,6 +66,14 @@ interface Scene3DProps<S> {
   children?: ReactNode;
   /** Fill the parent's height instead of following aspect (a backdrop behind HTML). */
   fill?: boolean;
+}
+
+function buzz(pattern: number | number[]) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    // Not allowed here (no tap yet, or a desktop browser): nothing to do.
+  }
 }
 
 let webglChecked: boolean | null = null;
@@ -178,15 +188,40 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
         if (reducedMotion) return;
         shakeStrength = strength;
         shakeUntil = clock + ms / 1000;
+        buzz(strength >= 0.04 ? [24, 40, 36] : 14);
+      },
+      haptic: (ms = 12) => {
+        if (!reducedMotion) buzz(ms);
       },
       bloom: bloomPass,
     };
 
     let handle: SceneHandle | null = null;
+    // Where the finger or mouse is, -1..1 across the stage: the camera leans towards it a little.
+    const lean = new THREE.Vector2();
+    const leanTarget = new THREE.Vector2();
     const onPointer = (kind: "down" | "move" | "up") => (e: PointerEvent) => {
-      if (kind === "down") renderer.domElement.setPointerCapture?.(e.pointerId);
+      const r = renderer.domElement.getBoundingClientRect();
+      leanTarget.set(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+      if (kind === "down") {
+        renderer.domElement.setPointerCapture?.(e.pointerId);
+        // Every touch answers: a few sparks where it lands and a tiny buzz.
+        if (!reducedMotion) {
+          toNdc(e);
+          const hit = raycaster.intersectObjects(scene.children, true).find((h) => h.object.visible && !(h.object as THREE.Points).isPoints);
+          if (hit && hit.distance < 30) fx.sparkBurst(hit.point, 8, 1.1);
+          buzz(8);
+        }
+      }
       handle?.pointer?.(kind, e);
     };
+    const leave = () => leanTarget.set(0, 0);
+    renderer.domElement.addEventListener("pointerleave", leave);
+    const tilt = (e: DeviceOrientationEvent) => {
+      if (e.gamma == null || e.beta == null) return;
+      leanTarget.set(THREE.MathUtils.clamp(e.gamma / 25, -1, 1), THREE.MathUtils.clamp((e.beta - 45) / 30, -1, 1));
+    };
+    if (!reducedMotion) window.addEventListener("deviceorientation", tilt);
     const down = onPointer("down");
     const move = onPointer("move");
     const up = onPointer("up");
@@ -204,6 +239,11 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
 
     let last = performance.now();
     const basePos = new THREE.Vector3();
+    const baseQuat = new THREE.Quaternion();
+    const fwd = new THREE.Vector3();
+    const right = new THREE.Vector3();
+    const upV = new THREE.Vector3();
+    const pivot = new THREE.Vector3();
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
       const dt = Math.min(0.05, (now - last) / 1000);
@@ -213,6 +253,21 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
       handle.update(dt, clock);
       fx.update(dt);
       basePos.copy(camera.position);
+      baseQuat.copy(camera.quaternion);
+      if (!reducedMotion) {
+        // Lean and a slow idle drift, orbiting the point the camera looks at; a short dolly in at the start.
+        lean.lerp(leanTarget, 1 - Math.exp(-4 * dt));
+        camera.getWorldDirection(fwd);
+        const dist = Math.max(1, camera.position.length());
+        pivot.copy(camera.position).addScaledVector(fwd, dist);
+        right.setFromMatrixColumn(camera.matrixWorld, 0);
+        upV.setFromMatrixColumn(camera.matrixWorld, 1);
+        const lx = lean.x * 0.045 + Math.sin(clock * 0.45) * 0.025;
+        const ly = -lean.y * 0.035 + Math.sin(clock * 0.37 + 1) * 0.015;
+        const intro = 1 - Math.min(1, clock / 1.1);
+        camera.position.addScaledVector(right, lx * dist).addScaledVector(upV, ly * dist).addScaledVector(fwd, -intro * intro * dist * 0.18);
+        camera.lookAt(pivot);
+      }
       if (clock < shakeUntil) {
         const k = shakeStrength * ((shakeUntil - clock) / 0.4);
         camera.position.x += Math.sin(clock * 83) * k;
@@ -221,6 +276,7 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
       if (composer) composer.render();
       else renderer.render(scene, camera);
       camera.position.copy(basePos);
+      camera.quaternion.copy(baseQuat);
     };
 
     // Text on the board is drawn in the brand fonts, so wait for them first.
@@ -254,6 +310,8 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
       renderer.domElement.removeEventListener("pointerup", up);
       renderer.domElement.removeEventListener("pointercancel", up);
       renderer.domElement.removeEventListener("webglcontextlost", lost);
+      renderer.domElement.removeEventListener("pointerleave", leave);
+      window.removeEventListener("deviceorientation", tilt);
       handle?.dispose?.();
       fx.dispose();
       scene.traverse((o) => {
