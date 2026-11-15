@@ -312,21 +312,23 @@ export function BlanketsSlotsBoard({ ticket, seed, decoys, reducedMotion, onReve
         bloom={false}
         fallback={flat}
         label="Blankets and Banknotes slot machine"
+        controls={
+          layout.paytable.length > 0 && (
+            <div className="rg3-paytable">
+              {layout.paytable.map((p) => (
+                <span key={p.symbol} className={`rg3-pay ${won && p.symbol === payline[0] ? "is-hit" : ""}`}>
+                  <b>3×</b>
+                  <FeastIcon symbol={p.symbol} />
+                  <span>{p.label}</span>
+                </span>
+              ))}
+            </div>
+          )
+        }
       />
-      {layout.paytable.length > 0 && (
-        <div className="rg3-paytable">
-          {layout.paytable.map((p) => (
-            <span key={p.symbol} className={`rg3-pay ${won && p.symbol === payline[0] ? "is-hit" : ""}`}>
-              <b>3×</b>
-              <FeastIcon symbol={p.symbol} />
-              <span>{p.label}</span>
-            </span>
-          ))}
-        </div>
-      )}
       {phase === "ready" ? (
         <div className="rg-slots-controls rg-bb-controls">
-          <button type="button" className="rg3-btn is-gold rg3-spin" onClick={pull}>
+          <button type="button" className="rg3-btn is-gold rg3-spin rg-bb-spin" onClick={pull}>
             SPIN
           </button>
           <p className="rg-note">{RESULT_SET_NOTE}</p>

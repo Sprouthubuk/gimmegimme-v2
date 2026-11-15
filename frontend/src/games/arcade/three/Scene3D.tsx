@@ -64,6 +64,8 @@ interface Scene3DProps<S> {
   label: string;
   /** Extra layers drawn over the canvas (labels, buttons). */
   children?: ReactNode;
+  /** Shown under the stage only while the 3D board is in use (the 2D fallback has its own controls). */
+  controls?: ReactNode;
   /** Fill the parent's height instead of following aspect (a backdrop behind HTML). */
   fill?: boolean;
   /** Draw at most this many frames a second (a backdrop needs fewer, leaving the phone free for the board). */
@@ -93,7 +95,7 @@ export function canUseWebGL(): boolean {
   return webglChecked;
 }
 
-export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, className = "", bloom = false, fallback, label, children, fill = false, maxFps = 60, maxPixelRatio = 2 }: Scene3DProps<S>) {
+export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, className = "", bloom = false, fallback, label, children, controls, fill = false, maxFps = 60, maxPixelRatio = 2 }: Scene3DProps<S>) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -342,8 +344,11 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
 
   if (failed) return <>{fallback}</>;
   return (
-    <div ref={hostRef} className={`rg3-stage ${ready ? "is-ready" : ""} ${className}`}>
-      {children}
-    </div>
+    <>
+      <div ref={hostRef} className={`rg3-stage ${ready ? "is-ready" : ""} ${className}`}>
+        {children}
+      </div>
+      {controls}
+    </>
   );
 }

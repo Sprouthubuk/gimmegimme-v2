@@ -68,7 +68,7 @@ async function play(page: Page, game: string) {
       await scratchAll(page);
       break;
     case "spin_wheel":
-      await page.locator(".rg-wheel-controls .rg-btn, .rg-ce-controls .rg-btn, .rg-sleigh-controls .rg-btn").first().click();
+      await page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls button").first().click();
       break;
     case "bingo_card":
       await page.locator(".rg-bingo-controls .rg-btn").click();
@@ -375,11 +375,11 @@ for (const size of SIZES) {
       // About 105 degrees a second: a lap takes more than three seconds.
       expect(perSecond).toBeGreaterThan(70);
       expect(perSecond).toBeLessThan(140);
-      await page.locator(".rg-sleigh-controls .rg-btn").click();
+      await page.locator(".rg-sleigh-controls button").click();
       await expect(page.locator(".rg-sleigh-svg")).toHaveAttribute("aria-label", "Landed on £10", { timeout: 15_000 });
       await expect(page.locator(".rg-dosh")).toHaveCount(9);
       await open(page, "spin_wheel", "christmas", "lose");
-      await page.locator(".rg-sleigh-controls .rg-btn").click();
+      await page.locator(".rg-sleigh-controls button").click();
       await expect(page.locator(".rg-sleigh-svg")).toHaveAttribute("aria-label", "Landed on no win", { timeout: 15_000 });
       await expect(page.locator(".rg-dosh")).toHaveCount(0);
     });

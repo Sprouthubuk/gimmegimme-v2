@@ -292,18 +292,20 @@ export function PiratesBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
         aspect={1.05}
         fallback={flat}
         label="Pirates of the Prizeibbean treasure chests"
+        controls={
+          layout.paytable.length > 0 && (
+            <div className="rg3-paytable">
+              {layout.paytable.map((p) => (
+                <span key={p.gem} className={`rg3-pay ${done && p.gem === layout.winGem ? "is-hit" : ""}`}>
+                  <Treasure kind={p.gem} className="rg-slot-icon" />
+                  <b>×3</b>
+                  <span>{p.label}</span>
+                </span>
+              ))}
+            </div>
+          )
+        }
       />
-      {layout.paytable.length > 0 && (
-        <div className="rg3-paytable">
-          {layout.paytable.map((p) => (
-            <span key={p.gem} className={`rg3-pay ${done && p.gem === layout.winGem ? "is-hit" : ""}`}>
-              <Treasure kind={p.gem} className="rg-slot-icon" />
-              <b>×3</b>
-              <span>{p.label}</span>
-            </span>
-          ))}
-        </div>
-      )}
       {prompt}
       <SoundToggle />
     </>

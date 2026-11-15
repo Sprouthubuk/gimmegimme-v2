@@ -78,6 +78,8 @@ export function buildStageScene(ctx: SceneCtx<StageState>, skin: StageSkin3D): S
   type Drop = { m: THREE.Object3D; v: THREE.Vector3; spin: number };
   const drops: Drop[] = [];
   let celebrated = false;
+  let pad = 92;
+  let padFor = -1;
 
   return {
     update(dt, t) {
@@ -87,7 +89,13 @@ export function buildStageScene(ctx: SceneCtx<StageState>, skin: StageSkin3D): S
       // Keep the sign in the top band (the HTML card sits below it).
       const signW = Math.min(2.4, W * 1.5);
       sign.scale.setScalar(signW / 2.4);
-      const topBand = (92 / size.h) * 2 * H;
+      // The band above the card is the frame's top padding (smaller on short phones).
+      if (padFor !== size.h) {
+        const wrap = ctx.renderer.domElement.parentElement?.parentElement;
+        pad = wrap ? parseFloat(getComputedStyle(wrap).paddingTop) || 92 : 92;
+        padFor = size.h;
+      }
+      const topBand = (pad / size.h) * 2 * H;
       sign.position.set(-W * 0.12, H - topBand / 2, 0);
       logo.position.set(W - 0.42, H - topBand / 2, 0.1);
       rays.position.set(0, H - topBand / 2, -2);

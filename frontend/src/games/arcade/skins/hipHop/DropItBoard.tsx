@@ -253,18 +253,22 @@ export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
         aspect={1.28}
         fallback={flat}
         label="Drop It Like It's Hot coin drop"
+        controls={
+          <>
+          <div className="rg3-controls">
+            <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.max(0, a - 1))} disabled={phase !== "aim"} aria-label="Aim left">
+              ◀
+            </button>
+            <button type="button" className="rg3-btn rg3-grab" onClick={dropCoin} disabled={phase !== "aim"}>
+              DROP
+            </button>
+            <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.min(COIN_BINS - 1, a + 1))} disabled={phase !== "aim"} aria-label="Aim right">
+              ▶
+            </button>
+          </div>
+          </>
+        }
       />
-      <div className="rg3-controls">
-        <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.max(0, a - 1))} disabled={phase !== "aim"} aria-label="Aim left">
-          ◀
-        </button>
-        <button type="button" className="rg3-btn rg3-grab" onClick={dropCoin} disabled={phase !== "aim"}>
-          DROP
-        </button>
-        <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.min(COIN_BINS - 1, a + 1))} disabled={phase !== "aim"} aria-label="Aim right">
-          ▶
-        </button>
-      </div>
       {phase === "aim" ? (
         <GamePrompt title="Slide to aim, tap to drop" sub={RESULT_SET_NOTE} />
       ) : phase === "dropping" ? (

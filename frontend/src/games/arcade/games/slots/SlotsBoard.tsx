@@ -126,18 +126,20 @@ export function SlotsBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
         aspect={1.2}
         fallback={flat}
         label="Slot machine"
+        controls={
+          layout.paytable.length > 0 && (
+            <div className="rg3-paytable">
+              {layout.paytable.map((p) => (
+                <span key={p.symbol} className={`rg3-pay ${phase === "landed" && layout.win && p.symbol === payline[0] ? "is-hit" : ""}`}>
+                  <b>3×</b>
+                  <SlotIcon symbol={p.symbol} />
+                  <span>{p.label}</span>
+                </span>
+              ))}
+            </div>
+          )
+        }
       />
-      {layout.paytable.length > 0 && (
-        <div className="rg3-paytable">
-          {layout.paytable.map((p) => (
-            <span key={p.symbol} className={`rg3-pay ${phase === "landed" && layout.win && p.symbol === payline[0] ? "is-hit" : ""}`}>
-              <b>3×</b>
-              <SlotIcon symbol={p.symbol} />
-              <span>{p.label}</span>
-            </span>
-          ))}
-        </div>
-      )}
       {phase === "ready" ? (
         <div className="rg-slots-controls">
           <button type="button" className="rg3-btn is-yellow rg3-spin" onClick={spin}>

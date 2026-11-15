@@ -310,53 +310,57 @@ export function SmashBoard({ tickets, seed, reducedMotion, onProgress, onReveal 
         aspect={0.82}
         fallback={flat}
         label="Smash My Cash: glass jars of cash"
-      >
-      </Scene3D>
-      <div className="rg-smash rg3-smash-below">
-        <div className="rg-smash-latest" aria-live="polite">
-          {!latest ? (
-            <span className="rg-smash-latest-empty">Each jar holds a ticket's result</span>
-          ) : latest.ticket.prize ? (
-            <div className="rg-smash-latest-win">
-              <Coin tone="yellow" label={prizeShortLabel(latest.ticket.prize)} />
-              <div>
-                <strong>{isCredited(latest.ticket.prize) ? `+${formatPence(latest.ticket.prize.valuePence)}` : latest.ticket.prize.name}</strong>
-                <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
-              </div>
-            </div>
-          ) : (
-            <div className="rg-smash-latest-none">
-              <strong>No win</strong>
-              <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
-            </div>
-          )}
-        </div>
-
-        <div className="rg-smash-panel">
-          <div className="rg-smash-stats">
-            <div>
-              <strong>{state.pulled.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} smashed
-            </div>
-            <div className="rg-smash-tray">
-              {wins.length === 0 ? (
-                <span className="rg-smash-tray-empty">Prizes you find land here</span>
+      
+        controls={
+          <>
+          <div className="rg-smash rg3-smash-below">
+            <div className="rg-smash-latest" aria-live="polite">
+              {!latest ? (
+                <span className="rg-smash-latest-empty">Each jar holds a ticket's result</span>
+              ) : latest.ticket.prize ? (
+                <div className="rg-smash-latest-win">
+                  <Coin tone="yellow" label={prizeShortLabel(latest.ticket.prize)} />
+                  <div>
+                    <strong>{isCredited(latest.ticket.prize) ? `+${formatPence(latest.ticket.prize.valuePence)}` : latest.ticket.prize.name}</strong>
+                    <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
+                  </div>
+                </div>
               ) : (
-                <>
-                  {wins.slice(-3).map((t) => (
-                    <Coin key={t.ticketNumber} tone="yellow" label={prizeShortLabel(t.prize!)} />
-                  ))}
-                  <span className="rg-smash-total">
-                    {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
-                  </span>
-                </>
+                <div className="rg-smash-latest-none">
+                  <strong>No win</strong>
+                  <small>Ticket {formatTicketNumber(latest.ticket.ticketNumber)}</small>
+                </div>
               )}
             </div>
+
+            <div className="rg-smash-panel">
+              <div className="rg-smash-stats">
+                <div>
+                  <strong>{state.pulled.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} smashed
+                </div>
+                <div className="rg-smash-tray">
+                  {wins.length === 0 ? (
+                    <span className="rg-smash-tray-empty">Prizes you find land here</span>
+                  ) : (
+                    <>
+                      {wins.slice(-3).map((t) => (
+                        <Coin key={t.ticketNumber} tone="yellow" label={prizeShortLabel(t.prize!)} />
+                      ))}
+                      <span className="rg-smash-total">
+                        {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button type="button" className="rg-smash-all" onClick={handleSmashAll} disabled={done || smashAll}>
+                SMASH ALL
+              </button>
+            </div>
           </div>
-          <button type="button" className="rg-smash-all" onClick={handleSmashAll} disabled={done || smashAll}>
-            SMASH ALL
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
       {done ? (
         <GamePrompt title="All smashed!" tone="pink" />
       ) : state.pulled === 0 ? (

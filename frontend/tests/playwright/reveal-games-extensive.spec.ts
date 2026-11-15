@@ -79,7 +79,7 @@ async function playBoard(page: Page, game: string) {
       await press(".rg-scratch-actions .rg-btn-cyan, .rg-scratch-actions .rg-btn-xmas-gold");
       break;
     case "spin_wheel":
-      await press(".rg-wheel-controls .rg-btn:not([disabled]), .rg-ce-controls .rg-btn:not([disabled]), .rg-sleigh-controls .rg-btn:not([disabled])");
+      await press(".rg-wheel-controls button:not([disabled]), .rg-ce-controls button:not([disabled]), .rg-sleigh-controls button:not([disabled])");
       break;
     case "bingo_card":
       await press(".rg-bingo-controls .rg-btn");
@@ -254,7 +254,7 @@ test.describe("awkward play", () => {
     test(`${skin}: a burst of taps on the spin button lands once, on the right result`, async ({ page }) => {
       const errors = watchErrors(page);
       await open(page, "spin_wheel", skin, "win", "full");
-      const btn = page.locator(".rg-wheel-controls .rg-btn, .rg-ce-controls .rg-btn, .rg-sleigh-controls .rg-btn").first();
+      const btn = page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls button").first();
       await btn.click();
       await btn.click({ force: true }).catch(() => {});
       await btn.dblclick({ force: true }).catch(() => {});
@@ -323,7 +323,7 @@ test.describe("awkward play in the themed looks", () => {
   test("cash escape: a burst of taps on the button cracks the vault once, on the right result", async ({ page }) => {
     const errors = watchErrors(page);
     await open(page, "spin_wheel", "cash_escape", "win", "full");
-    const btn = page.locator(".rg-ce-controls .rg-btn").first();
+    const btn = page.locator(".rg-ce-controls button").first();
     await btn.click();
     await btn.click({ force: true }).catch(() => {});
     await btn.dblclick({ force: true }).catch(() => {});

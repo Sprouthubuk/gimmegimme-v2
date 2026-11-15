@@ -349,33 +349,37 @@ export function BalloonPopBoard({ tickets, seed, reducedMotion, onProgress, onRe
         aspect={1.1}
         fallback={flat}
         label="Balloon pop"
-      />
-      <div className="rg-balloon-machine rg3-below">
-        <div className="rg-balloon-panel">
-          <div className="rg-balloon-stats" aria-live="polite">
-            <div>
-              <strong>{state.popped.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} popped
-            </div>
-            <div className="rg-balloon-tray">
-              {wins.length === 0 ? (
-                <span className="rg-balloon-tray-empty">Prizes you find land here</span>
-              ) : (
-                <>
-                  {wins.slice(-4).map((t) => (
-                    <Coin key={t.ticketNumber} label={prizeShortLabel(t.prize!)} />
-                  ))}
-                  <span className="rg-balloon-total">
-                    {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
-                  </span>
-                </>
-              )}
+        controls={
+          <>
+          <div className="rg-balloon-machine rg3-below">
+            <div className="rg-balloon-panel">
+              <div className="rg-balloon-stats" aria-live="polite">
+                <div>
+                  <strong>{state.popped.toLocaleString("en-GB")}</strong> of {n.toLocaleString("en-GB")} popped
+                </div>
+                <div className="rg-balloon-tray">
+                  {wins.length === 0 ? (
+                    <span className="rg-balloon-tray-empty">Prizes you find land here</span>
+                  ) : (
+                    <>
+                      {wins.slice(-4).map((t) => (
+                        <Coin key={t.ticketNumber} label={prizeShortLabel(t.prize!)} />
+                      ))}
+                      <span className="rg-balloon-total">
+                        {[wonPence > 0 ? formatPence(wonPence) : null, otherPrizes > 0 ? `${otherPrizes} prize${otherPrizes === 1 ? "" : "s"}` : null].filter(Boolean).join(" + ")}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button type="button" className="rg-balloon-all" onClick={handlePopAll} disabled={done || popAll}>
+                POP ALL
+              </button>
             </div>
           </div>
-          <button type="button" className="rg-balloon-all" onClick={handlePopAll} disabled={done || popAll}>
-            POP ALL
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
       {done ? (
         <GamePrompt title="All popped!" tone="pink" />
       ) : state.popped === 0 ? (

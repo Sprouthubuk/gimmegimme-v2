@@ -273,38 +273,42 @@ export function GrinchClawBoard({ ticket, reducedMotion, onReveal }: BoardProps)
         bloom={false}
         fallback={flat}
         label="Demi's Grinchmas Gold claw machine"
+        controls={
+          <>
+          <div className="rg3-controls rg-grinch-controls">
+            <button
+              type="button"
+              className="rg3-btn is-cyan rg3-arrow"
+              aria-label="Move claw left"
+              disabled={phase !== "aim"}
+              onPointerDown={() => startHold(-1)}
+              onPointerUp={stopHold}
+              onPointerLeave={stopHold}
+              onPointerCancel={stopHold}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(-8)}
+            >
+              ◀
+            </button>
+            <button type="button" className="rg3-btn is-gold rg3-grab" onClick={press} disabled={phase !== "aim"}>
+              GRAB
+            </button>
+            <button
+              type="button"
+              className="rg3-btn is-cyan rg3-arrow"
+              aria-label="Move claw right"
+              disabled={phase !== "aim"}
+              onPointerDown={() => startHold(1)}
+              onPointerUp={stopHold}
+              onPointerLeave={stopHold}
+              onPointerCancel={stopHold}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(8)}
+            >
+              ▶
+            </button>
+          </div>
+          </>
+        }
       />
-      <div className="rg3-controls rg-grinch-controls">
-        <button
-          type="button"
-          className="rg3-btn is-cyan rg3-arrow"
-          aria-label="Move claw left"
-          disabled={phase !== "aim"}
-          onPointerDown={() => startHold(-1)}
-          onPointerUp={stopHold}
-          onPointerLeave={stopHold}
-          onPointerCancel={stopHold}
-          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(-8)}
-        >
-          ◀
-        </button>
-        <button type="button" className="rg3-btn is-gold rg3-grab" onClick={press} disabled={phase !== "aim"}>
-          GRAB
-        </button>
-        <button
-          type="button"
-          className="rg3-btn is-cyan rg3-arrow"
-          aria-label="Move claw right"
-          disabled={phase !== "aim"}
-          onPointerDown={() => startHold(1)}
-          onPointerUp={stopHold}
-          onPointerLeave={stopHold}
-          onPointerCancel={stopHold}
-          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(8)}
-        >
-          ▶
-        </button>
-      </div>
       {phase === "aim" ? (
         <GamePrompt title="Steer, then press GRAB" sub={RESULT_SET_NOTE} />
       ) : phase === "open" && !cracked ? (

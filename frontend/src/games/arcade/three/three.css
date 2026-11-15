@@ -109,3 +109,6 @@
 .rg3-backdrop-wrap > .rg3-stage.rg3-backdrop .rg3-canvas { cursor: default; }
 .rg3-backdrop-content { position: relative; z-index: 1; }
 .rg3-backdrop-content > * { margin-left: auto; margin-right: auto; }
+/* No WebGL: the 2D card stands on its own, without the frame made for the 3D stage. */
+.rg3-backdrop-wrap:not(:has(> .rg3-stage)) { width: auto; padding: 0; border-radius: 0; overflow: visible; background: none; box-shadow: none; }
+@media (max-height: 700px) { .rg3-backdrop-wrap { padding-top: 66px; } }
