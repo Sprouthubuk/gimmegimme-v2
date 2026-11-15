@@ -52,7 +52,12 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Astro drops a space between `{expr}` and a following tag inside `<>…</>`: write `{expr}{" "}<span>`.
 - Standalone small links get `class="tap"` (40px tap height).
 - Title Case for every title. Mobile first (44px taps, 16px inputs, no sideways scroll at 320px).
-- Nothing third-party loads before a cookie choice.
+- Nothing third-party loads before a cookie choice. The only one is the Meta Pixel (`src/lib/consent.ts`, ID set in
+  Admin → Settings), loaded after "Accept" in the cookie banner; its addresses are the only extra ones in the CSP.
+- Reveal games draw in 3D (`src/games/arcade/three`, Three.js); the board's 2D version is the fallback when a phone
+  has no WebGL, and 3D-only buttons go in `Scene3D`'s `controls`. `npm run test:games -- --project=3d` and
+  `--project=flat` play every game and look both ways (run the smoothness checks alone: `GAMES_WORKERS=1 … -g smoothness`).
+- Legal wording loads from `backend/resources/legal/*.html` on deploy (`gimme:legal-pages`) and is then edited in the admin.
 - Redirects after sign-in go through `safeNext` (`src/lib/safe.ts`).
 - Astro trusts Host / X-Forwarded-* only for `allowedDomains` in `astro.config.mjs`; the build must
   have `PUBLIC_SITE_URL` set to the live address or form posts are refused.

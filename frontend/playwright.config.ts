@@ -19,7 +19,7 @@ export default defineConfig({
       // The 3D boards (WebGL in software, as on a CI machine).
       name: "3d",
       // Software WebGL on a shared machine is slow: the pick games need a few minutes each.
-      timeout: Number(process.env.GAMES_TIMEOUT ?? 360_000),
+      timeout: Number(process.env.GAMES_TIMEOUT ?? 480_000),
       testMatch: /reveal-games-3d\.spec\.ts/,
       use: { launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] } },
     },
