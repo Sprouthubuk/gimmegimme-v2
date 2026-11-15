@@ -43,7 +43,7 @@ export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): Scen
   const { scene, camera, reducedMotion, fx } = ctx;
   scene.background = gradientTexture(skin.sky);
   studioLights(scene, { strength: 1.05 });
-  camera.position.set(0, 3.55, 4.55);
+  camera.position.set(0, 3.3, 3.55);
   const look = new THREE.Vector3(0, -0.2, 0.0);
   camera.lookAt(look);
   const world = new THREE.Group();
@@ -52,7 +52,7 @@ export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): Scen
   skin.decor?.(world, ctx);
   const signTex = skin.sign(1024, 360);
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 2.9 * (360 / 1024)), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, toneMapped: false }));
-  sign.position.set(0, 0.6, -1.65);
+  sign.position.set(0, 0.42, -1.5);
   sign.lookAt(camera.position.clone().setX(0));
   world.add(sign);
 

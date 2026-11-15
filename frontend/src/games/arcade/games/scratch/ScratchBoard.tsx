@@ -68,6 +68,8 @@ export function ScratchBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
           seed={`scratch:${ticket.ticketNumber}`}
           reducedMotion={reducedMotion}
           fill
+          maxFps={30}
+          maxPixelRatio={1.5}
           className="rg3-backdrop"
           fallback={null}
           label="Scratch card stage"

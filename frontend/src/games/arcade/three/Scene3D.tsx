@@ -66,6 +66,10 @@ interface Scene3DProps<S> {
   children?: ReactNode;
   /** Fill the parent's height instead of following aspect (a backdrop behind HTML). */
   fill?: boolean;
+  /** Draw at most this many frames a second (a backdrop needs fewer, leaving the phone free for the board). */
+  maxFps?: number;
+  /** Highest device pixel ratio to draw at. */
+  maxPixelRatio?: number;
 }
 
 function buzz(pattern: number | number[]) {
@@ -89,7 +93,7 @@ export function canUseWebGL(): boolean {
   return webglChecked;
 }
 
-export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, className = "", bloom = false, fallback, label, children, fill = false }: Scene3DProps<S>) {
+export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, className = "", bloom = false, fallback, label, children, fill = false, maxFps = 60, maxPixelRatio = 2 }: Scene3DProps<S>) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -109,7 +113,7 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
       setFailed(true);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.92;
@@ -246,6 +250,7 @@ export function Scene3D<S>({ state, setup, seed, reducedMotion, aspect = 1, clas
     const pivot = new THREE.Vector3();
     const loop = (now: number) => {
       raf = requestAnimationFrame(loop);
+      if (now - last < 1000 / maxFps - 2) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       if (!handle || !visible || document.hidden) return;

@@ -13,10 +13,23 @@ export default defineConfig({
   fullyParallel: true,
   workers: Number(process.env.GAMES_WORKERS ?? 2),
   reporter: [["list"]],
-  use: {
-    baseURL,
-    launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox"] },
-  },
+  use: { baseURL },
+  projects: [
+    {
+      // The 3D boards (WebGL in software, as on a CI machine).
+      name: "3d",
+      // Software WebGL on a shared machine is slow: the pick games need a few minutes each.
+      timeout: Number(process.env.GAMES_TIMEOUT ?? 360_000),
+      testMatch: /reveal-games-3d\.spec\.ts/,
+      use: { launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] } },
+    },
+    {
+      // The 2D boards a phone without WebGL gets.
+      name: "flat",
+      testIgnore: /reveal-games-3d\.spec\.ts/,
+      use: { launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox", "--disable-webgl", "--disable-3d-apis"] } },
+    },
+  ],
   webServer: process.env.E2E_BASE_URL ? undefined : {
     // --ignore-lock keeps it in the foreground (Astro 7 backgrounds a dev server it thinks an AI agent started).
     command: `GG_NO_DEV_TOOLBAR=1 npx astro dev --host 127.0.0.1 --port ${PORT} --ignore-lock`,
