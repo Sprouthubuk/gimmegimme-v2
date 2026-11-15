@@ -571,3 +571,60 @@ html.rg-lock, html.rg-lock body { overflow: hidden; overscroll-behavior: none; }
   0% { transform: rotate(var(--a)) translateY(0) scale(0.4); opacity: 1; }
   100% { transform: rotate(var(--a)) translateY(calc(var(--d) * -1)) scale(1); opacity: 0; }
 }
+
+/* ---------- Neon: the same black-and-neon look as the rest of the site ----------
+   The classic look sits on the site's near-black with soft pink and cyan glows; themed looks keep their
+   own backdrops. Every result sheet is a dark card with a neon edge, like the site's cards. */
+.rg-reveal.rg-skin-classic {
+  --rg-bg-top: #1c0a26;
+  --rg-bg-bottom: #07050b;
+  background:
+    radial-gradient(90% 40% at 50% 0%, rgba(255, 45, 170, 0.22), transparent 70%),
+    radial-gradient(70% 40% at 50% 100%, rgba(34, 230, 255, 0.14), transparent 70%),
+    linear-gradient(180deg, var(--rg-bg-top) 0%, var(--rg-bg-bottom) 75%);
+}
+.rg-reveal.rg-skin-classic.rg-theme-yellow { --rg-bg-top: #241c06; }
+.rg-reveal.rg-skin-classic.rg-theme-blue { --rg-bg-top: #061c26; }
+.rg-reveal { border-color: rgba(255, 45, 170, 0.55); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 40px rgba(255, 45, 170, 0.18); }
+.rg-skin-classic .rg-counter,
+.rg-skin-classic .rg-comp-title { color: #fff; text-shadow: 0 0 12px rgba(255, 45, 170, 0.55); }
+.rg-skin-classic .rg-board .rg-prompt-title.is-ink { color: #fff; }
+.rg-skin-classic .rg-board .rg-prompt-sub,
+.rg-skin-classic .rg-board .rg-note,
+.rg-skin-classic .rg-board-loading { color: #b9afc6; }
+.rg-skin-classic .rg-prompt-title.is-pink { color: #ffe3f4; text-shadow: 0 0 2px #ff2daa, 0 0 12px #ff2daa, 0 0 28px rgba(255, 45, 170, 0.7); }
+.rg-skin-classic .rg-prompt-title.is-cyan { color: #e0fcff; text-shadow: 0 0 2px #22e6ff, 0 0 12px #22e6ff, 0 0 28px rgba(34, 230, 255, 0.6); }
+.rg-skin-classic .rg-pip { border-color: rgba(255, 255, 255, 0.35); background: #1a1222; }
+.rg-skin-classic .rg-pip.is-current { background: #ff2daa; box-shadow: 0 0 10px #ff2daa; }
+.rg-skin-classic .rg-pip.is-done { background: #fff; }
+.rg-skin-classic .rg-pip.is-won { background: #fff23a; box-shadow: 0 0 10px #fff23a; }
+.rg-reveal .rg-ticket-chip { background: #120c18; color: #fff; border: 1px solid rgba(255, 255, 255, 0.22); box-shadow: none; }
+.rg-reveal .rg-close { background: #120c18; color: #fff; border: 1px solid rgba(255, 255, 255, 0.22); box-shadow: none; }
+.rg-reveal .rg-wallet { background: #120c18; color: #fff23a; border: 1px solid rgba(255, 242, 58, 0.7); box-shadow: 0 0 14px rgba(255, 242, 58, 0.18); }
+.rg-reveal .rg-wallet-coin { border-color: #07050b; }
+
+.rg-reveal .rg-sheet,
+.rg-reveal .rg-summary {
+  background: linear-gradient(180deg, #170d20 0%, #0e0914 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 45, 170, 0.6);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 46px rgba(255, 45, 170, 0.28), 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+.rg-reveal .rg-sheet.is-win { border-color: rgba(255, 242, 58, 0.75); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 54px rgba(255, 242, 58, 0.3), 0 18px 40px rgba(0, 0, 0, 0.5); }
+.rg-reveal .rg-sheet .rg-kicker { color: #ffe3f4; text-shadow: 0 0 10px #ff2daa; }
+.rg-reveal .rg-sheet .rg-sheet-body,
+.rg-reveal .rg-sheet .rg-sheet-sub,
+.rg-reveal .rg-summary-note { color: #d8d0e2; }
+.rg-reveal .rg-sheet .rg-prize-big { text-shadow: 0 0 2px #fff23a, 0 0 18px rgba(255, 242, 58, 0.7), 0 4px 0 #7a5a00; color: #fffbd0; }
+.rg-reveal .rg-sheet .rg-no-win { text-shadow: 0 0 2px #22e6ff, 0 0 16px rgba(34, 230, 255, 0.6); color: #e0fcff; }
+.rg-reveal .rg-wallet-change { background: #120c18; color: #fff; border: 1px solid rgba(255, 242, 58, 0.6); }
+.rg-reveal .rg-wallet-change s { color: #8e84a0; }
+.rg-reveal .rg-wallet-change strong { color: #fff23a; }
+.rg-reveal .rg-sheet .rg-link,
+.rg-reveal .rg-summary .rg-link { color: #fff; }
+.rg-reveal .rg-sheet .rg-link.is-pink,
+.rg-reveal .rg-summary .rg-link.is-pink { color: #ff5cc0 !important; }
+.rg-reveal .rg-summary-list li { border-color: rgba(255, 255, 255, 0.08); }
+.rg-reveal .rg-btn-white { background: #120c18; color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: none; }
+.rg-reveal.is-result::after,
+.rg-reveal.is-summary::after { background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55)); }
