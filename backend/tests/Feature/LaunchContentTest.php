@@ -48,4 +48,15 @@ class LaunchContentTest extends TestCase
         $this->assertSame(0, User::query()->count());
         $this->assertSame(5, Page::query()->count());
     }
+
+    public function test_the_meta_pixel_id_reaches_the_site_only_when_it_is_a_real_id(): void
+    {
+        $this->getJson('/api/site')->assertOk()->assertJsonPath('metaPixelId', null);
+        \App\Models\Setting::put('meta_pixel_id', '<script>');
+        \Illuminate\Support\Facades\Cache::flush();
+        $this->getJson('/api/site')->assertJsonPath('metaPixelId', null);
+        \App\Models\Setting::put('meta_pixel_id', '123456789012345');
+        \Illuminate\Support\Facades\Cache::flush();
+        $this->getJson('/api/site')->assertJsonPath('metaPixelId', '123456789012345');
+    }
 }

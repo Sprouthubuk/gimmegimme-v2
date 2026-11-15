@@ -84,6 +84,8 @@ export interface SiteInfo {
   featuredSlug: string | null;
   socials: { instagram: string | null; facebook: string | null };
   supportEmail: string | null;
+  /** Meta Pixel ID from the admin; null when none is set (then nothing from Meta ever loads). */
+  metaPixelId: string | null;
 }
 
 export interface WalletBalances {

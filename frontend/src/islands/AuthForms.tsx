@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { api, ApiFailure, errorText } from "../lib/api";
 import { safeNext } from "../lib/safe";
 import { Svg } from "./Svg";
+import { track } from "../lib/consent";
 
 type Errors = Record<string, string>;
 function fieldErrors(e: unknown): Errors {
@@ -44,6 +45,7 @@ export function JoinForm({ next }: { next: string | null }) {
     const dob = `${f.year.padStart(4, "0")}-${f.month.padStart(2, "0")}-${f.day.padStart(2, "0")}`;
     try {
       await api("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing } });
+      track("CompleteRegistration");
       window.location.assign(`/verify-email?next=${encodeURIComponent(safeNext(next, "/competitions"))}`);
     } catch (err) {
       setErrors(fieldErrors(err));

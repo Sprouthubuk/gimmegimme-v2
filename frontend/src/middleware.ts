@@ -11,24 +11,26 @@ const FALLBACK_SITE: SiteInfo = {
   featuredSlug: null,
   socials: { instagram: null, facebook: null },
   supportEmail: null,
+  metaPixelId: null,
 };
 
 let siteCache: { at: number; value: SiteInfo } | null = null;
 
 /**
- * What a page may load: only the site itself (pictures may also be data:/blob: for the games). Nothing
- * third-party loads anywhere, so nothing else is listed: add an address here only alongside its consent check.
+ * What a page may load: the site itself (pictures may also be data:/blob: for the games), plus Meta's
+ * Pixel, which src/lib/consent.ts loads only after the visitor accepts marketing cookies and only when a
+ * Pixel ID is set in the admin. Add any other address here only alongside its consent check.
  * Inline scripts stay allowed because Astro's island loader is inline; the gain is that no outside script,
  * frame, plugin, <base> or form target can be injected. Not sent by the dev server (Vite needs websockets).
  */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://www.facebook.com",
   "font-src 'self' data:",
   "media-src 'self' data: blob:",
-  "connect-src 'self'",
+  "connect-src 'self' https://www.facebook.com https://connect.facebook.net",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
