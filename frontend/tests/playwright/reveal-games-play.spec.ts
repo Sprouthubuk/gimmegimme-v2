@@ -71,7 +71,7 @@ async function play(page: Page, game: string) {
       await page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls .rg-btn").first().click();
       break;
     case "bingo_card":
-      await page.locator(".rg-bingo-controls .rg-btn").click();
+      await page.locator(".rg-bingo-controls button").click();
       break;
     case "balloon_pop":
       await click(".rg-balloon-all, .rg-cracker-all, .rg-smash-all");

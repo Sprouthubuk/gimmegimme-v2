@@ -116,3 +116,40 @@
 }
 
 @keyframes rg-swing { 50% { transform: rotate(6deg); } 0%, 100% { transform: rotate(-6deg); } }
+
+/* ---------- premium classic: a lit fairground stall ---------- */
+.rg-skin-classic .rg-duck-stall {
+  border: 0;
+  background: linear-gradient(180deg, #3a1a6e 0%, #241047 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 0 0 6px #6b1fb8, 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 46px rgba(170, 70, 255, 0.3);
+}
+.rg-skin-classic .rg-duck-sign {
+  border: 0;
+  color: #3a1500;
+  background: linear-gradient(180deg, #fff3a8, #ffd23a 55%, #e9a300);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 4px 10px rgba(0, 0, 0, 0.4), 0 0 16px rgba(255, 216, 74, 0.5);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.rg-skin-classic .rg-pole { border: 0; background: linear-gradient(90deg, #8a5200, #ffe27a 50%, #8a5200); }
+.rg-skin-classic .rg-duck-wall {
+  border-top: 0;
+  background:
+    radial-gradient(circle at 10% 50%, rgba(255, 246, 200, 0.9) 0 3px, transparent 4px) 0 0 / 36px 100% repeat-x,
+    linear-gradient(180deg, #5a1fa0, #3a1270);
+}
+.rg-skin-classic .rg-water-back {
+  background:
+    radial-gradient(circle at 50% 100%, #5fd3f7 60%, rgba(255, 255, 255, 0.85) 61% 66%, transparent 67%) 0 0 / 40px 22px repeat-x,
+    linear-gradient(transparent 20px, #5fd3f7 20px, #2a9ad6);
+}
+.rg-skin-classic .rg-water-front {
+  background:
+    radial-gradient(circle at 50% 100%, #36bdf2 60%, rgba(255, 255, 255, 0.85) 61% 66%, transparent 67%) 20px 0 / 40px 22px repeat-x,
+    linear-gradient(transparent 20px, #36bdf2 20px, #1586c8 60%, #0b5d9c);
+}
+.rg-skin-classic .rg-ripple { background: rgba(255, 255, 255, 0.55); }
+.rg-skin-classic .rg-duck-svg { filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.3)); }
+.rg-skin-classic .rg-hook { background: linear-gradient(90deg, #8f95a6, #e9ecf3, #8f95a6); }
+.rg-skin-classic .rg-hook-tip { border-color: #c9ccd6; }
+.rg-skin-classic .rg-duck-tag { border: 0; color: #2b0f45; background: #fffdf6; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); }
+.rg-skin-classic .rg-duck-tag.is-win { color: #3a1500; background: linear-gradient(180deg, #fff3a8, #ffd23a 55%, #e9a300); box-shadow: 0 0 0 2px #fff, 0 0 20px rgba(255, 216, 74, 0.8); }

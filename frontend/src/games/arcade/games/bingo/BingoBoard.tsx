@@ -79,7 +79,7 @@ export function BingoBoard({ ticket, seed, reducedMotion, onReveal }: BoardProps
 
       {!started ? (
         <div className="rg-bingo-controls">
-          <button type="button" className="rg-btn rg-btn-yellow" onClick={start}>
+          <button type="button" className="rg-cta" onClick={start}>
             DRAW BALLS
           </button>
           <p className="rg-note">{BINGO_BALLS} balls per card. Any full line wins. Result set when you bought.</p>

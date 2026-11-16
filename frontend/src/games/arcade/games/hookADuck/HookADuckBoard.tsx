@@ -23,19 +23,32 @@ const DUCKS: { x: number; y: number; colour: DuckColour; row: 0 | 1 }[] = [
 const HOOK_REST = { x: 70, len: 26 };
 const LIFT_Y = 30;
 
+/** A rubber duck with soft shading; one gradient set per colour, shared by every duck on the board. */
 export function Duck({ colour }: { colour: DuckColour }) {
   const [light, main] = COLOURS[colour];
+  const g = `dk-${colour}`;
   return (
     <svg viewBox="0 0 100 84" className="rg-duck-svg" aria-hidden="true">
-      <circle cx="46" cy="8" r="6" fill="none" stroke="#141414" strokeWidth="3.5" />
-      <path d="M8 50 Q2 34 16 36 Q30 40 40 46 Z" fill={main} stroke="#141414" strokeWidth="3.5" strokeLinejoin="round" />
-      <path d="M10 54 Q14 80 50 80 Q86 80 88 56 Q84 44 64 46 L34 46 Q14 44 10 54 Z" fill={light} stroke="#141414" strokeWidth="3.5" strokeLinejoin="round" />
-      <path d="M30 58 Q46 50 62 58 Q52 72 34 66 Z" fill={main} stroke="#141414" strokeWidth="3" strokeLinejoin="round" />
-      <circle cx="54" cy="32" r="18" fill={light} stroke="#141414" strokeWidth="3.5" />
-      <path d="M70 30 Q88 30 90 38 Q82 44 68 40 Z" fill="#ff8a1f" stroke="#141414" strokeWidth="3" strokeLinejoin="round" />
-      <circle cx="59" cy="27" r="4.5" fill="#141414" />
-      <circle cx="60.5" cy="25.5" r="1.5" fill="#fff" />
-      <path d="M46 16 L46 14" stroke="#141414" strokeWidth="3" />
+      <defs>
+        <radialGradient id={`${g}-b`} cx="0.4" cy="0.3" r="0.85">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.9" />
+          <stop offset="0.25" stopColor={light} />
+          <stop offset="1" stopColor={main} />
+        </radialGradient>
+        <linearGradient id={`${g}-beak`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffc06a" />
+          <stop offset="1" stopColor="#f06a00" />
+        </linearGradient>
+      </defs>
+      <circle cx="46" cy="8" r="6" fill="none" stroke="#c9ccd6" strokeWidth="3" />
+      <path d="M8 50 Q2 34 16 36 Q30 40 40 46 Z" fill={main} />
+      <path d="M10 54 Q14 80 50 80 Q86 80 88 56 Q84 44 64 46 L34 46 Q14 44 10 54 Z" fill={`url(#${g}-b)`} />
+      <path d="M30 58 Q46 50 62 58 Q52 72 34 66 Z" fill={main} opacity="0.75" />
+      <circle cx="54" cy="32" r="18" fill={`url(#${g}-b)`} />
+      <path d="M70 30 Q88 30 90 38 Q82 44 68 40 Z" fill={`url(#${g}-beak)`} />
+      <circle cx="59" cy="27" r="4.2" fill="#2b0f45" />
+      <circle cx="60.4" cy="25.6" r="1.4" fill="#fff" />
+      <ellipse cx="46" cy="24" rx="5" ry="3" fill="#fff" opacity="0.55" transform="rotate(-30 46 24)" />
     </svg>
   );
 }
@@ -75,13 +88,17 @@ export function HookADuckBoard({ ticket, reducedMotion, onReveal }: BoardProps) 
       <div className={`rg-duck-stall is-${phase}`}>
         <div className="rg-awning">
           <svg viewBox="0 0 400 95" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="aw-pink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff6bbd" /><stop offset="1" stopColor="#c4006a" /></linearGradient>
+              <linearGradient id="aw-white" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#e6dcef" /></linearGradient>
+            </defs>
             {Array.from({ length: 8 }, (_, i) => (
-              <g key={i} fill={i % 2 ? "#ffffff" : "#ff2d95"} stroke="#141414" strokeWidth="3">
+              <g key={i} fill={i % 2 ? "url(#aw-white)" : "url(#aw-pink)"}>
                 <path d={`M${i * 50} 58 a25 25 0 0 0 50 0`} />
                 <rect x={i * 50} y="-3" width="50" height="61" strokeWidth="0" />
               </g>
             ))}
-            <line x1="0" x2="400" y1="58" y2="58" stroke="#141414" strokeWidth="3" />
+            <rect x="0" y="55" width="400" height="5" fill="#ffd34d" />
           </svg>
           <div className="rg-duck-sign">HOOK A DUCK</div>
         </div>

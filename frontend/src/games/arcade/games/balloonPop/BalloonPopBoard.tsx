@@ -32,9 +32,9 @@ function Balloon({ colour }: { colour: BalloonColour }) {
           <stop offset="1" stopColor={dark} />
         </radialGradient>
       </defs>
-      <path className="rg-balloon-string" d="M30 64 q-7 9 1 16 q7 6 -1 14" fill="none" stroke="#141414" strokeWidth="2" strokeLinecap="round" />
-      <path d="M24.5 62 h11 l-5.5 -8 z" fill={dark} stroke="#141414" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M30 3 C13 3 6 17 6 30 C6 46 20 57 30 57 C40 57 54 46 54 30 C54 17 47 3 30 3 Z" fill={`url(#${id})`} stroke="#141414" strokeWidth="3.5" />
+      <path className="rg-balloon-string" d="M30 64 q-7 9 1 16 q7 6 -1 14" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M24.5 62 h11 l-5.5 -8 z" fill={dark} />
+      <path d="M30 3 C13 3 6 17 6 30 C6 46 20 57 30 57 C40 57 54 46 54 30 C54 17 47 3 30 3 Z" fill={`url(#${id})`} />
       <ellipse cx="20" cy="19" rx="5.5" ry="9" fill="#fff" opacity="0.75" transform="rotate(-26 20 19)" />
       <circle cx="16" cy="33" r="2.2" fill="#fff" opacity="0.6" />
     </svg>
@@ -44,9 +44,9 @@ function Balloon({ colour }: { colour: BalloonColour }) {
 function Dart() {
   return (
     <svg viewBox="0 0 16 44" className="rg-dart-svg" aria-hidden="true">
-      <path d="M8 0 L10.5 12 H5.5 Z" fill="#d9dbe2" stroke="#141414" strokeWidth="1.5" strokeLinejoin="round" />
-      <rect x="5.5" y="12" width="5" height="16" rx="2" fill="#ffe11a" stroke="#141414" strokeWidth="1.5" />
-      <path d="M8 26 L1 40 L8 35 L15 40 Z" fill="#ff2d95" stroke="#141414" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M8 0 L10.5 12 H5.5 Z" fill="#e9ecf3" stroke="#6b7080" strokeWidth="1" strokeLinejoin="round" />
+      <rect x="5.5" y="12" width="5" height="16" rx="2" fill="#ffd23a" stroke="#a86400" strokeWidth="1" />
+      <path d="M8 26 L1 40 L8 35 L15 40 Z" fill="#ff2d95" stroke="#8a004a" strokeWidth="1" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -228,11 +228,11 @@ export function BalloonPopBoard({ tickets, seed, reducedMotion, onProgress, onRe
           <span className="rg-balloon-cloud is-1" aria-hidden="true" />
           <span className="rg-balloon-cloud is-2" aria-hidden="true" />
           <svg className="rg-balloon-bunting" viewBox="0 0 400 34" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 4 Q200 22 400 4" fill="none" stroke="#141414" strokeWidth="2.5" />
+            <path d="M0 4 Q200 22 400 4" fill="none" stroke="#ffd34d" strokeWidth="2" />
             {Array.from({ length: 10 }, (_, i) => {
               const x = 20 + i * 40;
               const y = 4 + 16 * (1 - Math.pow((x - 200) / 200, 2)) * 0.98;
-              return <path key={i} d={`M${x - 13} ${y - 1} L${x + 13} ${y - 1} L${x} ${y + 17} Z`} fill={["#ff2d95", "#ffe11a", "#1fc4f4"][i % 3]} stroke="#141414" strokeWidth="2.5" strokeLinejoin="round" />;
+              return <path key={i} d={`M${x - 13} ${y - 1} L${x + 13} ${y - 1} L${x} ${y + 17} Z`} fill={["#ff2d95", "#ffd23a", "#1fc4f4"][i % 3]} />;
             })}
           </svg>
 

@@ -207,3 +207,45 @@
 /* Under the 3D sky: only the panel, without the 2D cabinet. */
 .rg-balloon-machine.rg-below { margin-top: 12px; filter: none; }
 .rg-balloon-machine.rg-below .rg-balloon-panel { border-radius: 22px; }
+
+/* ---------- premium classic: a twilight fairground sky in a lit cabinet ---------- */
+.rg-skin-classic .rg-balloon-machine { filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 30px rgba(170, 70, 255, 0.3)); }
+.rg-skin-classic .rg-balloon-top {
+  border: 0;
+  padding: 10px 12px 8px;
+  background: radial-gradient(120% 140% at 50% 0%, #ff5fb8 0%, #d1006f 60%, #8a0048 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d;
+}
+.rg-skin-classic .rg-balloon-title {
+  background: linear-gradient(180deg, #fffbe0 0%, #ffd84a 55%, #f59e00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 3px 0 #7a003e) drop-shadow(0 0 10px rgba(255, 220, 90, 0.5));
+}
+.rg-skin-classic .rg-balloon-top .rg-marquee i { border: 0; background: #fff6c8; box-shadow: 0 0 8px #ffe27a; }
+.rg-skin-classic .rg-balloon-sky {
+  border: 0;
+  background:
+    radial-gradient(circle at 84% 16%, rgba(255, 240, 180, 0.95) 0 22px, rgba(255, 220, 150, 0.3) 23px 46px, transparent 47px),
+    linear-gradient(180deg, #5a7fe0 0%, #9a8ef0 45%, #f0a8d8 80%, #ffd0c0 100%);
+  box-shadow: inset 6px 0 0 #7a2fd0, inset -6px 0 0 #7a2fd0, inset 9px 0 0 #ffd34d, inset -9px 0 0 #ffd34d;
+}
+.rg-skin-classic .rg-balloon-cloud,
+.rg-skin-classic .rg-balloon-cloud::before,
+.rg-skin-classic .rg-balloon-cloud::after { background: rgba(255, 255, 255, 0.75); }
+.rg-skin-classic .rg-balloon-svg { filter: drop-shadow(0 6px 6px rgba(40, 10, 70, 0.35)); }
+.rg-skin-classic .rg-balloon-panel {
+  border: 0;
+  background: linear-gradient(180deg, #7a1fd0 0%, #4c129a 60%, #2a0866 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 0 0 6px #6b1fb8;
+}
+.rg-skin-classic .rg-balloon-total { color: #ffd84a; }
+.rg-skin-classic .rg-balloon-all {
+  border: 0;
+  color: #3a1500;
+  background: linear-gradient(180deg, #fff3a8 0%, #ffd23a 50%, #f0a400 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), 0 4px 0 rgba(20, 6, 34, 0.6), 0 0 14px rgba(255, 216, 74, 0.45);
+}
+.rg-skin-classic .rg-balloon-all:active:not(:disabled) { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 1px 0 rgba(20, 6, 34, 0.6); }

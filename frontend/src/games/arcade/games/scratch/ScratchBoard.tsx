@@ -7,32 +7,47 @@ import { formatTicketNumber } from "../../money";
 import { pluralLabel, scratchProgress, useScratchSurface, type PaintCover } from "./useScratchSurface";
 import "./scratch.css";
 
-/** Silver foil with diagonal sheen, like the printed card. */
+/** Brushed silver foil with a fine diamond pattern and gold lettering, like a printed lottery card. */
 const paintFoil: PaintCover = (c, width, height) => {
   const g = c.createLinearGradient(0, 0, width, height);
-  g.addColorStop(0, "#c9ccd6");
-  g.addColorStop(0.5, "#eef0f5");
-  g.addColorStop(1, "#b9bcc8");
+  g.addColorStop(0, "#b8bcc9");
+  g.addColorStop(0.35, "#eceef4");
+  g.addColorStop(0.55, "#c4c8d4");
+  g.addColorStop(1, "#e3e5ec");
   c.fillStyle = g;
   c.beginPath();
-  c.roundRect(0, 0, width, height, 18);
+  c.roundRect(0, 0, width, height, 14);
   c.fill();
   c.save();
   c.clip();
-  c.strokeStyle = "rgba(255,255,255,0.55)";
-  c.lineWidth = 14;
-  for (let x = -height; x < width + height; x += 38) {
+  c.strokeStyle = "rgba(255,255,255,0.35)";
+  c.lineWidth = 1;
+  for (let x = -height; x < width + height; x += 12) {
     c.beginPath();
-    c.moveTo(x, height);
-    c.lineTo(x + height, 0);
+    c.moveTo(x, 0);
+    c.lineTo(x + height, height);
+    c.moveTo(x + height, 0);
+    c.lineTo(x, height);
     c.stroke();
   }
+  const shine = c.createLinearGradient(0, 0, width, 0);
+  shine.addColorStop(0.3, "rgba(255,255,255,0)");
+  shine.addColorStop(0.5, "rgba(255,255,255,0.35)");
+  shine.addColorStop(0.7, "rgba(255,255,255,0)");
+  c.fillStyle = shine;
+  c.fillRect(0, 0, width, height);
   c.restore();
-  c.fillStyle = "#8d909c";
   c.textAlign = "center";
   c.textBaseline = "middle";
-  const size = Math.round(width * 0.14);
+  const size = Math.round(width * 0.13);
   c.font = `${size}px "Lilita One", "Arial Rounded MT Bold", sans-serif`;
+  const gold = c.createLinearGradient(0, height / 2 - size, 0, height / 2 + size);
+  gold.addColorStop(0, "#ffe680");
+  gold.addColorStop(1, "#c98500");
+  c.fillStyle = "rgba(60,30,0,0.35)";
+  c.fillText("SCRATCH", width / 2, height / 2 - size * 0.55 + 2);
+  c.fillText("HERE", width / 2, height / 2 + size * 0.55 + 2);
+  c.fillStyle = gold;
   c.fillText("SCRATCH", width / 2, height / 2 - size * 0.55);
   c.fillText("HERE", width / 2, height / 2 + size * 0.55);
 };

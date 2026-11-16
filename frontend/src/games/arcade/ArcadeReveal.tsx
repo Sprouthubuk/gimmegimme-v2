@@ -14,6 +14,7 @@ import { CLASSIC_SKIN } from "./skins/classic";
 import { SkinContext } from "./skins/SkinContext";
 import type { GameSkin } from "./skins/types";
 import "./shell/reveal.css";
+import "./shell/premium.css";
 import { Scenery } from "./shell/scenery/Scenery";
 
 export interface ArcadeRevealProps extends RevealGameProps {

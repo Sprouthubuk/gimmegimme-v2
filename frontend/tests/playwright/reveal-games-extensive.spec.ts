@@ -82,7 +82,7 @@ async function playBoard(page: Page, game: string) {
       await press(".rg-wheel-controls button:not([disabled]), .rg-ce-controls button:not([disabled]), .rg-sleigh-controls .rg-btn:not([disabled])");
       break;
     case "bingo_card":
-      await press(".rg-bingo-controls .rg-btn");
+      await press(".rg-bingo-controls button");
       break;
     case "balloon_pop":
       await press(".rg-balloon-all, .rg-cracker-all, .rg-smash-all");
@@ -97,7 +97,7 @@ async function playBoard(page: Page, game: string) {
       await press(".rg-coin-board");
       break;
     case "slots":
-      await press(".rg-board .rg-btn-yellow, .rg-lever");
+      await press(".rg-board .rg-cta, .rg-board .rg-btn-yellow, .rg-lever");
       break;
     case "gems":
       for (let k = 0; k < 9 && !(await sheetOrSummary.isVisible()); k++) {
@@ -541,7 +541,7 @@ test.describe("smoothness on a slowed-down phone", () => {
       const cdp = await page.context().newCDPSession(page);
       await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
       await page.waitForTimeout(500);
-      if (game === "bingo_card") await page.locator(".rg-bingo-controls .rg-btn").click();
+      if (game === "bingo_card") await page.locator(".rg-bingo-controls button").click();
       // Measured while the board is busy: bags bursting, or the claw on its way down.
       if (game === "gems") for (const k of [0, 5, 10]) await page.locator(".rg-gem-tile").nth(k).click();
       if (game === "claw_machine") await page.locator(".rg-grab").click();

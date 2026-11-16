@@ -212,7 +212,9 @@
 .rg-board-loading { margin-top: 80px; font-weight: 800; color: var(--rg-muted); }
 .rg-board.is-compact .rg-prompt { opacity: 0; }
 
-.rg-prompt { margin-top: 18px; text-align: center; transition: opacity 0.2s; padding: 0 8px; }
+.rg-prompt { position: relative; z-index: 2; margin-top: 18px; text-align: center; transition: opacity 0.2s; padding: 0 8px; }
+/* Positioned so a machine's soft shadow above never dims the words. */
+.rg-note { position: relative; z-index: 2; }
 .rg-prompt-title {
   font-family: var(--rg-font-display);
   font-size: 26px;
