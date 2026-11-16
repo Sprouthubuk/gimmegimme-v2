@@ -18,10 +18,8 @@ const SKIN_GAMES: Record<string, readonly string[]> = {
 
 /** Where to tap on the 3D stage, as fractions of it, in turn, when the board offers no button. */
 const TAPS: Record<string, [number, number][]> = {
-  gems: [
-    ...[0.22, 0.4, 0.6, 0.78].flatMap((x) => [0.76, 0.6].map((y) => [x, y] as [number, number])),
-    ...[0.27, 0.43, 0.57, 0.73].map((x) => [x, 0.45] as [number, number]),
-  ],
+  // The prize wall: four shelves of four, seen straight on.
+  gems: [0.82, 0.65, 0.47, 0.29].flatMap((y) => [0.19, 0.4, 0.6, 0.81].map((x) => [x, y] as [number, number])),
   hook_a_duck: [[0.5, 0.66], [0.3, 0.62], [0.7, 0.62]],
   coin_drop: [[0.5, 0.2], [0.3, 0.2], [0.7, 0.2]],
   default: [[0.5, 0.5], [0.5, 0.35], [0.5, 0.65]],

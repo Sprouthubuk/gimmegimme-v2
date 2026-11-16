@@ -32,11 +32,13 @@ export interface SlotsSkin3D {
   decor?: (g: THREE.Group, ctx: SceneCtx<SlotsState>) => void;
 }
 
-const N = 12; // cells round each drum
-const R = 0.5;
-const REEL_W = 0.5;
-const GAP = 0.06;
+// Fewer, bigger cells on fatter drums, so each symbol reads clearly on a phone.
+const N = 8; // cells round each drum
+const R = 0.56;
+const REEL_W = 0.57;
+const GAP = 0.035;
 const CELL = (Math.PI * 2) / N;
+const ARC = CELL * R; // height of one cell on the drum
 const theta = (k: number) => (k + 0.5) * CELL;
 
 export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, layout: SlotsLayout): SceneHandle {
@@ -46,8 +48,8 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
   const front = new THREE.PointLight(0xfff4e0, 2.2, 6, 1.6);
   front.position.set(0, 0.3, 1.8);
   scene.add(front);
-  camera.position.set(0, 0.3, 6.6);
-  const look = new THREE.Vector3(0, 0.2, 0);
+  camera.position.set(0, 0.3, 5.55);
+  const look = new THREE.Vector3(0, 0.22, 0);
   camera.lookAt(look);
 
   const machine = new THREE.Group();
@@ -109,25 +111,28 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
   const reels = layout.windows.map((win, r) => {
     const cells: SlotSymbol[] = Array.from({ length: N }, (_, k) => (k === 0 ? win[2] : k === 1 ? win[1] : k === 2 ? win[0] : layout.strips[r][k] ?? layout.strips[r][(k * 7) % layout.strips[r].length]));
     const canvas = document.createElement("canvas");
-    const S = 192;
+    // Canvas x runs round the drum, canvas y across it; sized so a pixel is square on the drum.
+    const S = 256;
+    const H = Math.round((S * REEL_W) / ARC);
     canvas.width = S * N;
-    canvas.height = S;
+    canvas.height = H;
     const g = canvas.getContext("2d")!;
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 4;
+    tex.anisotropy = 8;
     const paint = () => {
-      const grad = g.createLinearGradient(0, 0, 0, S);
-      grad.addColorStop(0, "#e9e4ee");
+      const grad = g.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, "#f2eef6");
       grad.addColorStop(0.5, skin.reelFace);
-      grad.addColorStop(1, "#e9e4ee");
+      grad.addColorStop(1, "#f2eef6");
       g.fillStyle = grad;
-      g.fillRect(0, 0, S * N, S);
-      g.strokeStyle = "rgba(20,20,20,0.12)";
+      g.fillRect(0, 0, S * N, H);
+      g.strokeStyle = "rgba(20,20,20,0.18)";
+      g.lineWidth = 3;
       for (let k = 0; k <= N; k++) {
         g.beginPath();
         g.moveTo(k * S, 0);
-        g.lineTo(k * S, S);
+        g.lineTo(k * S, H);
         g.stroke();
       }
     };
@@ -135,9 +140,10 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
     Promise.all(cells.map((c) => skin.icon(c))).then((imgs) => {
       imgs.forEach((img, k) => {
         g.save();
-        g.translate(k * S + S / 2, S / 2);
+        g.translate(k * S + S / 2, H / 2);
         g.rotate(Math.PI / 2);
-        g.drawImage(img, -S * 0.39, -S * 0.39, S * 0.78, S * 0.78);
+        const sz = S * 0.94;
+        g.drawImage(img, -sz / 2, -sz / 2, sz, sz);
         g.restore();
       });
       tex.needsUpdate = true;
@@ -146,7 +152,7 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
     geo.rotateZ(Math.PI / 2);
     const drum = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.35, clearcoat: 0.8, clearcoatRoughness: 0.2 }));
     const pivot = new THREE.Group();
-    pivot.position.set((r - 1) * (REEL_W + GAP), 0.15, 0.36);
+    pivot.position.set((r - 1) * (REEL_W + GAP), 0.15, 0.3);
     pivot.add(drum);
     // Drum edges.
     for (const sx of [-1, 1]) {
@@ -156,12 +162,13 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
       pivot.add(rim);
     }
     machine.add(pivot);
-    const start = theta(6 + r) + Math.PI * 2 * 3;
+    // Before the spin each drum faces cells 3-6, never the result cells 0-2.
+    const start = theta(4 + (r % 2)) + Math.PI * 2 * 3;
     pivot.rotation.x = start;
     return { pivot, angle: start, speed: 0, stopFrom: 0, stopTo: 0, stopAt: -1, landed: false };
   });
   // Shade top and bottom of the window so the drums read as round.
-  const shade = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 1.2), new THREE.MeshBasicMaterial({ map: gradientTexture([[0, "rgba(0,0,0,0.85)"], [0.3, "rgba(0,0,0,0)"], [0.7, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0.85)"]], 0), transparent: true, depthWrite: false }));
+  const shade = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 1.2), new THREE.MeshBasicMaterial({ map: gradientTexture([[0, "rgba(0,0,0,0.6)"], [0.18, "rgba(0,0,0,0)"], [0.82, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0.6)"]], 0), transparent: true, depthWrite: false }));
   shade.position.set(0, 0.15, 0.87);
   machine.add(shade);
   // Payline: a gold bar either side, and a glowing frame on a win.
@@ -171,14 +178,14 @@ export function buildSlotsScene(ctx: SceneCtx<SlotsState>, skin: SlotsSkin3D, la
     tip.position.set(sx * 0.93, 0.15, 0.95);
     machine.add(tip);
   }
-  const winFrame = new THREE.Mesh(roundedBox(1.72, 0.44, 0.02, 0.06), new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
+  const winFrame = new THREE.Mesh(roundedBox(1.84, ARC + 0.06, 0.02, 0.06), new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
   winFrame.position.set(0, 0.15, 0.875);
   machine.add(winFrame);
   const winHalo = halo(0xffd84a, 2.4, 0);
   winHalo.scale.set(2.6, 0.9, 1);
   winHalo.position.set(0, 0.15, 0.9);
   machine.add(winHalo);
-  const glassPane = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 1.2), glass(0xffffff, 0.06));
+  const glassPane = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 1.2), glass(0xffffff, 0.03));
   glassPane.position.set(0, 0.15, 0.95);
   machine.add(glassPane);
 

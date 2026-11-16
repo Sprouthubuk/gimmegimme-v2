@@ -38,22 +38,34 @@ export interface PickSkin3D {
 
 const COLS = 4;
 const SP = 0.62;
+/** Shelf heights, top row first. */
+const ROW_Y = [0.62, 0.08, -0.46, -1.0];
 
 export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): SceneHandle {
   const { scene, camera, reducedMotion, fx } = ctx;
   scene.background = gradientTexture(skin.sky);
   studioLights(scene, { strength: 1.05 });
-  camera.position.set(0, 3.3, 3.55);
-  const look = new THREE.Vector3(0, -0.2, 0.0);
+  // Front-on: the board stands up like a prize wall, four shelves of four, every tile the same size.
+  camera.position.set(0, 0.55, 4.75);
+  const look = new THREE.Vector3(0, -0.02, 0);
   camera.lookAt(look);
   const world = new THREE.Group();
   scene.add(world);
-  skin.floor(world, ctx);
+  // The skin's floor becomes the wall behind the shelves.
+  const wall = new THREE.Group();
+  wall.rotation.x = Math.PI / 2;
+  wall.position.set(0, -0.1, -0.75);
+  wall.scale.setScalar(1.25);
+  skin.floor(wall, ctx);
+  world.add(wall);
+  const backShade = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
+  backShade.position.set(0, -0.1, -0.7);
+  world.add(backShade);
   skin.decor?.(world, ctx);
   const signTex = skin.sign(1024, 360);
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 2.9 * (360 / 1024)), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, toneMapped: false }));
-  sign.position.set(0, 0.42, -1.5);
-  sign.lookAt(camera.position.clone().setX(0));
+  sign.scale.setScalar(0.85);
+  sign.position.set(0, 1.25, -0.45);
   world.add(sign);
 
   const lootTex: Partial<Record<GemKind, THREE.Texture>> = {};
@@ -74,17 +86,30 @@ export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): Scen
 
   const tiles = Array.from({ length: 16 }, (_, i) => {
     const c = skin.make(i);
+    const row = Math.floor(i / COLS);
     const x = ((i % COLS) - (COLS - 1) / 2) * SP;
-    const z = (Math.floor(i / COLS) - 1.5) * SP + 0.1;
-    c.root.position.set(x, 0, z);
+    const y = ROW_Y[row];
+    const z = -0.3 + row * 0.12;
+    c.root.position.set(x, y, z);
+    c.root.scale.setScalar(0.92);
     c.root.userData.tile = i;
     c.root.traverse((o) => (o.userData.tile = i));
     world.add(c.root);
     const sh = blobShadow(0.26, 0.5);
-    sh.position.set(x, -0.29, z);
+    sh.position.set(x, y - 0.285, z);
     world.add(sh);
-    return { ...c, x, z, openAt: -1, kind: null as GemKind | null, loot: null as THREE.Sprite | null, glow: null as THREE.Sprite | null, hover: 0 };
+    return { ...c, x, y, z, openAt: -1, kind: null as GemKind | null, loot: null as THREE.Sprite | null, glow: null as THREE.Sprite | null, hover: 0 };
   });
+
+  // A glossy shelf under each row, with a gold lip.
+  for (let r = 0; r < 4; r++) {
+    const shelf = new THREE.Mesh(roundedBox(2.75, 0.07, 0.5, 0.03), glossy(0x1a0f24, { roughness: 0.35 }));
+    shelf.position.set(0, ROW_Y[r] - 0.325, -0.3 + r * 0.12);
+    outline(shelf, 0.008);
+    const lip = new THREE.Mesh(new THREE.BoxGeometry(2.75, 0.025, 0.02), metal(GOLD, 0.25));
+    lip.position.set(0, ROW_Y[r] - 0.3, -0.04 + r * 0.12);
+    world.add(shelf, lip);
+  }
 
   let doneAt = -1;
   let celebrated = false;
@@ -102,7 +127,7 @@ export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): Scen
           tl.kind = k;
           const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: lootFor(k), transparent: true, depthWrite: false }));
           sp.scale.setScalar(0.01);
-          sp.position.set(tl.x, 0.05, tl.z);
+          sp.position.set(tl.x, tl.y, tl.z + 0.3);
           sp.renderOrder = 5;
           const gl = halo(skin.lootGlow[k], 0.9, 0);
           gl.position.copy(sp.position);
@@ -129,7 +154,8 @@ export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): Scen
           const pulse = hit && !reducedMotion ? 1 + Math.sin((t - doneAt) * 9) * 0.08 : 1;
           const size = (tl.kind === "dud" ? 0.42 : 0.5) * rise * pulse * (hit ? 1.25 : 1);
           tl.loot.scale.setScalar(Math.max(0.01, size));
-          tl.loot.position.y = 0.12 + 0.42 * rise + bob + (hit ? 0.12 : 0);
+          tl.loot.position.y = tl.y + 0.08 + 0.1 * rise + bob;
+          tl.loot.position.z = tl.z + 0.3 + 0.25 * rise + (hit ? 0.15 : 0);
           tl.glow.position.copy(tl.loot.position);
           tl.glow.scale.setScalar(Math.max(0.01, size * 2.1));
           tl.glow.material.opacity = damp(tl.glow.material.opacity, tl.kind === "dud" ? 0 : hit ? 0.9 : lose ? 0.15 : 0.45, 6, dt);
@@ -142,7 +168,7 @@ export function buildPickScene(ctx: SceneCtx<PickState>, skin: PickSkin3D): Scen
         fx.sparkBurst(new THREE.Vector3(0, 0.5, 0.4), 60, 2.4);
         ctx.shake(0.05, 420);
       }
-      camera.position.y = damp(camera.position.y, s.done && s.winGem ? 3.4 : 3.55, 2, dt);
+      camera.position.z = damp(camera.position.z, s.done && s.winGem ? 4.5 : 4.75, 2, dt);
       camera.lookAt(look);
     },
     pointer(kind, e) {
@@ -257,29 +283,29 @@ export function treasureChest(wood = 0x8a4b1f): (i: number) => Container3D {
   };
 }
 
-/** A glossy tile with a "?" that flips over (the classic gem board). */
+/** A glossy upright tile with a "?" that flips round to show what's behind it (the classic gem board). */
 export function flipTile(colors: number[] = [BRAND.pink, BRAND.cyan, BRAND.yellow]): (i: number) => Container3D {
-  const geo = roundedBox(0.5, 0.12, 0.5, 0.05);
+  const geo = roundedBox(0.5, 0.5, 0.1, 0.06);
   const q = textTexture("?", { width: 256, height: 256, size: 200, fill: "#ffffff", stroke: "#141414", strokeWidth: 16 });
   return (i) => {
     const root = new THREE.Group();
-    const tile = new THREE.Mesh(geo, glossy(colors[i % colors.length], { roughness: 0.25 }));
+    const tile = new THREE.Mesh(geo, glossy(colors[i % colors.length], { roughness: 0.22 }));
     outline(tile, 0.012);
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), new THREE.MeshBasicMaterial({ map: q, transparent: true, toneMapped: false }));
-    face.rotation.x = -Math.PI / 2;
-    face.position.y = 0.061;
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.36), new THREE.MeshBasicMaterial({ map: q, transparent: true, toneMapped: false }));
+    face.position.z = 0.052;
     tile.add(face);
-    tile.position.y = -0.2;
+    tile.position.y = -0.02;
     root.add(tile);
     return {
       root,
       setOpen(p) {
-        tile.rotation.x = p * Math.PI;
-        tile.position.y = -0.2 + Math.sin(p * Math.PI) * 0.25 - p * 0.04;
-        tile.scale.setScalar(1 - p * 0.15);
+        tile.rotation.y = p * Math.PI;
+        tile.position.z = Math.sin(p * Math.PI) * 0.2 - p * 0.12;
+        tile.scale.setScalar(1 - p * 0.25);
+        tile.visible = p < 0.98;
       },
       idle(t) {
-        tile.position.y = -0.2 + Math.sin(t * 2) * 0.01;
+        tile.rotation.y = Math.sin(t * 1.3) * 0.06;
       },
     };
   };
