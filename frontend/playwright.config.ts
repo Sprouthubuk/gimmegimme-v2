@@ -16,18 +16,9 @@ export default defineConfig({
   use: { baseURL },
   projects: [
     {
-      // The 3D boards (WebGL in software, as on a CI machine).
-      name: "3d",
-      // Software WebGL on a shared machine is slow: the pick games need a few minutes each.
-      timeout: Number(process.env.GAMES_TIMEOUT ?? 480_000),
-      testMatch: /reveal-games-3d\.spec\.ts/,
-      use: { launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] } },
-    },
-    {
-      // The 2D boards a phone without WebGL gets.
-      name: "flat",
-      testIgnore: /reveal-games-3d\.spec\.ts/,
-      use: { launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox", "--disable-webgl", "--disable-3d-apis"] } },
+      // The reveal games are 2D (SVG and CSS); no WebGL is needed.
+      name: "games",
+      use: { launchOptions: { executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox"] } },
     },
   ],
   webServer: process.env.E2E_BASE_URL ? undefined : {

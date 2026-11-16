@@ -669,3 +669,6 @@ html.rg-lock, html.rg-lock body { overflow: hidden; overscroll-behavior: none; }
 .rg-reveal.is-reduced-motion .rg-cta { animation: none; }
 /* Words that sit on a scene. */
 .rg-reveal.has-scenery .rg-note { color: rgba(255, 255, 255, 0.72); }
+
+/* A plain wrapper some boards keep round their content. */
+.rg-board-wrap-in > * { margin-left: auto; margin-right: auto; }

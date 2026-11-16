@@ -5,10 +5,6 @@ import { useSlotsSpin } from "../../games/slots/useSlotsSpin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
-import { Scene3D } from "../../three/Scene3D";
-import { buildSlotsScene, type SlotsState } from "../../three/slotsScene";
-import { svgElementToImage } from "../../three/svgImage";
-import { blanketsSkin3D } from "./blankets3d";
 import "../../games/slots/slots.css";
 import "../shared/themed.css";
 import "./blankets.css";
@@ -299,36 +295,13 @@ export function BlanketsSlotsBoard({ ticket, seed, decoys, reducedMotion, onReve
       </div>
     </>
   );
-  const state: SlotsState = { phase, stopped, win: layout.win, pull };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildSlotsScene(ctx, blanketsSkin3D(feastImage), layout)}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.2}
-        bloom={false}
-        fallback={flat}
-        label="Blankets and Banknotes slot machine"
-        controls={
-          layout.paytable.length > 0 && (
-            <div className="rg3-paytable">
-              {layout.paytable.map((p) => (
-                <span key={p.symbol} className={`rg3-pay ${won && p.symbol === payline[0] ? "is-hit" : ""}`}>
-                  <b>3×</b>
-                  <FeastIcon symbol={p.symbol} />
-                  <span>{p.label}</span>
-                </span>
-              ))}
-            </div>
-          )
-        }
-      />
+      {flat}
       {phase === "ready" ? (
         <div className="rg-slots-controls rg-bb-controls">
-          <button type="button" className="rg3-btn is-gold rg3-spin rg-bb-spin" onClick={pull}>
+          <button type="button" className="rg-cta rg-bb-spin" onClick={pull}>
             SPIN
           </button>
           <p className="rg-note">{RESULT_SET_NOTE}</p>
@@ -341,6 +314,3 @@ export function BlanketsSlotsBoard({ ticket, seed, decoys, reducedMotion, onReve
   );
 }
 
-const NOTE_CSS = ".rg-bb-note-text{font:900 15px Arial Black,Arial,sans-serif;fill:#fff;stroke:#141414;stroke-width:3px;paint-order:stroke}";
-/** The board's own symbol, as a picture for the 3D drums. */
-const feastImage = (symbol: SlotSymbol) => svgElementToImage(<FeastIcon symbol={symbol} />, { defs: <SharedDefs />, css: NOTE_CSS });

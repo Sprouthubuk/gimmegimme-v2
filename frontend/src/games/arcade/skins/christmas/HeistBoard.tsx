@@ -5,10 +5,6 @@ import { useGemPicks } from "../../games/gems/useGemPicks";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
-import { Scene3D } from "../../three/Scene3D";
-import { buildPickScene, type PickState } from "../../three/pickScene";
-import { svgElementToImage } from "../../three/svgImage";
-import { heistSkin3D } from "./heist3d";
 import "./heist.css";
 
 /**
@@ -272,37 +268,13 @@ export function HeistBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
       </div>
     </>
   );
-  const state: PickState = { kinds: Array.from({ length: 16 }, (_, i) => kindAt(i)), done, winGem: layout.winGem, open: crack };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildPickScene(ctx, heistSkin3D(lootImage))}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.05}
-        fallback={flat}
-        label="Liam's Humbug Heist money bags"
-        controls={
-          layout.paytable.length > 0 && (
-            <div className="rg3-paytable">
-              {layout.paytable.map((p) => (
-                <span key={p.gem} className={`rg3-pay ${done && p.gem === layout.winGem ? "is-hit" : ""}`}>
-                  <LootIcon kind={p.gem} className="rg-slot-icon" />
-                  <b>×3</b>
-                  <span>{p.label}</span>
-                </span>
-              ))}
-            </div>
-          )
-        }
-      />
+      {flat}
       {prompt}
       <SoundToggle />
     </>
   );
 }
 
-/** The board's own loot picture, for the 3D board. */
-const lootImage = (kind: GemKind) => svgElementToImage(<LootIcon kind={kind} />, { defs: <SharedDefs /> });

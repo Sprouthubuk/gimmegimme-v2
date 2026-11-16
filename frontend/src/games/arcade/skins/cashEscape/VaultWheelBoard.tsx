@@ -5,9 +5,6 @@ import { useWheelSpin } from "../../games/wheel/useWheelSpin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound, useSoundLater } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
-import { Scene3D } from "../../three/Scene3D";
-import { buildWheelScene, type WheelState } from "../../three/wheelScene";
-import { CASH_ESCAPE_SKIN_3D } from "./cashEscape3d";
 import "../shared/themed.css";
 import "./cashEscape.css";
 
@@ -252,22 +249,13 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
       </div>
     </>
   );
-  const state: WheelState = { phase, rotation, spinMs: SPIN_MS, winLabel: landed.kind === "prize" ? landed.label : null, spin: crack };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildWheelScene(ctx, CASH_ESCAPE_SKIN_3D, layout)}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.25}
-        fallback={flat}
-        label="The Great Cash Escape vault wheel"
-      />
+      {flat}
       {phase === "ready" ? (
         <div className="rg-ce-controls">
-          <button type="button" className="rg3-btn is-gold rg3-spin rg-ce-spin" onClick={crack}>
+          <button type="button" className="rg-cta rg-ce-spin" onClick={crack}>
             CRACK THE VAULT
           </button>
           <p className="rg-note">{RESULT_SET_NOTE}</p>
@@ -276,7 +264,7 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
         <div className="rg-ce-controls">
           <GamePrompt title={phase === "spinning" ? "Cracking the vault…" : landed.kind === "none" ? "No win" : `${landed.label}!`} tone={phase === "landed" && landed.kind === "none" ? "ink" : "pink"} />
           {phase === "spinning" && (
-            <button type="button" className="rg3-btn is-gold rg3-spin rg-ce-spin" disabled>
+            <button type="button" className="rg-cta rg-ce-spin" disabled>
               CRACK THE VAULT
             </button>
           )}

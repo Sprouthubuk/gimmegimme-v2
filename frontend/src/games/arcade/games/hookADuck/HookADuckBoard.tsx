@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import type { BoardProps } from "../types";
 import { winLabel } from "../symbols";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
-import { Scene3D } from "../../three/Scene3D";
-import { buildDuckScene, type DuckState } from "../../three/duckScene";
 import "./hookADuck.css";
 
 type DuckColour = "pink" | "yellow" | "cyan";
@@ -120,19 +118,10 @@ export function HookADuckBoard({ ticket, reducedMotion, onReveal }: BoardProps) 
       </div>
     </>
   );
-  const state: DuckState = { phase, chosen, label, hook };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildDuckScene(ctx)}
-        seed={`duck:${ticket.ticketNumber}`}
-        reducedMotion={reducedMotion}
-        aspect={1.0}
-        fallback={flat}
-        label="Hook a duck stall"
-      />
+      {flat}
       {phase === "ready" ? (
         <GamePrompt title="Tap a duck to hook it" sub={RESULT_SET_NOTE} />
       ) : phase === "tagged" ? (

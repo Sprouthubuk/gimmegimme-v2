@@ -6,9 +6,6 @@ import { sizeClass } from "../../games/symbols";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound, useSoundLater } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
-import { Scene3D } from "../../three/Scene3D";
-import { buildCoinDropScene, type CoinDropState } from "../../three/coinDropScene";
-import { DROP_IT_SKIN_3D } from "./dropIt3d";
 import "../../games/coinDrop/coinDrop.css";
 import "../shared/themed.css";
 import "./dropIt.css";
@@ -241,34 +238,10 @@ export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
       </div>
     </>
   );
-  const state: CoinDropState = { phase, aim, coin, landedBin, setAim, drop: dropCoin };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildCoinDropScene(ctx, DROP_IT_SKIN_3D, layout)}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.28}
-        fallback={flat}
-        label="Drop It Like It's Hot coin drop"
-        controls={
-          <>
-          <div className="rg3-controls">
-            <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.max(0, a - 1))} disabled={phase !== "aim"} aria-label="Aim left">
-              ◀
-            </button>
-            <button type="button" className="rg3-btn rg3-grab" onClick={dropCoin} disabled={phase !== "aim"}>
-              DROP
-            </button>
-            <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.min(COIN_BINS - 1, a + 1))} disabled={phase !== "aim"} aria-label="Aim right">
-              ▶
-            </button>
-          </div>
-          </>
-        }
-      />
+      {flat}
       {phase === "aim" ? (
         <GamePrompt title="Slide to aim, tap to drop" sub={RESULT_SET_NOTE} />
       ) : phase === "dropping" ? (

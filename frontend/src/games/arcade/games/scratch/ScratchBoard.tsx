@@ -6,9 +6,6 @@ import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { formatTicketNumber } from "../../money";
 import { pluralLabel, scratchProgress, useScratchSurface, type PaintCover } from "./useScratchSurface";
 import "./scratch.css";
-import { Scene3D } from "../../three/Scene3D";
-import { buildStageScene, type StageState } from "../../three/stageScene";
-import { CLASSIC_SCRATCH_3D } from "../../three/classicSkins";
 
 /** Silver foil with diagonal sheen, like the printed card. */
 const paintFoil: PaintCover = (c, width, height) => {
@@ -50,7 +47,6 @@ export function ScratchBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
     return () => clearTimeout(t);
   }, [allRevealed, onReveal, reducedMotion, layout.winningCells.length]);
 
-  const stage: StageState = { done: allRevealed, won: layout.winningCells.length > 0 };
   const progress = scratchProgress(layout, revealed, started);
   let prompt: React.ReactNode;
   if (progress.kind === "done") prompt = <GamePrompt title={progress.won ? "Match 3!" : "No match this time"} tone={progress.won ? "pink" : "ink"} />;
@@ -61,20 +57,8 @@ export function ScratchBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
 
   return (
     <>
-      <div className="rg3-backdrop-wrap">
-        <Scene3D
-          state={stage}
-          setup={(ctx) => buildStageScene(ctx, CLASSIC_SCRATCH_3D)}
-          seed={`scratch:${ticket.ticketNumber}`}
-          reducedMotion={reducedMotion}
-          fill
-          maxFps={30}
-          maxPixelRatio={1.5}
-          className="rg3-backdrop"
-          fallback={null}
-          label="Scratch card stage"
-        />
-        <div className="rg3-backdrop-content">
+      <div className="rg-board-wrap">
+        <div className="rg-board-wrap-in">
   <div className="rg-scratch-card">
           <div className="rg-scratch-sheen" />
           <div className="rg-scratch-head">
