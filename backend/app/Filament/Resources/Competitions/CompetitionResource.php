@@ -49,7 +49,7 @@ class CompetitionResource extends Resource
     public const GAMES = [
         'classic' => 'Classic reveal', 'scratch_card' => 'Scratch Card', 'spin_wheel' => 'Spin the Wheel', 'bingo_card' => 'Bingo Card', 'balloon_pop' => 'Balloon Pop',
         'hook_a_duck' => 'Hook a Duck', 'claw_machine' => 'Claw Machine', 'coin_drop' => 'Coin Drop', 'slots' => 'Slots', 'gems' => 'Gems',
-        'whack_a_mole' => 'Whack-a-Mole',
+        'whack_a_mole' => 'Whack-a-Mole', 'pinata' => 'Piñata',
     ];
 
     public static function form(Schema $schema): Schema

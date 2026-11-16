@@ -15,7 +15,7 @@ const SIZES = [
   { name: "390x844", width: 390, height: 844 },
   { name: "390x667 (short phone, board drawn smaller)", width: 390, height: 667 },
 ];
-const GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole"] as const;
+const GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole", "pinata"] as const;
 const SKINS = ["classic", "christmas", "pirates", "cash_escape", "hip_hop", "smash_cash"] as const;
 /** The games each skin draws its own way (null: all of them). Any other game falls back to the classic look. */
 const SKIN_GAMES: Record<(typeof SKINS)[number], readonly string[] | null> = {
@@ -71,6 +71,15 @@ async function whackAll(page: Page) {
   }
 }
 
+/** Taps the piñata until it breaks. */
+async function hitPinata(page: Page) {
+  await expect(page.locator(".rg-pinata")).toBeVisible({ timeout: 10_000 });
+  for (let k = 0; k < 20 && !(await page.locator(".rg-pinata.is-broken").count()); k++) {
+    await page.locator(".rg-pinata-swing").dispatchEvent("pointerdown").catch(() => {});
+    await page.waitForTimeout(120);
+  }
+}
+
 /** Plays the board on screen until the result sheet shows. */
 async function play(page: Page, game: string) {
   const click = (sel: string) => page.locator(sel).first().click();
@@ -95,6 +104,9 @@ async function play(page: Page, game: string) {
       break;
     case "whack_a_mole":
       await whackAll(page);
+      break;
+    case "pinata":
+      await hitPinata(page);
       break;
     default: {
       // The other classic games: press whatever the board offers until it lands.
@@ -475,5 +487,29 @@ test.describe("whack-a-mole", () => {
     const firstIndex = await page.locator(".rg-hole").evaluateAll((els) => els.findIndex((e) => e.classList.contains("is-up")));
     await expect.poll(async () => page.locator(".rg-hole").evaluateAll((els) => els.findIndex((e) => e.classList.contains("is-up"))), { timeout: 4000 }).not.toBe(firstIndex);
     await expect(page.locator(".rg-whack-count i.is-done")).toHaveCount(0);
+  });
+});
+
+test.describe("piñata", () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference" });
+
+  test("the prize shows only when the last hit breaks it", async ({ page }) => {
+    await open(page, "pinata", "classic", "win");
+    const swing = page.locator(".rg-pinata-swing");
+    for (let i = 1; i < 5; i++) {
+      await swing.dispatchEvent("pointerdown");
+      await expect(page.locator(".rg-pinata-count i.is-done")).toHaveCount(i);
+      await expect(page.locator(".rg-pinata-prize")).toHaveCount(0);
+    }
+    await swing.dispatchEvent("pointerdown");
+    await expect(page.locator(".rg-pinata-prize")).toHaveText("£10");
+    await expect(page.locator(".rg-sheet")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("a losing piñata says so plainly", async ({ page }) => {
+    await open(page, "pinata", "classic", "lose");
+    await hitPinata(page);
+    await expect(page.locator(".rg-pinata-prize")).toHaveText("No prize");
+    await expect(page.locator(".rg-pinata-prize")).not.toHaveClass(/is-win/);
   });
 });

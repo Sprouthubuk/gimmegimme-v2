@@ -15,7 +15,7 @@ import { expect, test, type Page } from "@playwright/test";
  * The board generators themselves are proven across thousands of seeds in tests/reveal-games.
  */
 
-const CLASSIC_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole"];
+const CLASSIC_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole", "pinata"];
 const CHRISTMAS_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "gems", "claw_machine", "slots"];
 /** The games each skin draws its own way. */
 const SKIN_GAMES: Record<string, string[]> = {
@@ -105,6 +105,12 @@ async function playBoard(page: Page, game: string) {
         const up = page.locator(".rg-hole.is-up:not([disabled])").first();
         if (await up.count()) await up.dispatchEvent("pointerdown").catch(() => {});
         await page.waitForTimeout(80);
+      }
+      break;
+    case "pinata":
+      for (let k = 0; k < 20 && !(await page.locator(".rg-pinata.is-broken").count()); k++) {
+        await page.locator(".rg-pinata-swing").dispatchEvent("pointerdown").catch(() => {});
+        await page.waitForTimeout(120);
       }
       break;
     case "gems":

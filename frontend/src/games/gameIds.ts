@@ -18,6 +18,7 @@ export const REVEAL_GAME_OPTIONS = [
   { id: "slots", label: "Slots" },
   { id: "gems", label: "Gems" },
   { id: "whack_a_mole", label: "Whack-a-Mole" },
+  { id: "pinata", label: "Piñata" },
 ] as const;
 
 export type RevealGameOptionId = (typeof REVEAL_GAME_OPTIONS)[number]["id"];
