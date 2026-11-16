@@ -138,3 +138,11 @@
 .rg-bauble { border: 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); }
 .rg-bauble-cap { border: 0; }
 .rg-bauble-inner { border: 0; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12); }
+
+/* Fit the height as well as the width: the card is about as tall as it is wide. Full screen on a phone the
+   header takes about 180px and the title, tray, button and sound switch about 290px (zoomed with the board);
+   in the desktop card (at most
+   820px tall, with the header) about 495px, and more in a short window. */
+.rg-jingle-frame { width: min(100%, 400px, calc(min(820px, 100svh) * 1.2 - 660px)); margin-inline: auto; }
+.rg-reveal.rg-fullscreen .rg-jingle-frame,
+.rg-reveal.rg-fill .rg-jingle-frame { width: min(100%, 400px, calc((100svh - 180px) / var(--rg-z, 1) - 290px)); }

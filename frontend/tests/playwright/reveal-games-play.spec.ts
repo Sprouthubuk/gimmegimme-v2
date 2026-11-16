@@ -241,20 +241,22 @@ for (const size of SIZES) {
         await open(page, "claw_machine", "christmas", sample);
         const rig = page.locator(".rg-claw-rig");
         const startX = (await rig.boundingBox())!.x;
+        // The machine fits the screen height, so measure moves against its glass, not in fixed pixels.
+        const step = (await page.locator(".rg-claw-glass").boundingBox())!.width * 0.05;
         // Hold the joystick right, then drag across the glass to the left.
         const right = page.locator(".rg-joy-btn.is-right");
         await right.hover();
         await page.mouse.down();
-        await page.waitForTimeout(500);
+        // Held down, the claw keeps moving: wait for it rather than a fixed time (a busy test machine is slower).
+        await expect.poll(async () => (await rig.boundingBox())!.x, { timeout: 3000 }).toBeGreaterThan(startX + step);
         await page.mouse.up();
-        expect((await rig.boundingBox())!.x).toBeGreaterThan(startX + 20);
         const glass = (await page.locator(".rg-claw-glass").boundingBox())!;
         await page.mouse.move(glass.x + glass.width * 0.6, glass.y + glass.height * 0.5);
         await page.mouse.down();
         await page.mouse.move(glass.x + glass.width * 0.2, glass.y + glass.height * 0.5, { steps: 8 });
         await page.mouse.up();
         await page.waitForTimeout(200);
-        expect((await rig.boundingBox())!.x).toBeLessThan(startX - 20);
+        expect((await rig.boundingBox())!.x).toBeLessThan(startX - step);
         await page.locator(".rg-grab").click();
         await page.locator(".rg-grab").click({ force: true }).catch(() => {});
         await expect(page.locator(".rg-claw-held .rg-bauble")).toBeVisible({ timeout: 5_000 });
