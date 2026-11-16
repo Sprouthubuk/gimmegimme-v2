@@ -9,7 +9,6 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -33,17 +32,16 @@ class SiteSettings extends Page
     public ?array $data = [];
 
     private const MONEY = ['min_deposit_pence' => 'Minimum top up', 'min_card_pence' => 'Minimum card payment', 'min_withdrawal_pence' => 'Minimum withdrawal',
-        'max_top_up_pence' => 'Largest top up', 'credit_card_monthly_cap_pence' => 'Credit cards: monthly limit per player', 'signup_bonus_cap_pence' => 'Welcome bonus: most it pays'];
+        'max_top_up_pence' => 'Largest top up', 'credit_card_monthly_cap_pence' => 'Credit cards: monthly limit per player'];
 
-    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'signup_bonus_max_grants', 'meta_pixel_id'];
+    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'meta_pixel_id'];
 
     public function mount(): void
     {
         $data = [];
-        foreach ([...array_keys(self::MONEY), ...self::TEXT, 'signup_bonus_enabled'] as $k) {
+        foreach ([...array_keys(self::MONEY), ...self::TEXT] as $k) {
             $data[$k] = Setting::get($k);
         }
-        $data['signup_bonus_enabled'] = $data['signup_bonus_enabled'] === '1';
         $this->form->fill($data);
     }
 
@@ -51,10 +49,8 @@ class SiteSettings extends Page
     {
         return $schema->statePath('data')->components([
             Section::make('Money')->columns(3)->components(array_map(fn ($k) => Money::input($k, self::MONEY[$k])->required(), array_keys(self::MONEY))),
-            Section::make('Welcome bonus')->columns(2)->components([
-                Toggle::make('signup_bonus_enabled')->label('Give a welcome bonus on the first top up'),
-                TextInput::make('bonus_expiry_days')->label('Bonus expires after (days)')->integer()->minValue(1)->maxValue(365)->required(),
-                TextInput::make('signup_bonus_max_grants')->label('Only for the first … players (0 = no limit)')->integer()->minValue(0)->required(),
+            Section::make('Bonus credit')->description('Credit you add to a player by hand, and bonus brought over from the old site.')->components([
+                TextInput::make('bonus_expiry_days')->label('Bonus credit expires after (days)')->integer()->minValue(1)->maxValue(365)->required(),
             ]),
             Section::make('Site')->columns(2)->components([
                 TextInput::make('featured_slug')->label('Featured competition (web address name)')->alphaDash(),

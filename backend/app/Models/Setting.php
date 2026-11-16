@@ -24,9 +24,6 @@ class Setting extends Model
         'min_withdrawal_pence' => '2000',
         'max_top_up_pence' => '50000',
         'credit_card_monthly_cap_pence' => '25000',
-        'signup_bonus_enabled' => '0',
-        'signup_bonus_cap_pence' => '2000',
-        'signup_bonus_max_grants' => '100', // first 100 players only
         'bonus_expiry_days' => '30',
         'featured_slug' => null,
         'instagram_url' => null,

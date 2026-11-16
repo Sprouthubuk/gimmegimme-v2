@@ -24,7 +24,6 @@ final class Orders
         private PlayCheck $check,
         private Fulfilment $fulfilment,
         private PaymentGateway $gateway,
-        private Bonus $bonus,
     ) {}
 
     /**
@@ -189,7 +188,6 @@ final class Orders
         }
         if ($order->isDeposit()) {
             $this->wallet->credit($order->user_id, 'deposit', $order->total_pence, 'Top up · Card', 'order:'.$order->id.':deposit', $order->id);
-            $this->bonus->maybeGrant($order);
         } else {
             $this->fulfilment->fulfil($order);
         }

@@ -271,27 +271,16 @@ class OrdersTest extends TestCase
         $this->orders()->deposit($this->player(), 499);
     }
 
-    public function test_the_welcome_bonus_is_off_by_default_and_once_per_house_when_on(): void
+    public function test_a_top_up_never_adds_a_welcome_bonus(): void
     {
-        $address = ['address_line1' => '1 High Street', 'postcode' => 'BS1 4DJ'];
-        $a = $this->player($address);
-        $o = $this->orders()->deposit($a, 2000);
+        // The double-your-deposit bonus was removed for the new site: a top up pays in exactly what was paid.
+        Setting::put('signup_bonus_enabled', '1'); // an old setting left behind changes nothing
+        $u = $this->player();
+        $o = $this->orders()->deposit($u, 2000);
         $this->gateway()->settle($o->gateway_ref, 'paid');
         $this->orders()->syncWithGateway($o);
-        $this->assertSame(0, $this->wallet()->balances($a)['bonus'], 'off by default');
-
-        Setting::put('signup_bonus_enabled', '1');
-        $b = $this->player($address + ['first_name' => 'Other']);
-        $o = $this->orders()->deposit($b, 2000);
-        $this->gateway()->settle($o->gateway_ref, 'paid');
-        $this->orders()->syncWithGateway($o);
-        $this->assertSame(2000, $this->wallet()->balances($b)['bonus'], 'matched up to the £20 cap');
-
-        $c = $this->player(['address_line1' => '1 high street ', 'postcode' => 'bs14dj']);
-        $o = $this->orders()->deposit($c, 2000);
-        $this->gateway()->settle($o->gateway_ref, 'paid');
-        $this->orders()->syncWithGateway($o);
-        $this->assertSame(0, $this->wallet()->balances($c)['bonus'], 'same house');
+        $this->assertSame(['deposit' => 2000, 'bonus' => 0, 'winnings' => 0], $this->wallet()->balances($u));
+        $this->assertSame(0, \App\Models\LedgerEntry::query()->where('reason', 'Welcome bonus')->count());
     }
 
     public function test_card_payments_in_progress_hold_their_tickets(): void
