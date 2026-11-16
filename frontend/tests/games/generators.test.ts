@@ -23,6 +23,8 @@ import {
   generateScratch,
   generateSlots,
   generateWheel,
+  generateWhack,
+  WHACK_HOLES,
   symbolKey,
 } from "../../src/games/arcade/games/generators";
 import { usableDecoys } from "../../src/games/arcade/games/symbols";
@@ -216,6 +218,30 @@ describe("balloon pop", () => {
       expect(["s", "m", "l"]).toContain(l.size);
       expect(l.duration).toBeGreaterThanOrEqual(10);
       expect(l.duration).toBeLessThanOrEqual(12.5);
+    }
+  });
+});
+
+describe("whack-a-mole", () => {
+  it("shows only this ticket's own prize (or none), and moles carry nothing before the last whack", () => {
+    for (const prize of [...PRIZES, null]) {
+      for (const seed of SEEDS) {
+        const w = generateWhack(prize, seed);
+        expect(w.label).toBe(prize ? prizeShortLabel(prize) : null);
+        expect(Object.keys(w).sort()).toEqual(["label", "pops"]);
+        expect(w.pops.length).toBeGreaterThanOrEqual(20);
+        w.pops.forEach((h, i) => {
+          expect(Number.isInteger(h) && h >= 0 && h < WHACK_HOLES).toBe(true);
+          if (i) expect(h).not.toBe(w.pops[i - 1]);
+        });
+      }
+    }
+  });
+
+  it("the garden is the same every time for a ticket, and the pop order does not depend on the prize", () => {
+    for (const seed of SEEDS.slice(0, 200)) {
+      expect(generateWhack(PRIZES[0], seed)).toEqual(generateWhack(PRIZES[0], seed));
+      expect(generateWhack(PRIZES[0], seed).pops).toEqual(generateWhack(null, seed).pops);
     }
   });
 });

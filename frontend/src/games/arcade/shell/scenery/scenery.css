@@ -41,3 +41,6 @@
 
 /* Classic games sit on their scene: the plain classic background is not needed under it. */
 .rg-reveal.rg-skin-classic.has-scenery { background: #07050b; }
+.rg-sc-cloud { animation: rg-sc-cloud 18s ease-in-out infinite alternate; }
+@keyframes rg-sc-cloud { from { transform: translateX(-12px); } to { transform: translateX(14px); } }
+.rg-reveal.is-reduced-motion .rg-sc-cloud { animation: none; }

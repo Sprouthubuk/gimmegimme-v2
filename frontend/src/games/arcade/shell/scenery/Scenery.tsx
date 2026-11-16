@@ -206,7 +206,144 @@ function Casino() {
   );
 }
 
+/** A sunny garden at dusk: rolling hills, a picket fence, flowers. (Whack-a-Mole) */
+function Garden() {
+  const flowers: [number, number, string][] = [[30, 820, "#ff5fb2"], [70, 838, "#ffd23a"], [112, 826, "#ffffff"], [290, 830, "#ffd23a"], [330, 818, "#ff5fb2"], [372, 840, "#4fe3ff"], [200, 842, "#ff5fb2"]];
+  return (
+    <>
+      <defs>
+        <BokehDefs />
+        <linearGradient id="gd-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a2a8c" />
+          <stop offset="0.45" stopColor="#8a5ad0" />
+          <stop offset="0.75" stopColor="#f2a0c8" />
+          <stop offset="1" stopColor="#ffd2a8" />
+        </linearGradient>
+        <linearGradient id="gd-hill1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#6fcf5a" />
+          <stop offset="1" stopColor="#2f7d28" />
+        </linearGradient>
+        <linearGradient id="gd-hill2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#4bb03a" />
+          <stop offset="1" stopColor="#1f5a1c" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="860" fill="url(#gd-sky)" />
+      <circle cx="350" cy="215" r="40" fill="url(#bk-gold)" opacity="0.9" />
+      <circle cx="350" cy="215" r="22" fill="#fff3c8" />
+      {[[36, 250, 0.8], [370, 300, 0.7], [60, 520, 0.6]].map(([x, y, k], i) => (
+        <g key={i} transform={`translate(${x} ${y}) scale(${k})`} opacity="0.85">
+          <g className="rg-sc-cloud" style={{ animationDelay: `${i * -7}s` }}>
+            <ellipse cx="0" cy="0" rx="34" ry="14" fill="#fff" />
+            <circle cx="-12" cy="-8" r="14" fill="#fff" />
+            <circle cx="10" cy="-12" r="17" fill="#fff" />
+          </g>
+        </g>
+      ))}
+      <path d="M0 560 Q100 500 210 540 T400 520 V860 H0 Z" fill="url(#gd-hill1)" />
+      <path d="M0 640 Q140 590 260 630 T400 610 V860 H0 Z" fill="url(#gd-hill2)" />
+      <g fill="#fffdf6">
+        {Array.from({ length: 14 }, (_, i) => (
+          <path key={i} d={`M${i * 30 + 4} 800 v-40 l9 -10 l9 10 v40 Z`} opacity="0.92" />
+        ))}
+        <rect x="0" y="768" width="400" height="7" rx="3" />
+        <rect x="0" y="786" width="400" height="7" rx="3" />
+      </g>
+      <rect x="0" y="800" width="400" height="60" fill="#1f5a1c" />
+      {flowers.map(([x, y, c], i) => (
+        <g key={i} transform={`translate(${x} ${y})`}>
+          <path d="M0 0 v24" stroke="#2f7d28" strokeWidth="3" />
+          {[0, 72, 144, 216, 288].map((a) => (
+            <ellipse key={a} cx="0" cy="-7" rx="5" ry="8" fill={c} transform={`rotate(${a})`} />
+          ))}
+          <circle r="4.5" fill="#ffd23a" />
+        </g>
+      ))}
+      <Sparkles n={10} seed={7} color="#fffbe0" />
+    </>
+  );
+}
+
+/** A crystal cave: dark rock, glowing crystals in the walls. (Gems) */
+function Cave() {
+  const crystals: [number, number, number, number, string][] = [[20, 300, 26, -20, "#4fe3ff"], [44, 320, 18, 8, "#ff5fb2"], [372, 260, 28, 18, "#ffd23a"], [352, 290, 18, -10, "#4fe3ff"], [28, 700, 30, 14, "#ffd23a"], [60, 730, 20, -12, "#4fe3ff"], [366, 690, 32, -16, "#ff5fb2"], [338, 728, 18, 10, "#ffd23a"]];
+  return (
+    <>
+      <defs>
+        <BokehDefs />
+        <radialGradient id="cv-bg" cx="0.5" cy="0.42" r="0.75">
+          <stop offset="0" stopColor="#3a2458" />
+          <stop offset="0.55" stopColor="#1a0f2a" />
+          <stop offset="1" stopColor="#07040c" />
+        </radialGradient>
+        <linearGradient id="cv-rock" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4a3a62" />
+          <stop offset="1" stopColor="#1c1228" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="860" fill="url(#cv-bg)" />
+      <path d="M0 0 H400 V60 Q340 120 300 70 Q250 140 200 80 Q150 150 100 70 Q60 130 0 60 Z" fill="url(#cv-rock)" />
+      <path d="M0 0 V860 H40 Q70 700 30 560 Q70 420 26 260 Q60 150 0 120 Z" fill="url(#cv-rock)" />
+      <path d="M400 0 V860 H360 Q330 690 372 540 Q330 400 376 240 Q340 140 400 110 Z" fill="url(#cv-rock)" />
+      <path d="M0 860 V790 Q100 750 200 790 Q300 750 400 790 V860 Z" fill="#140c20" />
+      {crystals.map(([x, y, h, a, c], i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(${a})`}>
+          <circle r={h} fill={`url(#bk-${c === "#ffd23a" ? "gold" : c === "#ff5fb2" ? "pink" : "cyan"})`} opacity="0.6" />
+          <path d={`M0 ${-h} L${h * 0.32} 0 L0 ${h * 0.5} L${-h * 0.32} 0 Z`} fill={c} />
+          <path d={`M0 ${-h} L${h * 0.32} 0 L0 0 Z`} fill="#fff" opacity="0.45" />
+        </g>
+      ))}
+      <Sparkles n={18} seed={11} color="#bdf3ff" />
+    </>
+  );
+}
+
+/** A fairground at night: a big wheel, string lights, a striped tent. (Hook A Duck, Balloon Pop, Claw Machine) */
+function Fairground() {
+  return (
+    <>
+      <defs>
+        <BokehDefs />
+        <linearGradient id="fg-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#140a3a" />
+          <stop offset="0.6" stopColor="#3a1468" />
+          <stop offset="1" stopColor="#12051f" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="860" fill="url(#fg-sky)" />
+      <g opacity="0.55" transform="translate(320 520)">
+        <g>
+          <circle r="120" fill="none" stroke="#ffd23a" strokeWidth="3" />
+          <circle r="96" fill="none" stroke="#ff5fb2" strokeWidth="1.5" />
+          {Array.from({ length: 12 }, (_, i) => (
+            <g key={i} transform={`rotate(${i * 30})`}>
+              <path d="M0 0 L0 -120" stroke="#ffd23a" strokeWidth="1.5" />
+              <circle cy="-120" r="6" fill={["#ffd84a", "#ff4fb4", "#4fe3ff"][i % 3]} />
+            </g>
+          ))}
+        </g>
+        <path d="M-16 0 L-70 260 M16 0 L70 260" stroke="#ffd23a" strokeWidth="5" />
+      </g>
+      <Bulbs y={40} n={12} sag={30} />
+      <Bulbs y={130} from={-20} to={260} n={8} sag={20} />
+      <g transform="translate(-50 740) scale(0.75)" opacity="0.55">
+        {Array.from({ length: 6 }, (_, i) => (
+          <path key={i} d={`M${100} 0 L${i * 34} 150 L${i * 34 + 34} 150 Z`} fill={i % 2 ? "#fffdf6" : "#d1006f"} />
+        ))}
+        <circle cx="100" cy="-6" r="7" fill="#ffd23a" />
+      </g>
+      <Bokeh items={[[60, 300, 40, "gold", 0.35], [340, 200, 50, "pink", 0.3], [200, 760, 90, "gold", 0.15], [30, 520, 30, "cyan", 0.3]]} />
+      <Sparkles n={14} seed={5} color="#ffe9a3" />
+    </>
+  );
+}
+
 const SCENES: Record<string, SceneFn> = {
+  whack_a_mole: Garden,
+  gems: Cave,
+  hook_a_duck: Fairground,
+  balloon_pop: Fairground,
+  claw_machine: Fairground,
   spin_wheel: Stage,
   slots: Casino,
   default: Casino,

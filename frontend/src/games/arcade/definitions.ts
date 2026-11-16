@@ -41,6 +41,10 @@ export const ARCADE_GAMES: Readonly<Record<string, RevealGameDefinition>> = {
     id: "slots", name: "Slots", kind: "single", noun: "Spin", playNextLabel: "Play next spin", theme: "pink",
     Board: lazy(() => import("./games/slots/SlotsBoard").then((m) => ({ default: m.SlotsBoard }))),
   },
+  whack_a_mole: {
+    id: "whack_a_mole", name: "Whack-a-Mole", kind: "single", noun: "Round", playNextLabel: "Play next round", theme: "yellow",
+    Board: lazy(() => import("./games/whackAMole/WhackAMoleBoard").then((m) => ({ default: m.WhackAMoleBoard }))),
+  },
   gems: {
     id: "gems", name: "Gems", kind: "single", noun: "Board", playNextLabel: "Play next board", theme: "yellow",
     Board: lazy(() => import("./games/gems/GemsBoard").then((m) => ({ default: m.GemsBoard }))),

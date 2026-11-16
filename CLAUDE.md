@@ -55,9 +55,11 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Title Case for every title. Mobile first (44px taps, 16px inputs, no sideways scroll at 320px).
 - Nothing third-party loads before a cookie choice. The only one is the Meta Pixel (`src/lib/consent.ts`, ID set in
   Admin → Settings), loaded after "Accept" in the cookie banner; its addresses are the only extra ones in the CSP.
-- Reveal games draw in 3D (`src/games/arcade/three`, Three.js); the board's 2D version is the fallback when a phone
-  has no WebGL, and 3D-only buttons go in `Scene3D`'s `controls`. `npm run test:games -- --project=3d` and
-  `--project=flat` play every game and look both ways (run the smoothness checks alone: `GAMES_WORKERS=1 … -g smoothness`).
+- Reveal games are 2D (SVG and CSS, no WebGL): each board sits on an illustrated scene (`src/games/arcade/shell/scenery`,
+  swappable for a painted picture through `PAINTED`). The classic skin's premium look is `shell/premium.css` plus a
+  `.rg-skin-classic` block at the end of each game's CSS. `npm run test:games` plays every game (run the smoothness checks
+  alone: `GAMES_WORKERS=1 … -g smoothness`). A new game needs its id in `shared/game-ids.json`, `src/games/gameIds.ts`,
+  the admin and presenter labels, and a migration calling `GameIds::replaceDatabaseChecks()`.
 - Legal wording loads from `backend/resources/legal/*.html` on deploy (`gimme:legal-pages`) and is then edited in the admin.
 - Redirects after sign-in go through `safeNext` (`src/lib/safe.ts`).
 - Astro trusts Host / X-Forwarded-* only for `allowedDomains` in `astro.config.mjs`; the build must

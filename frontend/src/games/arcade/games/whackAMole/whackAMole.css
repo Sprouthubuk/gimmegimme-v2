@@ -1,0 +1,138 @@
+/* Whack-a-Mole: a lawn in a lit wooden frame, nine holes, moles that rise out of them. */
+.rg-whack { width: min(100%, 370px); }
+.rg-whack-lawn { position: relative; }
+.rg-whack-sign {
+  position: relative;
+  z-index: 2;
+  margin: 0 auto -14px;
+  width: fit-content;
+  padding: 8px 22px 10px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #c9813d, #8a4f18);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 3px 0 6px rgba(255, 255, 255, 0.15), 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+.rg-whack-sign span {
+  font-family: var(--rg-font-display);
+  font-size: clamp(24px, 8cqw, 32px);
+  letter-spacing: 0.03em;
+  background: linear-gradient(180deg, #fffbe0 0%, #ffd84a 55%, #f59e00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 0 #4a2208);
+}
+.rg-whack-lawn {
+  padding: 30px 14px 14px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.12) 0 2px, transparent 3px) 0 0 / 26px 26px,
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0 34px, rgba(0, 0, 0, 0.05) 34px 68px),
+    radial-gradient(120% 80% at 50% 0%, #7fdc5a 0%, #4bb03a 55%, #2f7d28 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 0 0 7px #8a4f18, inset 0 0 0 9px #c9813d, inset 0 -10px 20px rgba(0, 0, 0, 0.25), 0 18px 36px rgba(0, 0, 0, 0.45);
+}
+.rg-whack-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 8px; }
+
+.rg-hole {
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.rg-hole:disabled { cursor: default; }
+.rg-hole:focus-visible { outline: 3px solid #fff; outline-offset: 2px; border-radius: 16px; }
+/* The hole: a dark pit with a dirt rim; the mole rises inside a clipped box so it seems to come out of the ground. */
+.rg-hole-back {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 6%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 35%, #0e0603 0 50%, #2a1408 68%, #4a2a12 100%);
+  box-shadow: inset 0 6px 8px rgba(0, 0, 0, 0.6);
+}
+.rg-hole-pit { position: absolute; left: 0; right: 0; top: -20%; bottom: 19%; overflow: hidden; }
+.rg-mole {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 80%;
+  translate: -50% 105%;
+  transition: translate 0.16s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.rg-hole.is-up .rg-mole { translate: -50% 6%; }
+.rg-hole.is-bonked .rg-mole { translate: -50% 105%; transition-duration: 0.35s; transition-delay: 0.12s; }
+.rg-mole-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.3)); }
+.rg-hole.is-bonked .rg-mole-svg { animation: rg-mole-squash 0.18s ease-out; }
+.rg-hole-front {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  bottom: 6%;
+  height: 16%;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background: linear-gradient(180deg, #8a5228 0%, #5e3313 100%);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.18), 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+.rg-hole-front::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6b3d18;
+}
+
+/* The prize sign the last mole holds up. */
+.rg-mole-sign {
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  translate: -50% 0;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  font-family: var(--rg-font-display);
+  font-size: 18px;
+  color: #2b0f45;
+  background: #fffdf6;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  animation: rg-pop 0.4s 0.15s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.rg-mole-sign.is-win { font-size: 22px; color: #3a1500; background: linear-gradient(180deg, #fff3a8, #ffd23a 55%, #e9a300); box-shadow: 0 0 0 2px #fff, 0 0 20px rgba(255, 216, 74, 0.85); }
+.rg-hole.is-final .rg-hole-pit { overflow: visible; }
+
+/* The mallet swings down on the hole, with a ring of stars. */
+.rg-bonk { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.rg-mallet { position: absolute; right: -6%; top: -18%; width: 62%; transform-origin: 85% 95%; animation: rg-mallet 0.42s ease-out both; }
+.rg-mallet-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.35)); }
+.rg-stars { position: absolute; left: 50%; top: 34%; }
+.rg-stars i {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ffe680;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: rg-star 0.55s 0.12s ease-out both;
+}
+.rg-stars i:nth-child(1) { --dx: -30px; --dy: -22px; }
+.rg-stars i:nth-child(2) { --dx: 26px; --dy: -26px; }
+.rg-stars i:nth-child(3) { --dx: 2px; --dy: -38px; }
+
+.rg-whack-count { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
+.rg-whack-count i { width: 16px; height: 16px; border-radius: 50%; background: rgba(0, 0, 0, 0.25); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.3); }
+.rg-whack-count i.is-done { background: radial-gradient(circle at 35% 30%, #fff7c2, #ffcf33 50%, #c47f00); box-shadow: 0 0 8px rgba(255, 216, 74, 0.8); }
+
+.rg-whack-controls { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 340px; }
+
+@keyframes rg-mallet { 0% { rotate: -55deg; opacity: 0; } 30% { opacity: 1; } 55% { rotate: 12deg; } 100% { rotate: 0deg; opacity: 0; } }
+@keyframes rg-star { 0% { translate: 0 0; scale: 0.4; opacity: 1; } 100% { translate: var(--dx) var(--dy); scale: 1; opacity: 0; } }
+@keyframes rg-mole-squash { 50% { scale: 1.12 0.82; } }
+.rg-reveal.is-reduced-motion .rg-whack * { animation: none !important; transition: none !important; }
+.rg-reveal.is-reduced-motion .rg-bonk { display: none; }

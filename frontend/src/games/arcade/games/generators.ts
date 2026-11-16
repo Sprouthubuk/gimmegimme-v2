@@ -268,3 +268,30 @@ export function balloonLooks(count: number, seed: string): BalloonLook[] {
     sway: 4 + Math.round(rng() * 8),
   }));
 }
+
+/* ---------- Whack-a-Mole ---------- */
+export const WHACK_HOLES = 9;
+/** Moles to whack before the result shows. The first ones only bonk; the result is on the last. */
+export const WHACK_TARGET = 3;
+
+export interface WhackLayout {
+  /** The order moles pop up in: hole indexes 0–8, never the same hole twice running. Looks only. */
+  pops: number[];
+  /** The result, shown only when the last mole is whacked: the ticket's own prize label, or null for no win. */
+  label: string | null;
+}
+
+/**
+ * Where moles appear. Seeded, so a ticket always plays the same garden. The pop-ups never
+ * carry a prize or a value: nothing a player sees before the last whack hints at a result.
+ */
+export function generateWhack(prize: RevealPrize | null, seed: string): WhackLayout {
+  const rng = createRng(`whack:${seed}`);
+  const pops: number[] = [];
+  for (let i = 0; i < 40; i++) {
+    let h = Math.floor(rng() * WHACK_HOLES);
+    if (h === pops[pops.length - 1]) h = (h + 1 + Math.floor(rng() * (WHACK_HOLES - 1))) % WHACK_HOLES;
+    pops.push(h);
+  }
+  return { pops, label: winLabel(prize) };
+}

@@ -209,7 +209,8 @@
 .rg-balloon-machine.rg-below .rg-balloon-panel { border-radius: 22px; }
 
 /* ---------- premium classic: a twilight fairground sky in a lit cabinet ---------- */
-.rg-skin-classic .rg-balloon-machine { filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 30px rgba(170, 70, 255, 0.3)); }
+/* A box shadow, not a filter: a filter would repaint the whole machine on every balloon frame. */
+.rg-skin-classic .rg-balloon-machine { filter: none; border-radius: 24px 24px 26px 26px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 46px rgba(170, 70, 255, 0.3); }
 .rg-skin-classic .rg-balloon-top {
   border: 0;
   padding: 10px 12px 8px;
