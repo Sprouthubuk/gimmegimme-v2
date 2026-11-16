@@ -21,7 +21,7 @@
 }
 
 /* Coins: gold (or tinted) metal with a raised rim and a soft shadow, no black ring. */
-.rg-reveal.has-scenery .rg-coin {
+.rg-reveal .rg-coin {
   border: 0;
   background:
     radial-gradient(circle at 50% 50%, transparent 0 60%, rgba(0, 0, 0, 0.18) 61% 64%, transparent 65%),
@@ -32,28 +32,40 @@
     0 0 0 calc(var(--rg-coin-size, 64px) * 0.045) var(--rg-coin-c),
     0 4px 8px rgba(30, 8, 50, 0.35);
 }
-.rg-reveal.has-scenery .rg-coin.rg-coin-smile { background: none; box-shadow: none; }
-.rg-reveal.has-scenery .rg-coin { --rg-coin-a: #fff6c2; --rg-coin-b: #ffd23a; --rg-coin-c: #c98500; }
-.rg-reveal.has-scenery .rg-coin.rg-tone-cyan { --rg-coin-a: #d6f7ff; --rg-coin-b: #3fcff7; --rg-coin-c: #0a86b8; }
-.rg-reveal.has-scenery .rg-coin.rg-tone-pink { --rg-coin-a: #ffd3ea; --rg-coin-b: #ff5fb2; --rg-coin-c: #c4006a; }
-.rg-reveal.has-scenery .rg-coin.rg-tone-white { --rg-coin-a: #ffffff; --rg-coin-b: #eef0f6; --rg-coin-c: #a9adbd; }
-.rg-reveal.has-scenery .rg-coin-label { color: #3a1500; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55); }
-.rg-reveal.has-scenery .rg-coin.rg-tone-pink .rg-coin-label,
-.rg-reveal.has-scenery .rg-coin.rg-tone-cyan .rg-coin-label { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
-.rg-reveal.has-scenery .rg-coin.rg-tone-white .rg-coin-label { color: #2b0f45; }
+.rg-reveal .rg-coin.rg-coin-smile { background: none; box-shadow: none; }
+.rg-reveal .rg-coin { --rg-coin-a: #fff6c2; --rg-coin-b: #ffd23a; --rg-coin-c: #c98500; }
+.rg-reveal .rg-coin.rg-tone-cyan { --rg-coin-a: #d6f7ff; --rg-coin-b: #3fcff7; --rg-coin-c: #0a86b8; }
+.rg-reveal .rg-coin.rg-tone-pink { --rg-coin-a: #ffd3ea; --rg-coin-b: #ff5fb2; --rg-coin-c: #c4006a; }
+.rg-reveal .rg-coin.rg-tone-white { --rg-coin-a: #ffffff; --rg-coin-b: #eef0f6; --rg-coin-c: #a9adbd; }
+.rg-reveal .rg-coin-label { color: #3a1500; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55); }
+.rg-reveal .rg-coin.rg-tone-pink .rg-coin-label,
+.rg-reveal .rg-coin.rg-tone-cyan .rg-coin-label { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.rg-reveal .rg-coin.rg-tone-white .rg-coin-label { color: #2b0f45; }
 
 /* Buttons: glossy, no black ring; same sizes and classes as before. */
-.rg-reveal.has-scenery .rg-btn {
+.rg-reveal .rg-btn {
   border: 0;
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.18), 0 5px 0 rgba(20, 6, 34, 0.6), 0 10px 18px rgba(0, 0, 0, 0.35);
 }
-.rg-reveal.has-scenery .rg-btn:active:not(:disabled) { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 1px 0 rgba(20, 6, 34, 0.6); }
-.rg-reveal.has-scenery .rg-btn-yellow { background: linear-gradient(180deg, #fff3a8 0%, #ffd23a 50%, #f0a400 100%); color: #3a1500; }
-.rg-reveal.has-scenery .rg-btn-cyan { background: linear-gradient(180deg, #a8ecff 0%, #2fc6f2 55%, #0a8cc0 100%); color: #06263a; }
-.rg-reveal.has-scenery .rg-btn-white { background: rgba(255, 255, 255, 0.12); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45); }
-.rg-reveal.has-scenery .rg-btn:disabled { background: rgba(255, 255, 255, 0.1) !important; color: rgba(255, 255, 255, 0.5) !important; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.2); }
+.rg-reveal .rg-btn:active:not(:disabled) { box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 1px 0 rgba(20, 6, 34, 0.6); }
+.rg-reveal .rg-btn-yellow { background: linear-gradient(180deg, #fff3a8 0%, #ffd23a 50%, #f0a400 100%); color: #3a1500; }
+.rg-reveal .rg-btn-cyan { background: linear-gradient(180deg, #a8ecff 0%, #2fc6f2 55%, #0a8cc0 100%); color: #06263a; }
+.rg-reveal .rg-btn-white { background: rgba(255, 255, 255, 0.12); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45); }
+.rg-reveal .rg-btn:disabled { background: rgba(255, 255, 255, 0.1) !important; color: rgba(255, 255, 255, 0.5) !important; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.2); }
 
 /* Prompts read on the dark scene. */
 .rg-reveal.has-scenery .rg-prompt-title.is-ink { color: #fff; text-shadow: 0 2px 0 rgba(43, 15, 69, 0.9); }
 .rg-reveal.has-scenery .rg-prompt-title.is-pink { color: #ff8fd0; text-shadow: 0 0 18px rgba(255, 45, 149, 0.6), 0 2px 0 #8a004a; }
 .rg-reveal.has-scenery .rg-prompt-sub { color: rgba(255, 255, 255, 0.75); }
+
+/* ---------- Themed skins (Christmas, Pirates, Cash Escape, Hip Hop, Smash Cash) ----------
+   Each keeps its own colours and artwork; outlines become a soft deep plum instead of hard black,
+   at a lighter weight, so the boards read as polished illustration rather than thick cartoon. */
+.rg-reveal:not(.rg-skin-classic) {
+  --rg-ink: #24103a;
+  --rg-line: 2px;
+  --rg-outline: 2px solid rgba(36, 16, 58, 0.85);
+  --rg-drop: 0 4px 0 rgba(20, 6, 34, 0.5);
+}
+.rg-reveal:not(.rg-skin-classic) .rg-board svg [stroke="#141414"] { stroke: rgba(36, 16, 58, 0.55); }
+.rg-reveal:not(.rg-skin-classic) .rg-board svg [fill="#141414"] { fill: #24103a; }

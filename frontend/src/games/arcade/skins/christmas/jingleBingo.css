@@ -117,3 +117,24 @@
 .rg-skin-christmas.rg-game-bingo_card .rg-kicker { color: var(--rg-xmas-red-dark); }
 .rg-skin-christmas.rg-game-bingo_card .rg-no-win { color: var(--rg-xmas-mint-dark); }
 .rg-skin-christmas.rg-game-bingo_card .rg-bingo-sticker { background: var(--rg-xmas-gold); color: var(--rg-ink); }
+
+/* ---------- premium pass: dark glass bauble tray, cream card with soft cells ---------- */
+.rg-jingle-tray.rg-bingo-tray,
+.rg-jingle-tray .rg-bingo-tray {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(40, 8, 14, 0.88), rgba(20, 4, 8, 0.92));
+  box-shadow: inset 0 0 0 2px rgba(230, 180, 34, 0.75), inset 0 6px 14px rgba(0, 0, 0, 0.45), 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+.rg-jingle-tray .rg-bingo-placeholder { color: rgba(255, 255, 255, 0.7); }
+.rg-jingle-card .rg-bingo-cell {
+  border: 0;
+  background: linear-gradient(180deg, #fffdf6, #f1e8d6);
+  color: #3a0c14;
+  box-shadow: inset 0 -3px 0 rgba(90, 20, 20, 0.12), 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+.rg-jingle-card .rg-bingo-head { border: 0; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), 0 3px 6px rgba(0, 0, 0, 0.3); }
+.rg-jingle-card .rg-bingo-cell.is-win { box-shadow: 0 0 0 2px #fff, 0 0 16px rgba(255, 216, 74, 0.85); }
+.rg-bauble { border: 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); }
+.rg-bauble-cap { border: 0; }
+.rg-bauble-inner { border: 0; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12); }

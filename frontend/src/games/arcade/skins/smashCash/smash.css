@@ -257,3 +257,14 @@
 /* Under the 3D shelf: the latest result and the panel, without the 2D cabinet around them. */
 .rg-smash.rg-smash-below { margin-top: 12px; padding-top: 0; background: none; border: 0; box-shadow: none; }
 .rg-smash.rg-smash-below::before, .rg-smash.rg-smash-below::after { display: none; }
+
+/* ---------- premium pass: dark glass panels with a neon pink edge ---------- */
+.rg-smash-latest,
+.rg-smash-panel {
+  border: 0;
+  color: #fff;
+  --rg-muted: rgba(255, 255, 255, 0.72);
+  background: linear-gradient(180deg, rgba(30, 8, 50, 0.9), rgba(14, 4, 24, 0.94));
+  box-shadow: inset 0 0 0 2px rgba(255, 79, 168, 0.75), 0 0 22px rgba(255, 79, 168, 0.2), inset 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+.rg-smash-latest-win strong { color: #ffd84a; }

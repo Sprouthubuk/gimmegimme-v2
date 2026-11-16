@@ -29,8 +29,8 @@ const polar = (deg: number, r: number) => {
 
 /** How wide a label may be: the slice's width where the label sits, less a little breathing room. */
 const LABEL_ROOM = 2 * (R - 21) * Math.sin(Math.PI / WHEEL_SEGMENTS) - 4;
-/** Roughly how wide each character is, as a share of the font size (the display font, measured). */
-const CHAR_EM = 0.6;
+/** Roughly how wide each character is, as a share of the font size (the body font at weight 800, measured). */
+const CHAR_EM = 0.68;
 /**
  * Fits a prize label inside its slice so neighbouring labels never run into each other:
  * short amounts stay big, longer ones shrink, and a long name splits over two lines.
@@ -180,6 +180,13 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
               );
             })}
 
+            <defs>
+              <radialGradient id="ce-shade" cx="0" cy="0" r={R} gradientUnits="userSpaceOnUse">
+                <stop offset="0.25" stopColor="#fff" stopOpacity="0.12" />
+                <stop offset="0.7" stopColor="#fff" stopOpacity="0" />
+                <stop offset="1" stopColor="#1a0030" stopOpacity="0.3" />
+              </radialGradient>
+            </defs>
             <g className="rg-ce-rotor" style={{ transform: `rotate(${rotation}deg)`, transition }}>
               <circle r={R + 3} fill="#141414" />
               {layout.segments.map((s, i) => {
@@ -213,6 +220,7 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
                   </g>
                 );
               })}
+              <circle r={R} fill="url(#ce-shade)" pointerEvents="none" />
               <circle r={R} fill="none" stroke="#141414" strokeWidth="3" />
               {/* The vault's spoked handle turns with the door. */}
               <g className="rg-ce-handle">
