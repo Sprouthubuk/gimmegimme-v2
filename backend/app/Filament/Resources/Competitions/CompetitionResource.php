@@ -44,6 +44,8 @@ class CompetitionResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Competitions';
+
     public const GAMES = [
         'classic' => 'Classic reveal', 'scratch_card' => 'Scratch Card', 'spin_wheel' => 'Spin the Wheel', 'bingo_card' => 'Bingo Card', 'balloon_pop' => 'Balloon Pop',
         'hook_a_duck' => 'Hook a Duck', 'claw_machine' => 'Claw Machine', 'coin_drop' => 'Coin Drop', 'slots' => 'Slots', 'gems' => 'Gems',

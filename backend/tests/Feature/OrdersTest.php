@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exceptions\RefusedException;
+use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\PrizeClaim;
 use App\Models\Setting;
@@ -280,7 +281,7 @@ class OrdersTest extends TestCase
         $this->gateway()->settle($o->gateway_ref, 'paid');
         $this->orders()->syncWithGateway($o);
         $this->assertSame(['deposit' => 2000, 'bonus' => 0, 'winnings' => 0], $this->wallet()->balances($u));
-        $this->assertSame(0, \App\Models\LedgerEntry::query()->where('reason', 'Welcome bonus')->count());
+        $this->assertSame(0, LedgerEntry::query()->where('reason', 'Welcome bonus')->count());
     }
 
     public function test_card_payments_in_progress_hold_their_tickets(): void

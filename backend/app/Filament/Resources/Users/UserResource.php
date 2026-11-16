@@ -41,6 +41,8 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Players & Money';
+
     public const MAX_ADJUST_PENCE = 50000;
 
     public static function canCreate(): bool

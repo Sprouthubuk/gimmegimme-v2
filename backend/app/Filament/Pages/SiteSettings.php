@@ -29,6 +29,8 @@ class SiteSettings extends Page
 
     protected static ?int $navigationSort = 20;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Site';
+
     public ?array $data = [];
 
     private const MONEY = ['min_deposit_pence' => 'Minimum top up', 'min_card_pence' => 'Minimum card payment', 'min_withdrawal_pence' => 'Minimum withdrawal',

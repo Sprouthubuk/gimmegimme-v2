@@ -22,9 +22,11 @@ class PrizeClaimResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGift;
 
-    protected static ?string $navigationLabel = 'Prizes to send';
+    protected static ?string $navigationLabel = 'Prizes To Send';
 
     protected static ?int $navigationSort = 5;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Players & Money';
 
     public static function canCreate(): bool
     {
