@@ -33,12 +33,16 @@ select p.user_id                                   as legacy_id,
        exists (select 1 from user_roles r where r.user_id = p.user_id and r.role = 'admin') as is_admin,
        public.is_account_suspended(p.user_id)      as on_hold,
        public.is_identity_verified(p.user_id)      as id_verified,
-       p.created_at
+       p.created_at,
+       ca.closed_at                                as closed_at
 from profiles p
 join auth.users u on u.id = p.user_id
 left join user_limits l on l.user_id = p.user_id
-where p.closed_at is null;  -- drop this line if the column doesn't exist
+left join public.closed_accounts ca on ca.user_id = p.id;
 ```
+
+Closed accounts are exported too, not filtered out, so the import can see them and check their
+balances (see [Closed accounts](#closed-accounts)).
 
 **balances.csv**
 
@@ -65,6 +69,18 @@ the first space if there are no `first_name` / `last_name` columns. True/false c
 
 `balances.csv` needs `legacy_id`, `deposit_pence`, `bonus_pence`, `winnings_pence` (whole pence);
 `bonus_expires_at` is optional (30 days from the import otherwise).
+
+## Closed accounts
+
+A row with a `closed_at` date is a closed account (a row in the old site's `public.closed_accounts`).
+The old site has already blanked its name and address, so its details aren't checked.
+
+- It is left out: no account is made here and the import says how many were left out.
+- If it still has money in `balances.csv`, the import stops and imports nothing. Sort that balance out
+  by hand on the old site first, as with a negative balance.
+- If it was brought across by an earlier run and closed on the old site since, the import leaves it as
+  it is (the blanked details are not copied over) and names it. Close it in the admin, with a reason:
+  the import never closes an account itself.
 
 ## What isn't moved
 

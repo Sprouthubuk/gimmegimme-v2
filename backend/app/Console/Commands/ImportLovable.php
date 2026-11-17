@@ -14,7 +14,8 @@ use Illuminate\Support\Str;
  * (format in docs/lovable-import.md):
  *
  *   players.csv   one row per account (legacy_id, email, names, date_of_birth, address, marketing,
- *                 safer-play dates, flags, and the bcrypt password_hash so existing passwords keep working)
+ *                 safer-play dates, flags, the bcrypt password_hash so existing passwords keep working,
+ *                 and closed_at for accounts closed there, which are left out)
  *   balances.csv  legacy_id, deposit_pence, bonus_pence, bonus_expires_at, winnings_pence
  *
  * Safe to run again: players are matched on legacy_id and balances are written once each
@@ -36,7 +37,6 @@ class ImportLovable extends Command
             return self::FAILURE;
         }
 
-        $problems = [];
         $seenEmails = [];
         foreach ($players as $i => &$p) {
             // The old site kept one full_name; split it at the first space.
@@ -46,6 +46,24 @@ class ImportLovable extends Command
             $p += ['first_name' => '', 'last_name' => ''];
         }
         unset($p);
+
+        // Closed accounts stay behind. Their details are already blanked on the old site, so they aren't
+        // checked; one with money left is a problem for a person, and one imported before it was closed is
+        // named so a person can close it in the admin (closing is an admin action with a reason).
+        $problems = [];
+        $closed = [];
+        foreach ($players as $i => $p) {
+            if (($p['closed_at'] ?? '') === '') {
+                continue;
+            }
+            if (strtotime($p['closed_at']) === false) {
+                $problems[] = 'players.csv line '.($i + 2).': closed_at is not a date';
+            }
+            $closed[$p['legacy_id']] = true;
+        }
+        $players = array_filter($players, fn ($p) => ! isset($closed[$p['legacy_id']]));
+        $closedSince = $closed ? User::query()->whereIn('legacy_id', array_keys($closed))->whereNull('closed_at')->get(['legacy_id', 'email']) : collect();
+
         foreach ($players as $i => $p) {
             $line = $i + 2;
             $email = Str::lower(trim($p['email']));
@@ -69,6 +87,13 @@ class ImportLovable extends Command
         $want = ['deposit' => 0, 'bonus' => 0, 'winnings' => 0];
         foreach ($balances as $i => $b) {
             $line = $i + 2;
+            if (isset($closed[$b['legacy_id']])) {
+                if (array_filter(['deposit', 'bonus', 'winnings'], fn ($k) => trim((string) $b["{$k}_pence"], '0') !== '')) {
+                    $problems[] = "balances.csv line {$line}: {$b['legacy_id']} is a closed account with money in its wallet; sort it out by hand first";
+                }
+
+                continue;
+            }
             if (! isset($known[$b['legacy_id']])) {
                 $problems[] = "balances.csv line {$line}: no player {$b['legacy_id']}";
             }
@@ -90,6 +115,12 @@ class ImportLovable extends Command
         }
         $this->info(count($players).' players, balances: deposit £'.number_format($want['deposit'] / 100, 2)
             .', bonus £'.number_format($want['bonus'] / 100, 2).', winnings £'.number_format($want['winnings'] / 100, 2));
+        if ($closed) {
+            $this->info('Left out '.count($closed).' closed '.(count($closed) === 1 ? 'account' : 'accounts').'.');
+        }
+        foreach ($closedSince as $u) {
+            $this->warn("{$u->legacy_id} ({$u->email}) was closed on the old site after an earlier import: close it in the admin. It was left as it is.");
+        }
         if ($this->option('dry-run')) {
             $this->info('Dry run: nothing written.');
 
@@ -147,6 +178,9 @@ class ImportLovable extends Command
                 $ids[$p['legacy_id']] = $u->id;
             }
             foreach ($balances as $b) {
+                if (! isset($ids[$b['legacy_id']])) {
+                    continue; // a closed account, with nothing in its wallet (checked above)
+                }
                 foreach (['deposit', 'bonus', 'winnings'] as $k) {
                     $pence = (int) $b["{$k}_pence"];
                     if ($pence > 0) {
