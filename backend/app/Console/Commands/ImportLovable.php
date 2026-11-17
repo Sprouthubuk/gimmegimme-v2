@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  * Bring players across from the Lovable site. Reads two CSV files from the export folder
  * (format in docs/lovable-import.md):
  *
- *   players.csv   one row per account (legacy_id, email, names, date_of_birth, address, marketing,
+ *   players.csv   one row per account (legacy_id, email, names, date_of_birth, address, marketing and when it was agreed,
  *                 safer-play dates, flags, the bcrypt password_hash so existing passwords keep working,
  *                 and closed_at for accounts closed there, which are left out)
  *   balances.csv  legacy_id, deposit_pence, bonus_pence, bonus_expires_at, winnings_pence
@@ -77,7 +77,7 @@ class ImportLovable extends Command
             if (($p['password_hash'] ?? '') !== '' && ! preg_match('/^\$2[aby]\$\d\d\$[.\/A-Za-z0-9]{53}$/', $p['password_hash'])) {
                 $problems[] = "players.csv line {$line}: password_hash is not a bcrypt hash";
             }
-            foreach (['date_of_birth', 'self_excluded_until', 'cool_off_until', 'created_at'] as $d) {
+            foreach (['date_of_birth', 'self_excluded_until', 'cool_off_until', 'created_at', 'marketing_email_at', 'marketing_sms_at'] as $d) {
                 if (($p[$d] ?? '') !== '' && strtotime($p[$d]) === false) {
                     $problems[] = "players.csv line {$line}: {$d} is not a date";
                 }
@@ -142,6 +142,9 @@ class ImportLovable extends Command
                     'address_line1' => self::text($p['address_line1'] ?? '', 120), 'address_line2' => self::text($p['address_line2'] ?? '', 120),
                     'city' => self::text($p['city'] ?? '', 80), 'postcode' => self::text(strtoupper($p['postcode'] ?? ''), 12),
                     'marketing_email' => self::bool($p['marketing_email'] ?? ''), 'marketing_sms' => self::bool($p['marketing_sms'] ?? ''),
+                    // The date each was agreed, only while it's on. A missing date stays empty: never made up.
+                    'marketing_email_consent_at' => self::bool($p['marketing_email'] ?? '') ? (self::date($p['marketing_email_at'] ?? '') ?? $u->marketing_email_consent_at) : null,
+                    'marketing_sms_consent_at' => self::bool($p['marketing_sms'] ?? '') ? (self::date($p['marketing_sms_at'] ?? '') ?? $u->marketing_sms_consent_at) : null,
                     'email_verified_at' => self::bool($p['email_confirmed'] ?? '') ? ($u->email_verified_at ?? now()) : null,
                     'self_excluded_until' => self::date($p['self_excluded_until'] ?? ''), 'cool_off_until' => self::date($p['cool_off_until'] ?? ''),
                     'is_staff' => self::bool($p['is_staff'] ?? '') || self::bool($p['is_admin'] ?? ''),

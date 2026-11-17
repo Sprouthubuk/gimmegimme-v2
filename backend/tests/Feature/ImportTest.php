@@ -76,6 +76,38 @@ class ImportTest extends TestCase
         $this->assertSame(3750, $this->wallet()->total($amy));
     }
 
+    public function test_marketing_consent_dates_come_across_and_are_never_made_up(): void
+    {
+        $head = ['legacy_id', 'email', 'full_name', 'marketing_email', 'marketing_email_at', 'marketing_sms', 'marketing_sms_at'];
+        $this->write('players.csv', [
+            $head,
+            ['a1', 'amy@example.com', 'Amy Pond', 'true', '2025-03-12T10:00:00Z', 'true', '2025-04-01 08:15:00+00'],
+            ['b2', 'ben@example.com', 'Ben Lee', 'true', '', 'false', ''],             // opted in, no date kept
+            ['c3', 'cat@example.com', 'Cat Ray', 'false', '2025-01-01T00:00:00Z', 'false', '2025-01-01T00:00:00Z'], // opted out since
+        ]);
+        $this->artisan('gimme:import-lovable', ['dir' => $this->dir])->assertSuccessful();
+
+        $amy = User::query()->where('legacy_id', 'a1')->firstOrFail();
+        $this->assertSame('2025-03-12 10:00:00', $amy->marketing_email_consent_at->utc()->toDateTimeString());
+        $this->assertSame('2025-04-01 08:15:00', $amy->marketing_sms_consent_at->utc()->toDateTimeString());
+        $ben = User::query()->where('legacy_id', 'b2')->firstOrFail();
+        $this->assertTrue($ben->marketing_email);
+        $this->assertNull($ben->marketing_email_consent_at, 'a missing date stays empty, never the sign-up date or today');
+        $cat = User::query()->where('legacy_id', 'c3')->firstOrFail();
+        $this->assertNull($cat->marketing_email_consent_at);
+        $this->assertNull($cat->marketing_sms_consent_at);
+
+        // Amy opts out on the old site before a re-run: her dates go.
+        $this->write('players.csv', [$head, ['a1', 'amy@example.com', 'Amy Pond', 'false', '2025-03-12T10:00:00Z', 'false', '']]);
+        $this->artisan('gimme:import-lovable', ['dir' => $this->dir])->assertSuccessful();
+        $this->assertNull($amy->refresh()->marketing_email_consent_at);
+        $this->assertNull($amy->marketing_sms_consent_at);
+
+        $this->write('players.csv', [$head, ['d4', 'dan@example.com', 'Dan Day', 'true', 'last tuesday-ish', 'false', '']]);
+        $this->artisan('gimme:import-lovable', ['dir' => $this->dir])
+            ->expectsOutputToContain('players.csv line 2: marketing_email_at is not a date')->assertFailed();
+    }
+
     public function test_closed_accounts_are_left_out(): void
     {
         // The old site blanks a closed account's name and address, and may blank its email too.

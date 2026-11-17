@@ -17,6 +17,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -26,6 +27,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /** Players. Accounts are never deleted; money and holds change only through the actions here, each with a reason. */
@@ -64,7 +66,21 @@ class UserResource extends Resource
                 TextInput::make('city')->maxLength(80),
                 TextInput::make('postcode')->maxLength(12),
             ]),
+            // Read only: only the player changes their choices (or self-exclusion clears them).
+            Section::make('Marketing Consent')->columns(2)->components([
+                TextEntry::make('marketing_email_shown')->label('Email')->state(fn (?User $record) => self::consent($record?->marketing_email, $record?->marketing_email_consent_at)),
+                TextEntry::make('marketing_sms_shown')->label('SMS')->state(fn (?User $record) => self::consent($record?->marketing_sms, $record?->marketing_sms_consent_at)),
+            ]),
         ]);
+    }
+
+    private static function consent(?bool $on, ?\DateTimeInterface $at): string
+    {
+        return match (true) {
+            ! $on => 'Not agreed',
+            $at === null => 'Agreed, date not known',
+            default => 'Agreed '.Carbon::instance($at)->timezone('Europe/London')->format('j M Y, H:i'),
+        };
     }
 
     public static function table(Table $table): Table

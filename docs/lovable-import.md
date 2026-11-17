@@ -24,7 +24,9 @@ select p.user_id                                   as legacy_id,
        p.phone                                     as phone,
        p.address_line1, p.address_line2, p.city, p.postcode,
        p.marketing_opt_in                          as marketing_email,
+       p.marketing_opt_in_at                       as marketing_email_at,
        p.sms_marketing_opt_in                      as marketing_sms,
+       p.sms_marketing_opt_in_at                   as marketing_sms_at,
        (u.email_confirmed_at is not null)          as email_confirmed,
        u.encrypted_password                        as password_hash,
        l.self_excluded_until, l.cool_off_until,
@@ -66,6 +68,12 @@ import refuses it.
 `players.csv` needs `legacy_id` and `email`; everything else is optional. `full_name` is split at
 the first space if there are no `first_name` / `last_name` columns. True/false columns accept
 `true/false`, `t/f`, `1/0` or `yes/no`. Dates are any format PHP reads (ISO 8601 is best).
+
+`marketing_email_at` and `marketing_sms_at` are when the player agreed to each. A date is kept only
+while that choice is on, and an empty one stays empty. The old site used the sign-up date in place of a
+missing email date when it sent marketing; don't do that in the export: take the column as it is
+stored. On the new site the date is set when a player ticks the box, cleared when they
+turn it off, and both are cleared when they self-exclude. The admin shows both on the player's page.
 
 `balances.csv` needs `legacy_id`, `deposit_pence`, `bonus_pence`, `winnings_pence` (whole pence);
 `bonus_expires_at` is optional (30 days from the import otherwise).

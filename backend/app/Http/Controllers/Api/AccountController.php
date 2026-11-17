@@ -90,7 +90,9 @@ class AccountController extends Controller
         $u = $r->user();
         $until = now()->addMonths($d['months']);
         if (! $u->self_excluded_until || $u->self_excluded_until->lt($until)) {
-            $u->forceFill(['self_excluded_until' => $until, 'marketing_email' => false, 'marketing_sms' => false])->save();
+            // One save, nothing in front of it: marketing and its consent dates go with the exclusion.
+            $u->forceFill(['self_excluded_until' => $until, 'marketing_email' => false, 'marketing_sms' => false,
+                'marketing_email_consent_at' => null, 'marketing_sms_consent_at' => null])->save();
         }
 
         return response()->json($this->present()->limits($u->refresh()));
@@ -127,7 +129,7 @@ class AccountController extends Controller
         $d = $r->validate(['email' => ['required', 'boolean'], 'sms' => ['required', 'boolean'], 'winNotifications' => ['required', 'boolean']]);
         $u = $r->user();
         $excluded = $u->self_excluded_until?->isFuture();
-        $u->forceFill(['marketing_email' => $d['email'] && ! $excluded, 'marketing_sms' => $d['sms'] && ! $excluded, 'win_notifications' => $d['winNotifications']])->save();
+        $u->forceFill([...$u->marketingChoices($d['email'] && ! $excluded, $d['sms'] && ! $excluded), 'win_notifications' => $d['winNotifications']])->save();
 
         return response()->json($this->present()->me($u));
     }
