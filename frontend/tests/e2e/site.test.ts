@@ -109,6 +109,15 @@ describe("site-wide rules", () => {
     expect(one).toContain("Show every prize");
     expect(one).not.toContain("King of the Jungle");
   });
+  it("game demos can be framed by this site only, and ?embed=1 is just the game", async () => {
+    const b = new Browser(site.origin);
+    const demo = await b.page("/demo/slots?skin=christmas&embed=1");
+    expect(demo.res.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    expect(demo.html).not.toContain('class="hd"'); // no header
+    expect(demo.html).not.toContain("GIMMEGIMMEPRIZES LTD"); // no footer
+    expect((await b.page("/demo/slots")).html).toContain("GIMMEGIMMEPRIZES LTD");
+    expect((await b.page("/")).res.headers.get("x-frame-options")).toBe("DENY");
+  });
   it("home filter chips filter the instant wins without JavaScript", async () => {
     const { html } = await new Browser(site.origin).page("/?filter=under10");
     expect(html).toContain("Pop For Pennies");

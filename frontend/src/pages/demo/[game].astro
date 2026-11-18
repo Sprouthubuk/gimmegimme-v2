@@ -8,10 +8,12 @@ const game = Astro.params.game!;
 if (!REVEAL_GAME_OPTIONS.some((g) => g.id === game)) return Astro.rewrite("/404");
 const skin = normaliseGameSkin(Astro.url.searchParams.get("skin"));
 const label = skinnedGameName(game, skin) ?? revealGameLabel(game);
+// ?embed=1: just the game, for the admin's game previewer (which frames this page from the same site).
+const embed = Astro.url.searchParams.get("embed") === "1";
 ---
-<Layout title={`Try ${label}`} noindex>
+<Layout title={`Try ${label}`} noindex bare={embed}>
   <section class="sec" style="padding-top:16px"><div class="narrow stack g16" style="max-width:720px">
-    <a href="javascript:history.back()" class="row g8" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />Back</a>
+    {!embed && <a href="javascript:history.back()" class="row g8" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />Back</a>}
     <div class="gg-rise"><div class="eyebrow">Free practice · nothing to win</div><h1 class="h1">Try <span class="nc gg-flicker">{label}</span></h1></div>
     <div class="notice notice-y"><Icon name="info" size={18} /><span>This is a demo with made-up tickets. Real results are fixed when you buy — the game only shows them.</span></div>
     <DemoReveal client:only="react" game={game} skin={skin} title={`${label} demo`} />

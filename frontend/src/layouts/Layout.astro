@@ -13,9 +13,11 @@ interface Props {
   headerTitle?: string;
   bottomNav?: boolean;
   footer?: boolean;
+  /** Only the page itself: no header, footer, tab bar or cookie banner (the admin's game previewer frames it). */
+  bare?: boolean;
   noindex?: boolean;
 }
-const { title, description = "Tiny tickets, ginormous prizes. Instant win games and live draws from 1p. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false } = Astro.props;
+const { title, description = "Tiny tickets, ginormous prizes. Instant win games and live draws from 1p. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false, bare = false } = Astro.props;
 const full = title === "Home" ? "Gimme Gimme Prizes | Tiny Tickets, Ginormous Prizes" : `${title} | Gimme Gimme Prizes`;
 const robots = noindex || import.meta.env.PUBLIC_SEARCH_INDEXING !== "on" ? "noindex, nofollow" : "index, follow";
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
@@ -41,13 +43,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString(
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <div class={`g ${bottomNav ? "has-bn" : ""}`}>
-    <Header active={active} variant={header} back={headerBack} title={headerTitle} />
+  <div class={`g ${bottomNav && !bare ? "has-bn" : ""}`}>
+    {!bare && <Header active={active} variant={header} back={headerBack} title={headerTitle} />}
     <main id="main"><slot /></main>
-    {footer && <Footer />}
-    {bottomNav && <BottomNav active={active} />}
+    {footer && !bare && <Footer />}
+    {bottomNav && !bare && <BottomNav active={active} />}
   </div>
-  <CookieBanner />
+  {!bare && <CookieBanner />}
   <script>
     import { readBasket, onBasketChange } from "../lib/basket";
     import { remaining, endsIn } from "../lib/time";
