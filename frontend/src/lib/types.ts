@@ -106,6 +106,9 @@ export interface Me {
   emailVerified: boolean;
   phone: string | null;
   dobVerified: boolean;
+  /** ID check before the first withdrawal: verified, pending (being checked), rejected (send again, see idCheckNote) or needed. */
+  idCheck: "verified" | "pending" | "rejected" | "needed";
+  idCheckNote: string | null;
   address: { line1: string | null; line2: string | null; city: string | null; postcode: string | null };
   marketing: { email: boolean; sms: boolean; winNotifications: boolean };
   memberSince: string;

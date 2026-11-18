@@ -47,6 +47,7 @@ Route::middleware('throttle:api')->group(function () {
         Route::post('me/password', [AuthController::class, 'password'])->middleware('throttle:login');
         Route::post('me/deposits', [AccountController::class, 'deposit'])->middleware('throttle:money');
         Route::post('me/withdrawals', [AccountController::class, 'withdraw'])->middleware('throttle:money');
+        Route::post('me/id-check', [AccountController::class, 'idCheck'])->middleware('throttle:money');
 
         Route::post('checkout', [OrderController::class, 'checkout'])->middleware('throttle:money');
         Route::get('orders/{number}', [OrderController::class, 'show']);

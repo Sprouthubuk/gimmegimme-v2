@@ -54,7 +54,17 @@ final class Postal
                 $this->fulfilment->playAll($group->reference);
             }
 
-            return $this->record($c, $user, $receivedAt, $admin, 'entered', null, $group->reference);
+            $entry = $this->record($c, $user, $receivedAt, $admin, 'entered', null, $group->reference);
+            $tickets = \Sprouthub\Verity\Models\Entry::query()->where('entry_group_id', $group->id)->orderBy('number')->pluck('number')->map(fn ($n) => (int) $n)->all();
+            DB::afterCommit(function () use ($user, $c, $tickets) {
+                try {
+                    $user->notify(new \App\Notifications\PostalEntryEntered($c, $tickets));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Postal entry email not sent', ['user' => $user->id]);
+                }
+            });
+
+            return $entry;
         });
     }
 

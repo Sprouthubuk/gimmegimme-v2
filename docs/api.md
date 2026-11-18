@@ -118,7 +118,8 @@ which calls `/return` server-side), failed `/payment/failed?order={n}`, cancelle
 | PATCH | `/api/me/preferences` | `{ email, sms, winNotifications }` → `Me` |
 | POST | `/api/me/password` | `{ currentPassword, password }` → `204` |
 | POST | `/api/me/deposits` | `{ amountPence }` → `{ redirectUrl, orderNumber }` (min £5, max setting, play check) |
-| POST | `/api/me/withdrawals` | `{ amountPence }` → `204` (winnings only, min £20, ID checked; paid by hand) |
+| POST | `/api/me/withdrawals` | `{ amountPence, accountName, sortCode, accountNumber }` → `201` (winnings only, min £20, needs `idCheck` verified; bank details stored encrypted, never returned; paid by hand; player emailed) |
+| POST | `/api/me/id-check` | multipart `photoId`, `proofOfAddress` (JPG/PNG/HEIC/PDF, 10MB each) → `201 { idCheck: "pending" }`; refused while one is pending or once verified |
 
 `Me.playBlock` is the same reason the play check would give, so the site can explain it before
 the player tries.
