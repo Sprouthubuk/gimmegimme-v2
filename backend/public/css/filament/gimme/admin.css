@@ -1,0 +1,165 @@
+/*
+ * Gimme Gimme admin: the site's black-and-neon look on top of Filament.
+ * Colours come from the panel (AdminPanelProvider: pink primary, purple-black greys, forced dark);
+ * this adds the glow, the headline font, softer cards and the branded sign-in page.
+ */
+:root {
+  --gg-pink: #ff2daa;
+  --gg-cyan: #22e6ff;
+  --gg-yellow: #fff23a;
+  --gg-ink: #07050b;
+  --gg-card: #120c18;
+  --gg-card-2: #170d20;
+  --gg-line: rgba(255, 255, 255, 0.08);
+  --gg-glow-pink: 0 0 0 1px rgba(255, 45, 170, 0.35), 0 0 28px rgba(255, 45, 170, 0.18);
+}
+
+/* Page: near-black with soft pink and cyan light. */
+.fi-body {
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255, 45, 170, 0.12), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(34, 230, 255, 0.08), transparent 60%),
+    var(--gg-ink) !important;
+  background-attachment: fixed !important;
+}
+
+/* Headings in the site's display font. */
+.fi-header-heading,
+.fi-simple-header-heading,
+.fi-wi-stats-overview-stat-value,
+.fi-section-header-heading.gg-display,
+.gg-display {
+  font-family: "Lilita One", "Nunito", system-ui, sans-serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em;
+}
+.fi-header-heading {
+  font-size: 2rem !important;
+  color: #fff;
+  text-shadow: 0 0 22px rgba(255, 45, 170, 0.45);
+}
+
+/* Brand in the sidebar. */
+.gg-brand { display: inline-flex; align-items: center; gap: 0.6rem; }
+.gg-brand-logo { height: 2.75rem; width: auto; filter: drop-shadow(0 0 10px rgba(255, 45, 170, 0.35)); }
+.gg-brand-tag {
+  font: 800 0.68rem/1 "Nunito", sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gg-cyan);
+  border: 1px solid rgba(34, 230, 255, 0.5);
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  box-shadow: 0 0 12px rgba(34, 230, 255, 0.2);
+}
+
+/* Sidebar and top bar: dark glass with a neon edge. */
+.fi-sidebar,
+.fi-main-sidebar {
+  background: rgba(10, 6, 14, 0.82) !important;
+  border-right: 1px solid var(--gg-line);
+  backdrop-filter: blur(14px);
+}
+.fi-topbar,
+.fi-topbar > nav {
+  background: rgba(7, 5, 11, 0.7) !important;
+  backdrop-filter: blur(14px);
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--gg-line);
+}
+.fi-sidebar-group-btn .fi-sidebar-group-label,
+.fi-sidebar-group-label {
+  font-size: 0.68rem !important;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8e84a0 !important;
+}
+.fi-sidebar-item-btn {
+  border-radius: 12px !important;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+  background: linear-gradient(90deg, rgba(255, 45, 170, 0.22), rgba(255, 45, 170, 0.06)) !important;
+  box-shadow: inset 3px 0 0 var(--gg-pink), 0 0 18px rgba(255, 45, 170, 0.12);
+}
+.fi-sidebar-item.fi-active .fi-sidebar-item-label { color: #fff !important; }
+
+/* Cards: sections, tables, stats. */
+.fi-section:not(.fi-section-not-contained),
+.fi-ta-ctn,
+.fi-wi-chart .fi-section,
+.fi-fo-tabs,
+.fi-sc-tabs {
+  background: linear-gradient(180deg, var(--gg-card-2), var(--gg-card)) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 0 0 1px var(--gg-line), 0 18px 40px rgba(0, 0, 0, 0.35) !important;
+}
+.fi-ta-header-cell {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b9afc6 !important;
+}
+.fi-ta-row:hover { background: rgba(255, 45, 170, 0.05) !important; }
+
+/* Stats: neon tiles. */
+.fi-wi-stats-overview-stat {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px !important;
+  background: linear-gradient(180deg, var(--gg-card-2), var(--gg-card)) !important;
+  box-shadow: 0 0 0 1px var(--gg-line), 0 18px 40px rgba(0, 0, 0, 0.35) !important;
+}
+.fi-wi-stats-overview-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gg-pink), var(--gg-cyan));
+  opacity: 0.85;
+}
+.fi-wi-stats-overview-stat-value { font-size: 2.1rem !important; color: #fff; }
+.fi-wi-stats-overview-stat-label {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b9afc6 !important;
+}
+
+/* Buttons: pink pills with a glow. */
+.fi-btn { border-radius: 999px !important; font-weight: 800 !important; }
+.fi-btn.fi-color-primary:not(.fi-btn-outlined) {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 6px 22px rgba(255, 45, 170, 0.35) !important;
+}
+.fi-badge { border-radius: 999px !important; font-weight: 800 !important; }
+
+/* Inputs: dark, rounded, pink focus. */
+.fi-input-wrp {
+  border-radius: 14px !important;
+  background: rgba(7, 5, 11, 0.6) !important;
+}
+.fi-input-wrp:focus-within { box-shadow: 0 0 0 2px rgba(255, 45, 170, 0.6), 0 0 18px rgba(255, 45, 170, 0.2) !important; }
+
+/* Sign-in: the logo over a glowing card. */
+.fi-simple-layout {
+  background:
+    radial-gradient(700px 420px at 50% -5%, rgba(255, 45, 170, 0.28), transparent 65%),
+    radial-gradient(600px 380px at 50% 105%, rgba(34, 230, 255, 0.16), transparent 65%),
+    var(--gg-ink) !important;
+}
+.fi-simple-main {
+  background: linear-gradient(180deg, var(--gg-card-2), var(--gg-card)) !important;
+  border-radius: 28px !important;
+  box-shadow: var(--gg-glow-pink), 0 30px 60px rgba(0, 0, 0, 0.5) !important;
+}
+.fi-simple-layout .gg-brand { flex-direction: column; gap: 0.8rem; }
+.fi-simple-layout .gg-brand-logo { height: 5.5rem; }
+.fi-simple-header-heading { font-size: 1.9rem !important; }
+
+/* Dashboard extras. */
+.gg-progress { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; min-width: 120px; }
+.gg-progress > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--gg-pink), var(--gg-cyan)); box-shadow: 0 0 10px rgba(255, 45, 170, 0.5); }
+.gg-progress-label { font-size: 0.75rem; color: #b9afc6; margin-top: 4px; }
+.fi-main-sidebar, .fi-sidebar { min-height: 100vh; }
+.fi-header-subheading { color: #b9afc6 !important; }
+.fi-simple-layout .fi-logo { height: auto !important; margin-bottom: 0.75rem; }

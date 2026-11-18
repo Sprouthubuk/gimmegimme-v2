@@ -37,6 +37,8 @@ class PostalEntries extends Page implements HasTable
 
     protected static ?int $navigationSort = 9;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Competitions';
+
     public ?array $data = [];
 
     public function mount(): void

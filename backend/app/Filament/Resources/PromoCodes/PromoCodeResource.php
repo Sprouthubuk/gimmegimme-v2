@@ -26,6 +26,8 @@ class PromoCodeResource extends Resource
 
     protected static ?int $navigationSort = 7;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Marketing';
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

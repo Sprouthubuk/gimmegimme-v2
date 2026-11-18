@@ -24,9 +24,11 @@ class PageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $navigationLabel = 'Legal pages';
+    protected static ?string $navigationLabel = 'Legal Pages';
 
     protected static ?int $navigationSort = 8;
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Site';
 
     public static function form(Schema $schema): Schema
     {

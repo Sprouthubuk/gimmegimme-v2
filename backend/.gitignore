@@ -14,7 +14,8 @@
 /auth.json
 /node_modules
 /public/build
-/public/css/filament
+/public/css/filament/*
+!/public/css/filament/gimme/
 /public/fonts/filament
 /public/hot
 /public/js/filament

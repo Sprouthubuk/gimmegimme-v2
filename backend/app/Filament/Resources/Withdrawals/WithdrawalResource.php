@@ -27,6 +27,8 @@ class WithdrawalResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Players & Money';
+
     public static function canCreate(): bool
     {
         return false;
