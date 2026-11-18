@@ -14,6 +14,8 @@ use App\Services\Fulfilment;
 use App\Services\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Sprouthub\Verity\Models\Entry;
@@ -110,35 +112,103 @@ class PublicController extends Controller
         ])->values()]);
     }
 
-    /** Closed and drawn draws whose entry list Verity has published. */
+    /**
+     * Every published competition's entry list, open from the moment it goes on sale: competitions still
+     * selling first (closing soonest), then finished ones (most recent first). Not-yet-open ones are left out.
+     */
     public function entryLists(): JsonResponse
     {
-        $list = Competition::query()->published()->with('prizes')->where('closes_at', '<=', now())->orderByDesc('closes_at')->limit(100)->get()
-            ->filter(fn (Competition $c) => $c->hasDraw() && in_array($this->state()->verity($c)?->status, ['drawn', 'carried'], true))
-            ->map(fn (Competition $c) => $this->present()->summary($c) + ['entries' => (int) $this->state()->verity($c)->entries_count])->values();
+        $all = Competition::query()->published()->with('prizes')->where('closes_at', '>', now()->subDays(90))->get()
+            ->filter(fn (Competition $c) => $this->state()->verity($c) !== null && $this->state()->status($c) !== 'scheduled');
+        [$open, $done] = $all->partition(fn (Competition $c) => in_array($this->state()->status($c), ['live', 'sold_out'], true));
+        $list = $open->sortBy('closes_at')->concat($done->sortByDesc('closes_at'))->take(100)
+            ->map(fn (Competition $c) => $this->present()->summary($c) + ['entries' => $this->state()->sold($c)])->values();
 
         return response()->json(['data' => $list]);
     }
 
+    /** One competition's confirmed tickets, live while it is on sale. Instant-win tickets show the prize they won. */
     public function entryList(Request $r, string $slug): JsonResponse
     {
         $c = Competition::query()->published()->with('prizes')->where('slug', $slug)->firstOrFail();
         $v = $this->state()->verity($c);
-        abort_unless($c->hasDraw() && $v && in_array($v->status, ['drawn', 'carried'], true), 404);
+        abort_unless($v !== null, 404);
         $per = 100;
-        $page = max(1, (int) $r->query('page', 1));
-        $q = Entry::query()->where('verity_entries.competition_id', $v->id)->join('verity_entry_groups', 'verity_entry_groups.id', '=', 'verity_entries.entry_group_id')
+        $page = max(1, min(10000, (int) $r->query('page', 1)));
+        $q = Entry::query()->where('verity_entries.competition_id', $v->id)
+            ->join('verity_entry_groups', 'verity_entry_groups.id', '=', 'verity_entries.entry_group_id')
+            ->leftJoin('verity_instant_tickets', 'verity_instant_tickets.id', '=', 'verity_entries.instant_ticket_id')
+            ->leftJoin('verity_instant_prizes', 'verity_instant_prizes.id', '=', 'verity_instant_tickets.instant_prize_id')
             ->whereNull('verity_entry_groups.withdrawn_at')->orderBy('verity_entries.number');
         if (ctype_digit((string) $r->query('q'))) {
             $q->where('verity_entries.number', (int) $r->query('q'));
         }
         $total = (clone $q)->count();
-        $rows = $q->skip(($page - 1) * $per)->take($per + 1)->get(['verity_entries.number', 'verity_entries.source', 'verity_entry_groups.owner_ref']);
+        $rows = $q->skip(($page - 1) * $per)->take($per + 1)
+            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name']);
+        $names = $this->names($rows->take($per)->pluck('owner_ref'));
 
         return response()->json([
             'competition' => $this->present()->summary($c),
-            'data' => $rows->take($per)->map(fn ($e) => ['ticket' => (int) $e->number, 'name' => $this->maskedName($e->owner_ref), 'source' => in_array($e->source, ['postal', 'free'], true) ? $e->source : 'paid'])->values(),
+            'data' => $rows->take($per)->map(fn ($e) => [
+                'ticket' => (int) $e->number, 'name' => $this->mask($names[$e->owner_ref] ?? 'Postal entrant'),
+                'source' => in_array($e->source, ['postal', 'free'], true) ? $e->source : 'paid',
+                'prizeName' => $e->prize_name,
+            ])->values(),
             'total' => $total,
+            'hasMore' => $rows->count() > $per,
+        ]);
+    }
+
+    /**
+     * Every instant prize's winning ticket number, public from publish (owner's decision, 18 Nov 2026). Safe
+     * because Verity hands out random unsold numbers at payment, never in order (it refuses sequential
+     * numbering with instant wins), so knowing a number never helps anyone get it. A prize is won once
+     * its ticket is sold. The seed that made the list is still revealed only when the competition ends.
+     */
+    public function winningNumbers(Request $r, string $slug): JsonResponse
+    {
+        $c = Competition::query()->published()->with('prizes')->where('slug', $slug)->firstOrFail();
+        $v = $this->state()->verity($c);
+        abort_unless($c->isInstant() && $v !== null, 404);
+        $per = 100;
+        $page = max(1, min(10000, (int) $r->query('page', 1)));
+        $sold = fn ($j) => $j->on('verity_entries.competition_id', '=', 'verity_instant_tickets.competition_id')
+            ->on('verity_entries.number', '=', 'verity_instant_tickets.ticket_number');
+        $base = DB::table('verity_instant_tickets')->where('verity_instant_tickets.competition_id', $v->id)
+            ->join('verity_instant_prizes', 'verity_instant_prizes.id', '=', 'verity_instant_tickets.instant_prize_id')
+            ->leftJoin('verity_entries', $sold)
+            ->leftJoin('verity_entry_groups', fn ($j) => $j->on('verity_entry_groups.id', '=', 'verity_entries.entry_group_id')->whereNull('verity_entry_groups.withdrawn_at'));
+        $total = (clone $base)->count();
+        $won = (clone $base)->whereNotNull('verity_entry_groups.id')->count();
+        $q = clone $base;
+        match ($r->query('show')) {
+            'won' => $q->whereNotNull('verity_entry_groups.id'),
+            'left' => $q->whereNull('verity_entry_groups.id'),
+            default => null,
+        };
+        if (ctype_digit((string) $r->query('q'))) {
+            $q->where('verity_instant_tickets.ticket_number', (int) $r->query('q'));
+        }
+        $matching = (clone $q)->count();
+        $rows = $q->orderByDesc('verity_instant_prizes.value_pence')->orderBy('verity_instant_tickets.ticket_number')
+            ->skip(($page - 1) * $per)->take($per + 1)
+            ->get(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
+                'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at']);
+        $names = $this->names($rows->take($per)->pluck('owner_ref')->filter());
+
+        return response()->json([
+            'competition' => $this->present()->summary($c),
+            'data' => $rows->take($per)->map(fn ($t) => [
+                'ticket' => (int) $t->ticket_number, 'prizeName' => $t->name, 'valuePence' => (int) $t->value_pence,
+                'type' => json_decode((string) $t->meta, true)['type'] ?? 'site_credit',
+                'won' => $t->group_id !== null,
+                'winnerName' => $t->group_id !== null ? ($names[$t->owner_ref] ?? 'Postal entrant') : null,
+                'wonAt' => $t->won_at ? Carbon::parse($t->won_at)->toIso8601ZuluString() : null,
+            ])->values(),
+            'total' => $total,
+            'won' => $won,
+            'matching' => $matching,
             'hasMore' => $rows->count() > $per,
         ]);
     }
@@ -183,17 +253,26 @@ class PublicController extends Controller
     /** "Liam O." for an account; "Postal entrant" otherwise. */
     private function publicName(string $ownerRef): string
     {
-        $id = Fulfilment::userIdFromOwner($ownerRef);
-        $u = $id ? User::query()->find($id, ['id', 'first_name', 'last_name', 'closed_at']) : null;
+        return $this->names(collect([$ownerRef]))[$ownerRef] ?? 'Postal entrant';
+    }
 
-        return $u && ! $u->closed_at ? $u->publicName() : 'Postal entrant';
+    /**
+     * Public names for many owner refs in one query: "Liam O." for an open account. Postal entrants and
+     * closed accounts are left out (callers show "Postal entrant").
+     *
+     * @return array<string, string>
+     */
+    private function names(\Illuminate\Support\Collection $ownerRefs): array
+    {
+        $ids = $ownerRefs->unique()->mapWithKeys(fn ($ref) => [$ref => Fulfilment::userIdFromOwner((string) $ref)])->filter();
+        $users = $ids->isEmpty() ? collect() : User::query()->whereIn('id', $ids->values())->whereNull('closed_at')->get(['id', 'first_name', 'last_name'])->keyBy('id');
+
+        return $ids->map(fn ($id) => $users->get($id)?->publicName())->filter()->all();
     }
 
     /** "L*** O." in entry lists. */
-    private function maskedName(string $ownerRef): string
+    private function mask(string $name): string
     {
-        $name = $this->publicName($ownerRef);
-
         return $name === 'Postal entrant' ? $name : preg_replace('/^(\p{L})\p{L}*/u', '$1***', $name);
     }
 }

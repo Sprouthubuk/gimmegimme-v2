@@ -6,7 +6,7 @@ import Countdown from "../../components/Countdown.astro";
 import HeroImage from "../../components/HeroImage.astro";
 import Icon from "../../components/Icon.astro";
 import TicketPicker from "../../islands/TicketPicker";
-import type { CompetitionDetail, CompetitionSummary } from "../../lib/types";
+import type { CompetitionDetail, CompetitionSummary, WinningNumbersPage } from "../../lib/types";
 import { formatPence, formatCount } from "../../lib/money";
 import { ukDateTime, ukShortDay } from "../../lib/time";
 
@@ -17,7 +17,11 @@ const early = api.hasSession() ? othersCall() : null;
 early?.catch(() => undefined); // still rejects where it is awaited; this only stops an early failure crashing Node
 const c = await api.maybe<CompetitionDetail>(`/api/competitions/${encodeURIComponent(slug)}`);
 if (!c) return Astro.rewrite("/404");
+const numbersCall = c.type === "instant" && c.verityRef ? api.maybe<WinningNumbersPage>(`/api/competitions/${encodeURIComponent(slug)}/winning-numbers`) : Promise.resolve(null);
+numbersCall.catch(() => undefined);
 const { data: others } = await (early ?? othersCall());
+const numbers = await numbersCall.catch(() => null);
+const shownNumbers = numbers?.data.slice(0, 8) ?? [];
 const more = others.filter((o) => o.id !== c.id && o.type === c.type).slice(0, 3);
 const isDraw = c.type === "draw";
 const prizesLeft = c.prizes.reduce((n, p) => n + (p.quantity - p.won), 0);
@@ -76,7 +80,7 @@ const [first, ...rest] = c.title.split(" – ");
     {!isDraw && c.prizes.length > 0 ? (
       <div class="stack g12">
         <div class="row between g8 gg-reveal sh"><h2 class="h2">Instant <span class="np">Prizes</span></h2><span class="tag tag-p">{formatCount(prizesWon)} won</span></div>
-        <p class="p" style="font-size:14px">Every outcome is fixed before the first ticket is sold — the fingerprint below proves the list can't change.</p>
+        <p class="p" style="font-size:14px">Every outcome is fixed before the first ticket is sold, and every winning ticket number is public from the start. Tickets are given out at random when you pay, so knowing a number never helps anyone get it.</p>
         <div class="card gg-reveal" style="overflow:hidden">
           {c.prizes.map((p, i) => (
             <div class="row g12" style="padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)">
@@ -86,6 +90,21 @@ const [first, ...rest] = c.title.split(" – ");
             </div>
           ))}
         </div>
+        {numbers && numbers.total > 0 && (
+          <div class="card card-p stack g12 gg-reveal" data-testid="winning-numbers">
+            <div class="row between g8"><h3 class="d" style="font-size:20px;margin:0">Winning <span class="nc">Numbers</span></h3><span class="hint">{formatCount(numbers.won)} of {formatCount(numbers.total)} won</span></div>
+            <div class="stack" style="gap:0">
+              {shownNumbers.map((n) => (
+                <div class="row g12" style="padding:10px 0;border-top:1px solid rgba(255,255,255,.06)">
+                  <span class="tn" style="min-width:64px">#{n.ticket}</span>
+                  <span style="flex:1;min-width:0;font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{n.prizeName}</span>
+                  {n.won ? <span class="tag tag-p" style="white-space:nowrap">Won · {n.winnerName}</span> : <span class="hint" style="white-space:nowrap">Still to win</span>}
+                </div>
+              ))}
+            </div>
+            <a class="btn btn-o" href={`/competitions/${c.slug}/winning-numbers`}>See All {formatCount(numbers.total)} Winning Numbers</a>
+          </div>
+        )}
         {c.endPrize && (
           <div class="card card-cy card-p row g12 gg-reveal" data-testid="end-prize">
             <span class="d nc" style="font-size:22px;white-space:nowrap">{endPrizeLine}</span>
@@ -98,7 +117,7 @@ const [first, ...rest] = c.title.split(" – ");
         <div class="gg-reveal"><div class="eyebrow">How draw night works</div><h2 class="h2">Drawn <span class="np">Live</span>, Totally Random</h2></div>
         <div class="tl gg-stagger">
           <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">01</span><div><div style="font-weight:900">Entries Close</div><div class="hint" style="font-size:13px">{ukDateTime(c.closesAt)}</div></div></div>
-          <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Entry List Published</div><div class="hint" style="font-size:13px">Every ticket number, public before the draw</div></div></div>
+          <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Entry List Open Throughout</div><div class="hint" style="font-size:13px">Every ticket number is public from the first sale</div></div></div>
           <div class="gg-card"><span class="d ny" style="font-size:26px;width:38px">03</span><div><div style="font-weight:900">Winner Picked Live</div><div class="hint" style="font-size:13px">A random draw anyone can verify, revealed here{c.drawAt ? ` at ${ukShortDay(c.drawAt)}` : ""}</div></div></div>
           <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">04</span><div><div style="font-weight:900">Prize On Its Way</div><div class="hint" style="font-size:13px">We contact the winner{c.cashAlternativePence ? ` — or pay the ${formatPence(c.cashAlternativePence, { short: false })} cash alternative` : ""}</div></div></div>
         </div>
@@ -109,7 +128,7 @@ const [first, ...rest] = c.title.split(" – ");
       <details class="acd" open><summary>About This Competition <Icon name="down" /></summary><div class="ab" set:html={c.description.replace(/</g, "&lt;").replace(/\n/g, "<br>")}></div></details>
       {c.howToPlay && <details class="acd"><summary>How To Play <Icon name="down" /></summary><div class="ab">{c.howToPlay}</div></details>}
       <details class="acd"><summary>Free Postal Entry <Icon name="down" /></summary><div class="ab">Same chance of winning. <a href="/free-entry">How to enter by post</a></div></details>
-      <details class="acd"><summary>Entry List <Icon name="down" /></summary><div class="ab">Every confirmed ticket with a masked name. <a href={`/entry-lists/${c.slug}`}>View the entry list</a></div></details>
+      <details class="acd"><summary>Entry List <Icon name="down" /></summary><div class="ab">Every confirmed ticket with a masked name, updated as tickets sell. <a href={`/entry-lists/${c.slug}`}>View the entry list</a>{!isDraw && numbers && <>{" · "}<a href={`/competitions/${c.slug}/winning-numbers`}>Winning numbers</a></>}</div></details>
       {c.verityRef && <details class="acd"><summary>Fair Play Record <Icon name="down" /></summary><div class="ab stack g8"><span>Competition reference <b style="color:#fff">{c.verityRef}</b></span>{c.commitment && <span style="word-break:break-all">Seed fingerprint <code style="color:#22E6FF">{c.commitment}</code></span>}{c.verifyUrl && <a class="tap" style="padding-left:0" href={c.verifyUrl}>Verify this competition</a>}</div></details>}
       <details class="acd"><summary>Terms <Icon name="down" /></summary><div class="ab">18+ UK residents only. Max {formatCount(c.maxPerPerson)} tickets per person.{(c.minTickets ?? 1) > 1 && ` Minimum ${formatCount(c.minTickets)} tickets per order.`} <a href="/legal/terms">Full T&amp;Cs</a></div></details>
       {!isDraw && c.game && <a href={`/demo/${c.game}?skin=${c.skin}`} class="card card-cy card-p row g12 gg-card mob" style="text-decoration:none;color:#fff;display:flex"><span style="width:44px;height:44px;border-radius:14px;border:1px solid #22E6FF;color:#22E6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><Icon name="play" size={24} stroke={1.8} /></span><span style="flex:1"><b class="d" style="font-size:19px;display:block">Try The Game Free</b><span class="hint">See how it works first</span></span><Icon name="chev" /></a>}

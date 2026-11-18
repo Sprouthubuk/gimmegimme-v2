@@ -182,8 +182,27 @@ route("GET", "/api/competitions", (req, res, { query }) => send(res, 200, { data
 route("GET", "/api/competitions/:slug", (req, res, { params, user }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, detail(c, user)) : fail(res, 404, "Not found"); });
 route("GET", "/api/winners/instant", (req, res) => send(res, 200, { data: [0, 1, 2, 3, 4].map((i) => ({ id: `w${i}`, name: "Emmie A.", prizeName: i ? "£0.50 site credit" : "£0.25 site credit", valuePence: i ? 50 : 25, game: i ? "balloon_pop" : "hook_a_duck", gameLabel: i ? "Balloon Pop" : "Hook a Duck", competitionTitle: i ? "Pop For Pennies" : "Liam’s Lucky Ducks", at: iso(now - (53 + i) * 6e4) })), hasMore: false }));
 route("GET", "/api/winners/draws", (req, res) => send(res, 200, { data: [{ id: "d1", name: "Natalie B.", prizeName: "£50 Supermarket Voucher", competitionTitle: "Free – Win A £50 Supermarket Voucher", ticketNumber: null, at: iso(now - 6 * DAY), videoUrl: null, verifyUrl: null }] }));
+// Like Laravel: every instant prize's winning number, public from publish; won once its ticket sells.
+function winningNumbers(c) {
+  const max = Math.max(c.maxTickets, 3000);
+  const used = new Set();
+  let x = [...c.slug].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const next = () => { do { x = (x * 1103515245 + 12345) >>> 0; } while (used.has((x % max) + 1)); used.add((x % max) + 1); return (x % max) + 1; };
+  return LADDER.flatMap(([name, valuePence, q], i) => Array.from({ length: q }, (_, k) => {
+    const won = i > 3 && k < Math.floor(q * 0.03);
+    return { ticket: next(), prizeName: name, valuePence, type: "site_credit", won, winnerName: won ? "Emmie A." : null, wonAt: won ? iso(now - (k + 1) * 36e5) : null };
+  })).sort((a, b) => b.valuePence - a.valuePence || a.ticket - b.ticket);
+}
+route("GET", "/api/competitions/:slug/winning-numbers", (req, res, { params, query }) => {
+  const c = bySlug.get(params.slug);
+  if (!c || c.type !== "instant") return fail(res, 404, "Not found");
+  const all = winningNumbers(c);
+  const show = query.get("show"), q = query.get("q"), page = Math.max(1, Number(query.get("page")) || 1);
+  const rows = all.filter((r) => (show === "won" ? r.won : show === "left" ? !r.won : true) && (!q || String(r.ticket) === q));
+  send(res, 200, { competition: c, data: rows.slice((page - 1) * 100, page * 100), total: all.length, won: all.filter((r) => r.won).length, matching: rows.length, hasMore: rows.length > page * 100 });
+});
 route("GET", "/api/entry-lists", (req, res) => send(res, 200, { data: COMPS }));
-route("GET", "/api/entry-lists/:slug", (req, res, { params }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, { competition: c, data: [{ ticket: 1, name: "N***** B.", source: "paid" }, { ticket: 2, name: "E**** A.", source: "postal" }], total: 2, hasMore: false }) : fail(res, 404, "Not found"); });
+route("GET", "/api/entry-lists/:slug", (req, res, { params }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, { competition: c, data: [{ ticket: 1, name: "N***** B.", source: "paid", prizeName: null }, { ticket: 2, name: "E**** A.", source: "postal", prizeName: c.type === "instant" ? "Bug Bite" : null }], total: 2, hasMore: false }) : fail(res, 404, "Not found"); });
 route("GET", "/api/pages/:slug", (req, res, { params }) => send(res, 200, { title: { terms: "Terms & Conditions", privacy: "Privacy Policy", cookies: "Cookie Policy", complaints: "Complaints", "free-entry": "Free Entry Terms" }[params.slug] ?? "Page", updatedAt: iso(now - 10 * DAY), version: "1.0", html: `<h2 id="about">1. About Us</h2><p>Gimme Gimme Prizes is a trading name of GIMMEGIMMEPRIZES LTD.</p><h2 id="who">2. Who Can Enter</h2><p>UK residents aged 18 or over.</p>`, headings: [{ id: "about", text: "1. About Us" }, { id: "who", text: "2. Who Can Enter" }] }));
 route("POST", "/api/contact", async (req, res) => { const b = await readJson(req); if (!b.message || String(b.message).length < 10) return fail(res, 422, "Please check the form.", { message: ["Tell us a bit more (at least 10 characters)."] }); send(res, 201, { ok: true }); });
 route("POST", "/api/basket/price", async (req, res, { user }) => { const b = await readJson(req); send(res, 200, price(b.lines, user, b.promoCode)); });

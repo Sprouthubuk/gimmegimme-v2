@@ -33,13 +33,17 @@ against it; the Laravel feature tests must cover the same behaviour.
 | GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player |
 | GET | `/api/winners/instant?limit=&page=&game=` | `{ data: InstantWinnerRow[], total }` |
 | GET | `/api/winners/draws` | `{ data: DrawWinnerRow[] }` |
-| GET | `/api/entry-lists` | `{ data: (CompetitionSummary & { entries })[] }`: draws Verity has drawn |
-| GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], total, hasMore }`; names masked ("L*** P."); 404 until drawn |
+| GET | `/api/entry-lists` | `{ data: (CompetitionSummary & { entries })[] }`: every published competition once it opens, on sale first (closing soonest), then finished ones |
+| GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], total, hasMore }`; open from the first sale; names masked ("L*** P."); `prizeName` on an instant-win ticket that won |
+| GET | `/api/competitions/{slug}/winning-numbers?show=all\|won\|left&q=&page=` | `WinningNumbersPage`: every instant prize's winning ticket number, public from publish, biggest prize first, 100 a page; `404` for draws |
 | GET | `/api/pages/{slug}` | `{ title, updatedAt, version, html, headings }` (terms, privacy, rules, cookies, free-entry) |
 | POST | `/api/contact` | `{ name, email, topic, message }` → `204`; rate limited |
 
-`CompetitionDetail.prizes` lists the prize *tiers* and how many of each are won. It must never
-reveal which ticket numbers win (Verity holds them until the competition ends).
+`CompetitionDetail.prizes` lists the prize *tiers* and how many of each are won. Which ticket number
+wins each prize is public from publish (owner's decision, 18 Nov 2026) through `/winning-numbers`.
+That is safe only because Verity gives each buyer random unsold numbers at payment (it refuses
+in-order numbering with instant wins); never publish with `ticket_allocation` other than `random`.
+The seed that made the list stays sealed until the competition ends.
 `CompetitionDetail.endPrize` is `{ name, valuePence, count }`: `count` winners each win the prize
 (Verity draws that many different tickets; one end prize per person, a repeat win is redrawn).
 `presets` are the ticket quick-pick buttons (smallest first), `popularPreset` the one marked

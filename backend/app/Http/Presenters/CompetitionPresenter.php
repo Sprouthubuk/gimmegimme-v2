@@ -8,7 +8,7 @@ use App\Services\CompetitionState;
 use Sprouthub\Verity\Models\InstantPrize;
 use Sprouthub\Verity\Models\Winner;
 
-/** CompetitionSummary / CompetitionDetail (frontend/src/lib/types.ts). Never includes winning ticket numbers. */
+/** CompetitionSummary / CompetitionDetail (frontend/src/lib/types.ts). Winning ticket numbers are listed, paged, by PublicController::winningNumbers. */
 final class CompetitionPresenter
 {
     public const GAME_LABELS = [

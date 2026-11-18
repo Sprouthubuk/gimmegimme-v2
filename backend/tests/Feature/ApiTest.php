@@ -49,9 +49,8 @@ class ApiTest extends TestCase
         $this->assertSame(0, $d['heldByMe']);
         $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $d['commitment']);
         $this->assertStringStartsWith('VTY-', $d['verityRef']);
-        // No winning ticket numbers, anywhere in the answer.
+        // The detail itself carries no ticket numbers: they are listed, paged, at /winning-numbers.
         $this->assertStringNotContainsStringIgnoringCase('ticket_number', json_encode($d));
-        $this->assertArrayNotHasKey('winningTickets', $d);
         $this->getJson('/api/competitions/nope')->assertNotFound();
     }
 
@@ -337,7 +336,9 @@ class ApiTest extends TestCase
         $this->topUp($u, 1000);
         $c = $this->competition('draw', ['closes_at' => now()->addMinutes(30)]);
         $this->checkout($u, $c, 4)->assertCreated();
-        $this->getJson('/api/entry-lists/'.$c->slug)->assertNotFound();
+        // Open while on sale, not only after the draw.
+        $this->assertSame(4, $this->getJson('/api/entry-lists/'.$c->slug)->assertOk()->json('total'));
+        $this->assertContains($c->slug, array_column($this->getJson('/api/entry-lists')->json('data'), 'slug'));
 
         Carbon::setTestNow(now()->addMinutes(31));
         Verity::close($c->verity_ref);
@@ -354,6 +355,64 @@ class ApiTest extends TestCase
         $this->assertSame(4, $list['total']);
         $this->assertSame('L*** O.', $list['data'][0]['name']);
         $this->assertSame('drawn', $this->getJson('/api/me/tickets?tab=past')->json('data.0.competition.status'));
+    }
+
+    public function test_winning_numbers_are_public_from_publish_and_marked_won_when_sold(): void
+    {
+        $c = $this->competition('instant', ['max_tickets' => 40, 'max_per_person' => 40], [['£100 Cash', 10000, 2, 'cash'], ['£5 Credit', 500, 8, 'site_credit']]);
+        $this->competition('instant', [], [], false); // not published: no list
+        $v = Competition::query()->where('ref', $c->verity_ref)->firstOrFail();
+        $table = \Illuminate\Support\Facades\DB::table('verity_instant_tickets')->where('competition_id', $v->id)->pluck('ticket_number')->sort()->values()->all();
+
+        // Before a single sale: all ten numbers, biggest prize first, none won.
+        $list = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers')->assertOk()->json();
+        $this->assertSame(10, $list['total']);
+        $this->assertSame(0, $list['won']);
+        $this->assertSame($table, collect($list['data'])->pluck('ticket')->sort()->values()->all());
+        $this->assertSame(['£100 Cash', '£100 Cash'], array_slice(array_column($list['data'], 'prizeName'), 0, 2));
+        $this->assertFalse(collect($list['data'])->contains('won', true));
+        // The seed that made the table stays sealed until the end.
+        $this->assertNull($v->revealed_seed);
+        $this->assertStringNotContainsString('seed', json_encode($list));
+
+        $u = $this->player(['first_name' => 'Amy', 'last_name' => 'Brook']);
+        $this->topUp($u, 1000);
+        $this->checkout($u, $c, 20)->assertCreated();
+        $mine = \Sprouthub\Verity\Models\Entry::query()->where('competition_id', $v->id)->pluck('number')->all();
+
+        $list = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers')->json();
+        foreach ($list['data'] as $row) {
+            $this->assertSame(in_array($row['ticket'], $mine, true), $row['won'], "ticket {$row['ticket']}");
+            $this->assertSame($row['won'] ? 'Amy B.' : null, $row['winnerName']);
+        }
+        $won = collect($list['data'])->where('won', true)->count();
+        $this->assertSame($won, $list['won']);
+        $this->assertSame($won, $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?show=won')->json('matching'));
+        $this->assertSame(10 - $won, $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?show=left')->json('matching'));
+        $one = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?q='.$table[0])->json('data');
+        $this->assertSame([$table[0]], array_column($one, 'ticket'));
+        // The detail's won counts agree with the list.
+        $this->assertSame($won, array_sum(array_column($this->getJson('/api/competitions/'.$c->slug)->json('prizes'), 'won')));
+
+        // The entry list names the prize on each winning ticket.
+        $entries = collect($this->getJson('/api/entry-lists/'.$c->slug)->json('data'));
+        $this->assertSame($won, $entries->whereNotNull('prizeName')->count());
+        $this->assertSame('A*** B.', $entries->first()['name']);
+
+        $this->getJson('/api/competitions/'.$this->competition('draw')->slug.'/winning-numbers')->assertNotFound();
+    }
+
+    public function test_ticket_numbers_are_random_so_public_winning_numbers_give_no_edge(): void
+    {
+        // Every published competition uses random numbers, and Verity refuses in-order numbers with instant wins.
+        $c = $this->competition('instant', ['max_tickets' => 1000]);
+        $this->assertSame('random', Competition::query()->where('ref', $c->verity_ref)->value('ticket_allocation'));
+        $u = $this->player();
+        $this->topUp($u, 5000);
+        $this->checkout($u, $c, 30)->assertCreated();
+        $numbers = \Sprouthub\Verity\Models\Entry::query()->orderBy('id')->pluck('number')->all();
+        $this->assertNotSame(range(1, 30), $numbers);
+        $this->assertNotSame(range(1, 30), collect($numbers)->sort()->values()->all());
     }
 
     public function test_the_contact_form_bot_trap_saves_nothing(): void
