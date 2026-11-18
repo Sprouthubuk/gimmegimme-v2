@@ -121,7 +121,7 @@ export default function TicketPicker(p: PickerProps) {
 
       {blocked && <div className="notice notice-p" role="status"><Svg name="info" size={18} /><span>{blocked}</span></div>}
       {added && <div className="notice notice-c gg-pop" role="status"><Svg name="check" size={18} stroke={2.6} /><span>Added {qty} {qty === 1 ? "ticket" : "tickets"} to your basket. <a href="/basket" style={{ color: "#22E6FF" }}>View basket</a> or keep browsing.</span></div>}
-      <div className="row g8 wrapx hint"><Svg name="lock" size={14} /> Wallet or card <span style={{ marginLeft: "auto" }}>Max {formatCount(p.maxPerPerson)} per person</span></div>
+      <div className="row g8 wrapx hint"><Svg name="lock" size={14} /> Wallet or card</div>
     </div>
   );
 }

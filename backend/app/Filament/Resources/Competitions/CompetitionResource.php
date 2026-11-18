@@ -78,10 +78,8 @@ class CompetitionResource extends Resource
             Section::make('Terms')->description('Fixed by Verity when the competition is published: they can’t change after that.')->columns(3)->components([
                 Money::input('price_pence', 'Ticket price')->required()->disabled($locked),
                 TextInput::make('max_tickets')->label('Tickets')->integer()->minValue(1)->maxValue(10_000_000)->required()->disabled($locked),
-                TextInput::make('max_per_person')->label('Tickets per person')->integer()->minValue(1)->required()->disabled($locked)
-                    ->lte('max_tickets'),
                 TextInput::make('min_tickets')->label('Minimum tickets per order')->integer()->minValue(1)->default(1)->required()->disabled($locked)
-                    ->lte('max_per_person')->helperText('E.g. 100 on a 1p competition for a £1 minimum.'),
+                    ->lte('max_tickets')->helperText('E.g. 100 on a 1p competition for a £1 minimum. There is no limit per person.'),
                 DateTimePicker::make('opens_at')->label('Opens (UK time)')->timezone('Europe/London')->seconds(false)->disabled($locked),
                 DateTimePicker::make('closes_at')->label('Closes (UK time)')->timezone('Europe/London')->seconds(false)->required()->after('now')->disabled($locked),
                 Money::input('cash_alternative_pence', 'Cash alternative'),

@@ -191,13 +191,6 @@ final class Orders
         } else {
             $this->fulfilment->fulfil($order);
         }
-        if ($cardType === 'credit' && Settings::creditCardMonthlyCap() > 0) {
-            $user = $order->user;
-            $spent = $this->check->creditCardSpendThisMonth($user);
-            if ($spent > Settings::creditCardMonthlyCap()) {
-                $this->fulfilment->flag($order, 'Paid by credit card past the £250 monthly limit: refund the card part.');
-            }
-        }
         if ($wasClosed) {
             $this->fulfilment->flag($order, 'Paid after the order had closed.');
         }

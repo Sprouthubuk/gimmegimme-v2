@@ -25,7 +25,8 @@ Read before every task. If a request conflicts with this, stop and ask.
   Reveal games are presentation only (`frontend/src/games/`); `tests/games` proves a board can only
   show the result it was given.
 - One play check on every path: sales switch (off by default), staff can't play, 18+, email
-  verified, self-exclusion, break, hold, spend limits, £250/month credit-card cap.
+  verified, self-exclusion, break, hold, spend limits. No credit-card cap and no limit per person
+  (owner's decision, 18 Nov 2026).
   Self-exclusion and breaks always apply at once — no check or delay in front of them.
 - At fulfilment only WINNING entries are played through Verity (`Fulfilment::playAll`: entries with an
   `instant_ticket_id`), so an order's cost doesn't grow with its ticket count; never go back to

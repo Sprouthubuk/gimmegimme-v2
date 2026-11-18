@@ -1,5 +1,4 @@
 ---
-import { gameBadge } from "../lib/gameLabels";
 import Icon from "./Icon.astro";
 import type { CompetitionSummary } from "../lib/types";
 import { formatCount, formatPence } from "../lib/money";
@@ -26,9 +25,7 @@ const drawLine = live
 <a class="cc gg-card" href={href}>
   <div class="im">
     <img src={c.imageSmall} srcset={c.imageSrcset ?? undefined} sizes="(min-width:1024px) 300px, (min-width:640px) 33vw, 50vw" alt={c.title} loading="lazy" decoding="async" width="400" height="400">
-    {live
-      ? <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>
-      : <span class="gt"><Icon name="bolt" size={10} stroke={3} />{gameBadge(c) ?? "Instant Win"}</span>}
+    {live && <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>}
   </div>
     <div class={`st ${hot ? "hot" : ""}`}><Icon name="clock" size={12} stroke={2.6} />{hot && <><b class="wide">Ending Soon</b><i class="wide" aria-hidden="true"></i></>}<span>{hot ? <><span class="wide">Ends{" "}</span>{when(c.closesAt)}</> : strip}</span></div>
   <div class="bd">

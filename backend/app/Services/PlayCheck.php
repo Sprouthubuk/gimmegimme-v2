@@ -28,7 +28,6 @@ final class PlayCheck
         'under_18' => 'You must be 18 or over to enter.',
         'email_unverified' => 'Please confirm your email address before you enter — check your inbox.',
         'spend_limit' => 'This would take you past your weekly deposit limit.',
-        'credit_card_cap' => 'Credit card payments are limited to £250 a month. Pay by debit card or from your wallet.',
     ];
 
     /** The reason this account can't play at all right now, ignoring amounts and the sales switch. */
@@ -68,10 +67,6 @@ final class PlayCheck
         if ($limit !== null && $this->paidInSince($user, now()->subDays(7)) + $cardPence > $limit) {
             $this->refuse('spend_limit', 403);
         }
-        $cap = Settings::creditCardMonthlyCap();
-        if ($cap > 0 && $this->creditCardSpendThisMonth($user) + $cardPence > $cap) {
-            $this->refuse('credit_card_cap', 403);
-        }
     }
 
     /** Card payments and deposits paid since $since, plus card payments in progress. */
@@ -82,14 +77,6 @@ final class PlayCheck
         return $paid + $this->inProgress($user);
     }
 
-    public function creditCardSpendThisMonth(User $user): int
-    {
-        $start = now('Europe/London')->startOfMonth()->utc();
-        $paid = (int) Order::query()->where('user_id', $user->id)->where('status', 'paid')->where('paid_at', '>=', $start)
-            ->where(fn ($q) => $q->where('card_type', 'credit')->orWhereNull('card_type'))->where('card_pence', '>', 0)->sum('card_pence');
-
-        return $paid + $this->inProgress($user);
-    }
 
     private function inProgress(User $user): int
     {
