@@ -2,7 +2,7 @@
 import Icon from "./Icon.astro";
 import type { CompetitionSummary } from "../lib/types";
 import { formatCount, formatPence } from "../lib/money";
-import { endsIn, ukDate, ukWhen } from "../lib/time";
+import { endsIn, ukWhen } from "../lib/time";
 interface Props { c: CompetitionSummary }
 const { c } = Astro.props;
 const live = c.type === "draw";
@@ -10,38 +10,39 @@ const href = `/competitions/${c.slug}`;
 const soon = c.status === "scheduled" && c.opensAt ? c.opensAt : null;
 const open = c.status === "live";
 const sold = Math.max(0, Math.min(100, c.soldPercent));
-const dayMonth = (iso: string) => ukDate(iso).replace(/ \d{4}$/, "");
 // The strip across the foot of the picture: red when it closes within a day and a half.
 const msLeft = new Date(c.closesAt).getTime() - Date.now();
 const hot = open && msLeft > 0 && msLeft < 36 * 36e5;
 // Today / Tomorrow with the time; further off, just the day ("Sat 28 Nov") so it fits a phone card.
 const when = (iso: string) => { const w = ukWhen(iso); return /^(Today|Tomorrow)/.test(w) ? w : w.split(",")[0]; };
-const strip = soon ? `Opens ${when(soon)}` : c.status === "sold_out" ? "Sold out" : !open ? "Closed" : `Ends ${when(c.closesAt)}`;
-// One line on what's drawn: a live draw's date, or an instant win's end prize.
-const drawLine = live
-  ? (c.drawAt ? `Draw ${ukWhen(c.drawAt)}` : null)
-  : c.endPrize ? `+ ${c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}${formatPence(c.endPrize.valuePence, { short: false })} end prize, drawn ${dayMonth(c.drawAt ?? c.closesAt)}` : null;
+// A strip across the foot of the picture only when there's something to flag: ending within a day
+// and a half (red), opening later, sold out or closed.
+const strip = soon ? `Opens ${when(soon)}` : c.status === "sold_out" ? "Sold Out" : !open ? "Closed" : hot ? `Ends ${when(c.closesAt)}` : null;
+// The highlight line: an instant win's end prize (or its top prize), or what a live draw is worth.
+const money = (p: number) => formatPence(p, { short: false });
+const highlight = live
+  ? (c.topPrizePence ? `Worth ${money(c.topPrizePence)}` : null)
+  : c.endPrize ? `Plus ${c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}${money(c.endPrize.valuePence)} End Prize`
+  : c.topPrizePence ? `Top Prize ${money(c.topPrizePence)}` : null;
+// When: the draw date for a live draw or an end prize, otherwise when the game closes.
+const whenLine: [string, string] = (live || c.endPrize) && (c.drawAt ?? c.closesAt) ? ["Draw", ukWhen(c.drawAt ?? c.closesAt)] : ["Ends", ukWhen(c.closesAt)];
 ---
 <a class="cc gg-card" href={href}>
   <div class="im">
     <img src={c.imageSmall} srcset={c.imageSrcset ?? undefined} sizes="(min-width:1024px) 300px, (min-width:640px) 33vw, 50vw" alt={c.title} loading="lazy" decoding="async" width="400" height="400">
     {live && <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>}
+    {strip && <div class={`st ${hot && !soon ? "hot" : ""}`}><Icon name="clock" size={12} stroke={2.6} /><span>{strip}</span></div>}
   </div>
-    <div class={`st ${hot ? "hot" : ""}`}><Icon name="clock" size={12} stroke={2.6} />{hot && <><b class="wide">Ending Soon</b><i class="wide" aria-hidden="true"></i></>}<span>{hot ? <><span class="wide">Ends{" "}</span>{when(c.closesAt)}</> : strip}</span></div>
   <div class="bd">
     <div class="pr">
-      <div class="pp"><b class={live ? "nc" : "np"}>{formatPence(c.pricePence)}</b><small>per entry</small></div>
-      {live
-        ? (c.topPrizePence ? <span class="pl cy">Worth {formatPence(c.topPrizePence, { short: false })}</span> : null)
-        : (c.prizeCount ? <span class="pl"><Icon name="bolt" size={11} stroke={3} />{formatCount(c.prizeCount)} instant {c.prizeCount === 1 ? "win" : "wins"}</span> : null)}
+      <b class={`pp ${live ? "nc" : "np"}`}>{formatPence(c.pricePence)}</b>
+      {!live && c.prizeCount ? <span class="pl" title={`${formatCount(c.prizeCount)} instant ${c.prizeCount === 1 ? "win" : "wins"}`}><Icon name="bolt" size={11} stroke={3} />{formatCount(c.prizeCount)}<span class="sr-only"> instant {c.prizeCount === 1 ? "win" : "wins"}</span></span> : null}
     </div>
     <div class="tt">{c.title}</div>
-    <div class="mt">
-      {!live && c.topPrizePence ? <span>Top prize <b class="ny">{formatPence(c.topPrizePence, { short: false })}</b></span> : null}
-      {drawLine && <span>{drawLine}{live ? " · Live draw" : ""}</span>}
-    </div>
-    {open && <div class="en"><span class="dt"></span>Ends in{" "}<b data-ends={c.closesAt}>{endsIn(c.closesAt)}</b></div>}
-    <div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${sold}%`}></div></div>
+    {highlight && <div class={`hl ${live ? "nc" : ""}`}><span aria-hidden="true">★</span>{highlight}</div>}
+    <div class="wh"><span>{whenLine[0]}</span>{" "}<b>{whenLine[1]}</b></div>
+    {open && <div class="en"><span class="dt"></span><b data-ends={c.closesAt}>{endsIn(c.closesAt)}</b></div>}
+    <div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${sold > 0 ? Math.max(sold, 2) : 0}%`}></div></div>
     <div class="sl"><span><b>{sold}%</b> sold</span><span><b>{formatCount(c.ticketsLeft)}</b> left</span></div>
     <span class="btn btn-y btn-block go">{!open && !soon ? "View" : soon ? "See The Prizes" : live ? "Enter Now" : "Play Now"}{(open || soon) && <span aria-hidden="true" class="star">★</span>}</span>
   </div>

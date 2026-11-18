@@ -65,7 +65,7 @@ const [first, ...rest] = c.title.split(" – ");
           {opensLater && <span class="eyebrow">Entries open in</span>}
           {isDraw && !opensLater && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
           <Countdown until={opensLater ?? (isDraw && c.drawAt ? c.drawAt : c.closesAt)} />
-          <div class={`bar ${isDraw ? "cy" : ""}`}><div class="gg-shine" style={`width:${c.soldPercent}%`}></div></div>
+          <div class={`bar ${isDraw ? "cy" : ""}`}><div class="gg-shine" style={`width:${c.soldPercent > 0 ? Math.max(c.soldPercent, 2) : 0}%`}></div></div>
           <div class="row between hint"><span>{c.soldPercent}% sold</span><span>{isDraw ? `${formatCount(c.maxTickets)} tickets` : "Results fixed when you buy"}</span></div>
         </div>
         <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
@@ -98,7 +98,7 @@ const [first, ...rest] = c.title.split(" – ");
                     ? <span class="iw-c"><b class="d">All Found</b><small>{formatCount(p.won)} won</small></span>
                     : <span class="iw-c"><b class="d nc">{formatCount(left)}</b><small>Left to win</small></span>}
                 </span>
-                <div class="bar cy" style="height:5px"><div style={`width:${p.quantity ? Math.max((p.won / p.quantity) * 100, p.won ? 3 : 0) : 0}%;min-width:0`}></div></div>
+                <div class="bar cy" style="height:5px"><div style={`width:${p.quantity ? Math.max((p.won / p.quantity) * 100, p.won ? 3 : 0) : 0}%`}></div></div>
                 <span class="row between g8 iw-f"><span><b>{formatCount(p.won)}</b> of {formatCount(p.quantity)} found</span><span class="iw-l">Winning tickets →</span></span>
               </div>
             </a>
