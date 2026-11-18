@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\RefusedException;
+use App\Models\Competition;
 use App\Models\Order;
 use App\Models\PromoCode;
 use App\Models\User;
@@ -41,6 +42,8 @@ final class Orders
 
         $order = DB::transaction(function () use ($user, $lines, $payWith, $useWallet, $promoCode, $requestId) {
             $this->wallet->lock($user->id);
+            // One buyer at a time per competition, so two orders can't both take the last tickets.
+            Competition::query()->whereIn('id', collect($lines)->pluck('competitionId')->unique()->sort()->values())->orderBy('id')->lockForUpdate()->get(['id']);
             $user->refresh();
             $priced = $this->pricing->price($lines, $user, $promoCode);
             $lineProblem = collect($priced['lines'])->firstWhere('problem', '!=', null);
@@ -72,7 +75,8 @@ final class Orders
                 'discount_pence' => $priced['promo']['discountPence'] ?? 0, 'request_id' => $requestId,
             ]);
             foreach ($priced['lines'] as $l) {
-                $order->lines()->create(['competition_id' => $l['competitionId'], 'quantity' => $l['quantity'], 'unit_pence' => $l['unitPence'], 'line_pence' => $l['linePence']]);
+                $order->lines()->create(['competition_id' => $l['competitionId'], 'quantity' => $l['quantity'], 'unit_pence' => $l['unitPence'], 'line_pence' => $l['linePence'],
+                    'bundle_tier_id' => $l['bundleId'], 'bundle_label' => $l['bundleLabel'], 'paid_quantity' => $l['paidQuantity'], 'free_quantity' => $l['freeQuantity']]);
             }
             $this->wallet->spendForOrder($order, $walletPart, $total);
             if ($cardPart === 0) {

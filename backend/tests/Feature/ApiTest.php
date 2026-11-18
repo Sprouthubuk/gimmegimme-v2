@@ -43,7 +43,8 @@ class ApiTest extends TestCase
         $this->assertSame('live', $list[1]['status']);
         $this->assertSame(10000, $list[1]['topPrizePence']);
         $this->assertSame('Scratch Card', $list[1]['gameLabel']);
-        $this->assertSame(1000, $list[1]['ticketsLeft']);
+        $this->assertSame(0, $list[1]['soldPercent']);
+        $this->assertArrayNotHasKey('ticketsLeft', $list[1]);
 
         $d = $this->getJson('/api/competitions/'.$instant->slug)->assertOk()->json();
         $this->assertSame(['£100 Cash', '50p Credit'], array_column($d['prizes'], 'name'));
@@ -202,7 +203,7 @@ class ApiTest extends TestCase
     {
         $u = $this->player(['self_excluded_until' => null]);
         $c = $this->competition('draw', ['max_per_person' => 10]);
-        $this->checkout($u, $c, 11)->assertStatus(422)->assertJsonPath('message', $c->title.': You can buy 10 more tickets for this competition.');
+        $this->checkout($u, $c, 11)->assertStatus(422)->assertJsonPath('message', $c->title.': Not that many tickets are left. Please choose fewer.');
         $this->checkout($u, $c, 4)->assertStatus(422)->assertJsonPath('code', 'not_enough_wallet');
         $this->checkout($u, $c, 4, ['payWith' => 'bitcoin'])->assertStatus(422)->assertJsonValidationErrors('payWith');
         $this->checkout($u, $c, 4, ['requestId' => '../x'])->assertStatus(422);
@@ -349,7 +350,7 @@ class ApiTest extends TestCase
         $c = $this->competition('draw', ['closes_at' => now()->addMinutes(30)]);
         $this->checkout($u, $c, 4)->assertCreated();
         // Open while on sale, not only after the draw.
-        $this->assertSame(4, $this->getJson('/api/entry-lists/'.$c->slug)->assertOk()->json('total'));
+        $this->assertCount(4, $this->getJson('/api/entry-lists/'.$c->slug)->assertOk()->json('data'));
         $this->assertContains($c->slug, array_column($this->getJson('/api/entry-lists')->json('data'), 'slug'));
 
         Carbon::setTestNow(now()->addMinutes(31));
@@ -364,7 +365,8 @@ class ApiTest extends TestCase
         $resp = $this->getJson('/api/entry-lists/'.$c->slug);
         $this->assertSame(200, $resp->status(), (string) Competition::query()->value('status').' '.$resp->getContent());
         $list = $resp->json();
-        $this->assertSame(4, $list['total']);
+        $this->assertCount(4, $list['data']);
+        $this->assertArrayNotHasKey('total', $list);
         $this->assertSame('L*** O.', $list['data'][0]['name']);
         $this->assertSame('drawn', $this->getJson('/api/me/tickets?tab=past')->json('data.0.competition.status'));
     }
@@ -397,7 +399,7 @@ class ApiTest extends TestCase
         $this->assertSame([], $this->getJson('/api/winners/instant')->json('data'));
         $this->assertSame(0, collect($this->getJson('/api/entry-lists/'.$c->slug)->json('data'))->whereNotNull('prizeName')->count());
         $this->postJson("/api/orders/{$number}/play")->assertOk();
-        $this->assertSame(20, $this->getJson('/api/competitions/'.$c->slug)->json('ticketsLeft'));
+        $this->assertSame(50, $this->getJson('/api/competitions/'.$c->slug)->json('soldPercent'));
 
         $list = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers')->json();
         foreach ($list['data'] as $row) {

@@ -20,13 +20,13 @@ class SweepOrders extends Command
     public function handle(Orders $orders): int
     {
         $confirmed = $expired = 0;
-        Order::query()->whereIn('status', Order::UNPAID)->where('created_at', '<=', now()->subMinutes(10))->orderBy('created_at')->limit(500)->get()
+        Order::query()->whereIn('status', Order::UNPAID)->where('created_at', '<=', now()->subMinutes(5))->orderBy('created_at')->limit(500)->get()
             ->each(function (Order $o) use ($orders, &$confirmed, &$expired) {
                 $o = $orders->syncWithGateway($o);
                 if ($o->status === 'paid') {
                     $confirmed++;
-                } elseif (in_array($o->status, Order::UNPAID, true) && $o->created_at->lte(now()->subHour())) {
-                    // A hosted payment page doesn't stay open for an hour: close it. A late payment is still confirmed below.
+                } elseif (in_array($o->status, Order::UNPAID, true) && $o->created_at->lte(now()->subMinutes(Order::HOLD_MINUTES))) {
+                    // The tickets were held for HOLD_MINUTES: close it and let them go. A late payment is still confirmed below.
                     $expired += $orders->closeUnpaid($o, 'expired') ? 1 : 0;
                 }
             });

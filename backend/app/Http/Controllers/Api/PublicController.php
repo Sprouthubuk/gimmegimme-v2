@@ -9,6 +9,7 @@ use App\Models\ContactMessage;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Bundles;
 use App\Services\CompetitionState;
 use App\Services\Fulfilment;
 use App\Services\Settings;
@@ -39,7 +40,7 @@ class PublicController extends Controller
 
     private function present(): CompetitionPresenter
     {
-        return new CompetitionPresenter($this->state());
+        return new CompetitionPresenter($this->state(), new Bundles($this->state()));
     }
 
     public function site(): JsonResponse
@@ -123,7 +124,7 @@ class PublicController extends Controller
             ->filter(fn (Competition $c) => $this->state()->verity($c) !== null && $this->state()->status($c) !== 'scheduled');
         [$open, $done] = $all->partition(fn (Competition $c) => in_array($this->state()->status($c), ['live', 'sold_out'], true));
         $list = $open->sortBy('closes_at')->concat($done->sortByDesc('closes_at'))->take(100)
-            ->map(fn (Competition $c) => $this->present()->summary($c) + ['entries' => $this->state()->sold($c)])->values();
+            ->map(fn (Competition $c) => $this->present()->summary($c))->values(); // no ticket counts: % sold only
 
         return response()->json(['data' => $list]);
     }
@@ -144,7 +145,6 @@ class PublicController extends Controller
         if (ctype_digit((string) $r->query('q'))) {
             $q->where('verity_entries.number', (int) $r->query('q'));
         }
-        $total = (clone $q)->count();
         $rows = $q->skip(($page - 1) * $per)->take($per + 1)
             ->get(['verity_entries.number', 'verity_entries.source', 'verity_entries.entry_group_id', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name']);
         $names = $this->names($rows->take($per)->pluck('owner_ref'));
@@ -157,7 +157,7 @@ class PublicController extends Controller
                 'source' => in_array($e->source, ['postal', 'free'], true) ? $e->source : 'paid',
                 'prizeName' => isset($unseen[(int) $e->entry_group_id]) ? null : $e->prize_name,
             ])->values(),
-            'total' => $total,
+            // No total: players see % sold only, never a count of tickets.
             'hasMore' => $rows->count() > $per,
         ]);
     }

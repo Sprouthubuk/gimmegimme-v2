@@ -202,6 +202,7 @@ final class AccountPresenter
             'lines' => $lines->map(fn (OrderLine $l) => [
                 'competitionId' => $l->competition_id, 'slug' => $l->competition->slug, 'title' => $l->competition->title,
                 ...$l->competition->pictureFields(), 'type' => $l->competition->type, 'quantity' => $l->quantity,
+                'paidQuantity' => (int) ($l->paid_quantity ?? $l->quantity), 'freeQuantity' => (int) $l->free_quantity, 'bundleLabel' => $l->bundle_label,
                 'tickets' => $l->tickets ?? [], 'drawAt' => $l->competition->hasDraw() ? $l->competition->closes_at->toIso8601ZuluString() : null,
             ])->all(),
             'toPlay' => $o->status === 'paid' ? (int) $lines->filter(fn ($l) => $l->competition->isInstant() && $l->tickets && ! $l->revealed_at)->sum('quantity') : 0,

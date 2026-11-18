@@ -107,7 +107,8 @@ class OrderController extends Controller
         return $r->validate([
             'lines' => ['required', 'array', 'min:1', 'max:'.Pricing::MAX_LINES],
             'lines.*.competitionId' => ['required', 'string', 'max:64'],
-            'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'lines.*.quantity' => ['required_without:lines.*.bundleId', 'nullable', 'integer', 'min:1', 'max:100000'],
+            'lines.*.bundleId' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'promoCode' => ['sometimes', 'nullable', 'string', 'max:32'],
         ]);
     }
