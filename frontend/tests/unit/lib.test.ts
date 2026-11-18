@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { formatMoney, formatPence, parsePounds } from "../../src/lib/money";
 import { safeNext } from "../../src/lib/safe";
-import { ago, endsIn, remaining, ukDateTime, ukTime } from "../../src/lib/time";
+import { ago, endsIn, remaining, ukDateTime, ukTime, ukWhen } from "../../src/lib/time";
 import { addToBasket, clearBasket, readBasket, removeFromBasket, restoreAside, setAside, setQuantity } from "../../src/lib/basket";
 
 describe("money", () => {
@@ -89,5 +89,17 @@ describe("basket", () => {
     expect(restoreAside("GG-1")).toBe(true);
     expect(readBasket()).toEqual([{ competitionId: "a", quantity: 4 }]);
     expect(restoreAside("GG-1")).toBe(false);
+  });
+});
+
+describe("ukWhen", () => {
+  const now = Date.parse("2026-11-18T23:30:00Z"); // 11:30pm in the UK
+  it("says Today and Tomorrow by the UK calendar, and the date after that", () => {
+    expect(ukWhen("2026-11-18T23:45:00Z", now)).toBe("Today 11:45pm");
+    expect(ukWhen("2026-11-19T21:00:00Z", now)).toBe("Tomorrow 9pm");
+    expect(ukWhen("2026-12-26T21:00:00Z", now)).toBe("Sat 26 Dec, 9pm");
+  });
+  it("uses UK summer time", () => {
+    expect(ukWhen("2027-06-20T20:00:00Z", Date.parse("2027-06-19T12:00:00Z"))).toBe("Tomorrow 9pm");
   });
 });

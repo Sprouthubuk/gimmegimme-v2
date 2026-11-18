@@ -31,6 +31,8 @@ export interface CompetitionSummary {
   /** Shown under the price, e.g. "£50 cash alternative" or "2,516 wins". */
   subtitle: string | null;
   soldPercent: number;
+  /** Tickets still for sale (max tickets less those sold), from Verity. */
+  ticketsLeft: number;
   /** Instant wins: how many instant prizes there are in total. Null for draws. */
   prizeCount: number | null;
   /** Instant wins with an end prize: what is drawn at the close, and for how many winners. Null otherwise. */

@@ -7,12 +7,12 @@ import HeroImage from "../components/HeroImage.astro";
 import Icon from "../components/Icon.astro";
 import type { CompetitionSummary, CompetitionDetail, InstantWinnerRow } from "../lib/types";
 import { formatPence, formatCount } from "../lib/money";
-import { ukDateTime, ukShortDay } from "../lib/time";
+import { ago, ukDateTime, ukShortDay } from "../lib/time";
 
 const { api, site } = Astro.locals;
 const filter = Astro.url.searchParams.get("filter") ?? "all";
 // The independent calls run side by side once the visitor has a session (see api.hasSession).
-const winnersCall = () => api.get<{ data: InstantWinnerRow[] }>("/api/winners/instant?limit=8");
+const winnersCall = () => api.get<{ data: InstantWinnerRow[] }>("/api/winners/instant?limit=12");
 const early = api.hasSession() ? winnersCall() : null;
 early?.catch(() => undefined); // still rejects where it is awaited; this only stops an early failure crashing Node
 const { data: comps } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
@@ -61,7 +61,17 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
         {prizesTotal > 0 && <span class="gg-pop gg-d6" style="position:absolute;right:10px;bottom:14px;background:rgba(7,5,11,.9);border:1px solid #22E6FF;border-radius:14px;padding:8px 12px;box-shadow:0 0 20px rgba(34,230,255,.35)"><span class="eyebrow" style="display:block">Still to win</span><span class="d nc" style="font-size:22px">{formatCount(prizesLeft)} prizes</span></span>}
       </HeroImage>
     </div>
-    {ladder.length > 0 && (
+    {winners.length > 0 ? (
+      <div class="wrap" style="margin-top:24px"><div class="wfeed" aria-label="Live winners">
+        <span class="wl"><span class="gg-ping"></span>Live <b>Winners</b></span>
+        <div class="wm"><div class="gg-marq" data-winners={winners.map((w) => w.id).join()} style={`animation-duration:${winnersLoop.length * 4}s`}>
+          {[...winnersLoop, ...winnersLoop].map((w, i) => (
+            <span class="wp" aria-hidden={i >= winners.length ? "true" : undefined}><span class="av">{w.name.slice(0, 1)}</span><span><b>{w.name}</b> won <b class="ny">{w.prizeName}</b><small>{w.competitionTitle} · {ago(w.at)}</small></span></span>
+          ))}
+        </div></div>
+        <a href="/instant-winners" class="dsk wa">All Winners →</a>
+      </div></div>
+    ) : ladder.length > 0 && (
       <div class="wrap" style="margin-top:24px"><div style="border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 0;overflow:hidden" aria-label="Prize ladder">
         <div class="gg-marq" style={`animation-duration:${ladderLoop.length * 3.5}s`}>{[...ladderLoop, ...ladderLoop].map((p, i) => <span aria-hidden={i >= ladder.length ? "true" : undefined} style="white-space:nowrap;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800"><span class="d" style="color:#FF5CC0">{formatPence(p.valuePence)}</span> <span class="dim">×</span> {formatCount(p.quantity)}</span>)}</div>
       </div></div>
@@ -83,15 +93,6 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
     </div></section>
   )}
 
-  {winners.length > 0 && (
-    <section style="border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);padding:16px 0"><div class="wrap row g16">
-      <h2 class="d ny gg-flicker" style="font-size:22px;white-space:nowrap;margin:0">Just Won</h2>
-      <div style="flex:1;min-width:0;overflow:hidden"><div class="gg-marq" style={`animation-duration:${winnersLoop.length * 3.5}s`}>
-        {[...winnersLoop, ...winnersLoop].map((w, i) => <span aria-hidden={i >= winners.length ? "true" : undefined} class="row g8" style="flex-shrink:0;border:1px solid rgba(255,242,58,.35);border-radius:999px;padding:5px 14px 5px 5px;font-size:13px;font-weight:700;color:#B9AFC6"><span class="av" style="width:28px;height:28px;background:#FF2DAA;font-size:13px">{w.name.slice(0, 1)}</span><b style="color:#fff">{w.name}</b> won <b style="color:#FFF23A">{w.prizeName}</b></span>)}
-      </div></div>
-      <a href="/instant-winners" class="dsk" style="font-weight:900;color:#fff;text-decoration:none;white-space:nowrap">All Winners →</a>
-    </div></section>
-  )}
 
   <section class="sec"><div class="wrap stack g20">
     <h2 class="h2 gg-reveal">How It <span class="nc">Works</span></h2>
@@ -105,4 +106,35 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
       <div><Icon name="bolt" />Instant results</div><div><Icon name="mail" />Free postal entry</div><div><Icon name="shield" />Verifiable draws</div><div><Icon name="wallet" />Withdraw from {formatPence(site.minWithdrawalPence)}</div>
     </div>
   </div></section>
+<script>
+  import { ago } from "../lib/time";
+  // Keeps the featured winners feed live: new winners every minute, built with textContent (never HTML).
+  const strip = document.querySelector<HTMLElement>("[data-winners]");
+  type W = { id: string; name: string; prizeName: string; competitionTitle: string; at: string };
+  let shown = strip?.dataset.winners ?? "";
+  const pill = (w: W, copy: boolean) => {
+    const el = document.createElement("span");
+    el.className = "wp";
+    if (copy) el.setAttribute("aria-hidden", "true");
+    const av = el.appendChild(document.createElement("span")); av.className = "av"; av.textContent = w.name.slice(0, 1);
+    const tx = el.appendChild(document.createElement("span"));
+    tx.append(Object.assign(document.createElement("b"), { textContent: w.name }), " won ", Object.assign(document.createElement("b"), { textContent: w.prizeName, className: "ny" }));
+    tx.appendChild(document.createElement("small")).textContent = `${w.competitionTitle} · ${ago(w.at)}`;
+    return el;
+  };
+  const refresh = async () => {
+    try {
+      const res = await fetch("/api/winners/instant?limit=12", { headers: { Accept: "application/json" }, credentials: "same-origin" });
+      if (!res.ok) return;
+      const list: W[] = (await res.json()).data ?? [];
+      const key = list.map((w) => w.id).join();
+      if (!strip || !list.length || key === shown) return;
+      shown = key;
+      const loop = Array.from({ length: Math.max(1, Math.ceil(8 / list.length)) }, () => list).flat();
+      strip.replaceChildren(...[...loop, ...loop].map((w, i) => pill(w, i >= list.length)));
+      strip.style.animationDuration = `${loop.length * 4}s`;
+    } catch { /* keep what is showing */ }
+  };
+  if (strip) setInterval(refresh, 60_000);
+</script>
 </Layout>

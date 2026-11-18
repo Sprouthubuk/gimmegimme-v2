@@ -15,6 +15,15 @@ export function ukDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
 }
 
+/** "Today 9pm", "Tomorrow 9pm", or "Sat 26 Dec, 9pm" (UK days). */
+export function ukWhen(iso: string, now = Date.now()): string {
+  const day = (t: number) => new Date(t).toLocaleDateString("en-CA", { timeZone: TZ });
+  const target = day(new Date(iso).getTime());
+  if (target === day(now)) return `Today ${ukTime(iso)}`;
+  if (target === day(now + 864e5)) return `Tomorrow ${ukTime(iso)}`;
+  return ukDateTime(iso);
+}
+
 /** "Sat 8pm" */
 export function ukShortDay(iso: string): string {
   const d = new Date(iso);
