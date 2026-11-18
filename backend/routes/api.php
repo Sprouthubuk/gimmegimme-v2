@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FakePayController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PublicController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 // The contract is docs/api.md. Everything here is under /api.
 
 Route::middleware('throttle:api')->group(function () {
+    Route::get('health', HealthController::class);
     Route::get('site', [PublicController::class, 'site']);
     Route::get('competitions', [PublicController::class, 'competitions']);
     Route::get('competitions/{slug}', [PublicController::class, 'competition']);
