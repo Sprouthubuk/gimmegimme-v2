@@ -5,10 +5,11 @@ import { Svg } from "./Svg";
 
 type IdCheck = "verified" | "pending" | "rejected" | "needed";
 
-export default function WalletActions({ minDepositPence, maxTopUpPence, minWithdrawalPence, withdrawablePence, blocked, idCheck: initialIdCheck, idCheckNote }: { minDepositPence: number; maxTopUpPence: number; minWithdrawalPence: number; withdrawablePence: number; blocked: string | null; idCheck: IdCheck; idCheckNote: string | null }) {
+export default function WalletActions({ minDepositPence, maxTopUpPence, minWithdrawalPence, withdrawablePence, blocked, idCheck: initialIdCheck, idCheckNote, suggestPence = null }: { minDepositPence: number; maxTopUpPence: number; minWithdrawalPence: number; withdrawablePence: number; blocked: string | null; idCheck: IdCheck; idCheckNote: string | null; suggestPence?: number | null }) {
   const presets = [500, 1000, 2000, 5000].filter((p) => p >= minDepositPence && p <= maxTopUpPence);
   const [amount, setAmount] = useState<number | null>(presets[2] ?? presets[0] ?? minDepositPence);
-  const [custom, setCustom] = useState("");
+  // Coming from checkout with a shortfall: the amount that covers it, typed in for the player to confirm.
+  const [custom, setCustom] = useState(suggestPence ? (suggestPence / 100).toFixed(2) : "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wAmount, setWAmount] = useState("");

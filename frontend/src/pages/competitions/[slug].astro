@@ -28,7 +28,6 @@ const prizesWon = c.prizes.reduce((n, p) => n + p.won, 0);
 const prizesTotal = prizesLeft + prizesWon;
 const open = c.status === "live";
 const opensLater = c.status === "scheduled" && c.opensAt ? c.opensAt : null;
-const ticketsLeft = Math.max(0, Math.round(c.maxTickets * (1 - c.soldPercent / 100)));
 const presets = c.presets?.length ? c.presets : isDraw ? [1, 5, 10, 25] : [5, 10, 25, 50];
 const endCount = c.endPrize?.count ?? 0;
 const endPrizeLine = c.endPrize ? `${endCount > 1 ? `${endCount} × ` : ""}${formatPence(c.endPrize.valuePence, { short: false })}` : "";
@@ -65,10 +64,10 @@ const [first, ...rest] = c.title.split(" – ");
           {opensLater && <span class="eyebrow">Entries open in</span>}
           {isDraw && !opensLater && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
           <Countdown until={opensLater ?? (isDraw && c.drawAt ? c.drawAt : c.closesAt)} />
-          <div class={`bar ${isDraw ? "cy" : ""}`}><div class="gg-shine" style={`width:${c.soldPercent > 0 ? Math.max(c.soldPercent, 2) : 0}%`}></div></div>
-          <div class="row between hint"><span>{c.soldPercent}% sold</span><span>{isDraw ? `${formatCount(c.maxTickets)} tickets` : "Results fixed when you buy"}</span></div>
+          <div class={`bar ${isDraw ? "cy" : ""}`} data-sold-bar={c.slug}><div class="gg-shine" style={`width:${c.soldPercent > 0 ? Math.max(c.soldPercent, 2) : 0}%`}></div></div>
+          <div class="row between hint"><span data-sold-text={c.slug}><b>{c.status === "sold_out" ? "SOLD OUT" : `${c.soldPercent}% SOLD`}</b>{c.status !== "sold_out" && c.soldPercent >= 90 && <span class="ny"> · Almost gone!</span>}</span><span>{isDraw ? "" : "Results fixed when you buy"}</span></div>
         </div>
-        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} maxPerPerson={c.maxPerPerson} heldByMe={c.heldByMe} ticketsLeft={ticketsLeft} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
+        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} bundles={c.bundles ?? []} soldPercent={c.soldPercent} soldOut={c.status === "sold_out"} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
         <p class="hint" style="margin:0">No purchase necessary — <a href="/free-entry">enter free by post</a> with the same chance of winning. 18+ UK only · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
     </div>
@@ -133,6 +132,7 @@ const [first, ...rest] = c.title.split(" – ");
       {c.howToPlay && <p class="info-d" style="margin:0"><b>How to play:</b>{" "}{c.howToPlay}</p>}
       <div class="info-f">
         <span>18+ UK residents only{(c.minTickets ?? 1) > 1 ? ` · Minimum ${formatCount(c.minTickets)} tickets per order` : ""}</span>
+        <span>Every ticket has the same chance: bundle and free tickets are entered into the draw exactly like paid tickets, and so are free postal entries.</span>
         <span class="row wrapx" style="gap:4px 16px">
           <a class="tap" href="/free-entry">Free postal entry</a>
           <a class="tap" href={`/entry-lists/${c.slug}`}>Entry list</a>
@@ -146,7 +146,17 @@ const [first, ...rest] = c.title.split(" – ");
 
   {more.length > 0 && <section class="sec"><div class="wrap stack g16"><h2 class="h2 gg-reveal">{isDraw ? <>More <span class="nc">Draws</span></> : <>You Might <span class="np">Also Like</span></>}</h2><div class="rail gg-stagger">{more.map((o) => <CompCard c={o} />)}</div></div></section>}
 </div>
+{open && <div class="mob" style="height:72px" aria-hidden="true"></div>}
 <script define:vars={{ slug: c.slug, title: c.title }}>
   window.addEventListener("load", () => window.ggTrack?.("ViewContent", { content_ids: [slug], content_name: title, content_type: "product" }));
+  // The ticket picker re-reads % sold every minute; keep the bar and its words in step.
+  window.addEventListener("gg-sold", (e) => {
+    const { slug: s, percent } = e.detail || {};
+    if (s !== slug) return;
+    const bar = document.querySelector(`[data-sold-bar="${slug}"] > div`);
+    if (bar) bar.style.width = `${percent > 0 ? Math.max(percent, 2) : 0}%`;
+    const text = document.querySelector(`[data-sold-text="${slug}"]`);
+    if (text) text.innerHTML = `<b>${percent}% SOLD</b>${percent >= 90 && percent < 100 ? '<span class="ny"> · Almost gone!</span>' : ""}`;
+  });
 </script>
 </Layout>

@@ -17,7 +17,7 @@ const PUBLIC_PAGES: [string, RegExp][] = [
   ["/instant-winners", /Instant Winners/],
   ["/winners", /Our Winners/],
   ["/entry-lists", /Entry Lists/],
-  ["/entry-lists/lush-snow-fairy-wonderland", /confirmed tickets/],
+  ["/entry-lists/lush-snow-fairy-wonderland", /\d+% sold/],
   ["/entry-lists/bush-bucks-jungle-trial", /Won Bug Bite/],
   ["/competitions/bush-bucks-jungle-trial/winning-numbers", /Winning Numbers[\s\S]*prizes won[\s\S]*#\d+/],
   ["/competitions/bush-bucks-jungle-trial/winning-numbers?show=won", /Emmie A\./],
@@ -89,14 +89,16 @@ describe("site-wide rules", () => {
     expect(html).toMatch(/Emmie A\.<\/b> won <b class="ny">£0\.50 site credit<\/b><small>Pop For Pennies · /);
     expect(html).not.toContain('aria-label="Prize ladder"');
   });
-  it("competition cards show price, wins, highlight, time left and tickets left", async () => {
+  it("competition cards show price, wins, highlight, time left and % sold, never a ticket count", async () => {
     const { html } = await new Browser(site.origin).page("/competitions");
     const t = text(html);
     expect(t).toMatch(/25p/);
     expect(t).toMatch(/2,516 instant wins/); // the count on the pill, with the words for screen readers
     expect(t).toMatch(/Top Prize £/);
     expect(t).toMatch(/\d+d \d+h/);
-    expect(t).toMatch(/98,000 ?left/); // Bush Bucks: 100,000 tickets, 2% sold (from the server, not worked out)
+    expect(t).toMatch(/2% sold/);
+    expect(t).not.toMatch(/\d ?left|tickets in total|max entries/i); // players only ever see % sold
+    expect(t).toMatch(/Buy 10 Get 15 Free/); // a live draw card names its Best Value bundle
     expect(html).toContain("data-ends=");
     // No game tag on a card (only live draws keep their Live Draw tag), and no limit per person anywhere.
     expect(html).not.toMatch(/<span class="gt">/);
@@ -127,6 +129,17 @@ describe("site-wide rules", () => {
     expect(demo.html).not.toContain("GIMMEGIMMEPRIZES LTD"); // no footer
     expect((await b.page("/demo/slots")).html).toContain("GIMMEGIMMEPRIZES LTD");
     expect((await b.page("/")).res.headers.get("x-frame-options")).toBe("DENY");
+  });
+  it("a live draw's page shows its bundles, Best Value first choice, and no ticket counts", async () => {
+    const { html } = await new Browser(site.origin).page("/competitions/lush-snow-fairy-wonderland");
+    const t = text(html);
+    expect(t).toMatch(/Buy 10 Get 15 FREE!/);
+    expect(t).toMatch(/Best Value/);
+    expect(t).toMatch(/25 tickets for £5\.90/);
+    expect(t).toMatch(/Save £8\.85/);
+    expect(t).toMatch(/Bundle and free tickets are entered into the draw exactly like paid tickets/);
+    expect(t).toMatch(/8% SOLD/);
+    expect(html).not.toMatch(/maxTickets|ticketsLeft|maxPerPerson/);
   });
   it("the competition page renders the ticket picker on the server", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");

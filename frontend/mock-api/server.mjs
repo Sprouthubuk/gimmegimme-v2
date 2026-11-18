@@ -25,7 +25,7 @@ const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Sc
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {
-  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, ticketsLeft: Math.round((type === "draw" ? 5000 : 100000) * (1 - sold / 100)), prizeCount: type === "instant" ? 2516 : null, endPrize: null, maxTickets: type === "draw" ? 5000 : 100000, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], ...extra };
+  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, prizeCount: type === "instant" ? 2516 : null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], bestBundle: null, ...extra };
 }
 const COMPS = [
   comp("c-bush", "bush-bucks-jungle-trial", "Bush Bucks – Jungle Trial", "instant", "claw_machine", "classic", "bush-lg", 25, 75000, 2, "2,516 wins", { featured: true }),
@@ -43,6 +43,16 @@ const COMPS = [
   comp("c-cash", "250-tax-free-cash", "£250 Tax-Free Cash", "draw", null, "classic", "cash", 99, 25000, 14, "Cash prize", { closesAt: iso(now + 20 * 36e5), drawAt: iso(now + 20 * 36e5) }), // ending soon: the red strip
   comp("c-ninja", "ninja-possiblecooker", "Ninja PossibleCooker Plus 6-in-1", "draw", null, "classic", "ninja", 79, 15000, 11, "£100 cash alternative", { cashAlternativePence: 10000 }),
 ];
+// "Buy X Get Y Free" bundles (live draws): what the server would offer for these two.
+const TIERS = [[1, 5, 5], [2, 10, 15], [3, 20, 40], [4, 40, 100]];
+function bundlesFor(c, ids, best) {
+  return TIERS.filter(([id]) => ids.includes(id)).map(([id, paid, free]) => ({ id, label: `Buy ${paid} Get ${free} Free`, paid, free, tickets: paid + free, pricePence: paid * c.pricePence, savePence: free * c.pricePence, bestValue: id === best }));
+}
+for (const [slug, ids, best] of [["lush-snow-fairy-wonderland", [1, 2, 3, 4], 2], ["ninja-possiblecooker", [1, 2, 3], 2]]) {
+  const c = COMPS.find((x) => x.slug === slug);
+  c.bundles = bundlesFor(c, ids, best);
+  c.bestBundle = c.bundles.find((b) => b.bestValue);
+}
 const byId = new Map(COMPS.map((c) => [c.id, c]));
 const bySlug = new Map(COMPS.map((c) => [c.slug, c]));
 
@@ -52,8 +62,8 @@ function detail(c, user) {
     ...c,
     description: c.type === "draw" ? `Win the ${c.title}. One winner picked at random, live.` : `Are you brave enough? ${c.title} — every ticket plays one go, with instant prizes up to £${(c.topPrizePence / 100).toFixed(2)}.`,
     howToPlay: c.type === "instant" ? "Buy tickets and each one plays one game. Your result is locked in at purchase — the game just reveals it." : null,
-    maxPerPerson: c.type === "draw" ? 100 : 2000,
     heldByMe: held,
+    bundles: c.bundles ?? [],
     cashAlternativePence: c.cashAlternativePence ?? null,
     prizes: c.type === "instant" ? LADDER.map(([name, v, q], i) => ({ name, valuePence: v, type: "site_credit", quantity: q, won: i > 3 ? Math.floor(q * 0.03) : 0 })) : [],
     endPrize: c.endPrize ?? (c.type === "draw" ? { name: c.title, valuePence: c.topPrizePence, count: 1 } : null),
@@ -131,9 +141,17 @@ function price(lines, u, promoCode) {
   for (const l of lines || []) {
     const c = byId.get(l.competitionId);
     if (!c) { problems.push("A competition in your basket isn't available any more."); continue; }
+    const base = { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, unitPence: c.pricePence, minQuantity: 1 };
+    const offers = c.bundles ?? [];
+    const nextUp = (paid, tickets) => { const n = offers.filter((o) => o.paid >= paid && o.tickets > tickets).sort((a, b) => a.tickets - b.tickets)[0]; return n ? { bundleId: n.id, label: n.label, tickets: n.tickets, freeQuantity: n.free, extraPence: (n.paid - paid) * c.pricePence } : null; };
+    if (l.bundleId) {
+      const b = offers.find((o) => o.id === Number(l.bundleId));
+      out.push({ ...base, quantity: b ? b.tickets : 0, bundleId: b?.id ?? Number(l.bundleId), bundleLabel: b?.label ?? null, paidQuantity: b?.paid ?? 0, freeQuantity: b?.free ?? 0, linePence: b ? b.pricePence : 0, problem: b ? null : "This bundle is no longer available. Please choose a smaller one.", upgrade: b ? nextUp(b.paid, b.tickets) : null });
+      continue;
+    }
     const max = (c.type === "draw" ? 100 : 2000) - (u ? u.tickets.filter((t) => t.competitionId === c.id).length : 0);
     const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
-    out.push({ competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, quantity: q, unitPence: c.pricePence, linePence: q * c.pricePence, maxQuantity: Math.max(0, max), minQuantity: 1, problem: q > max ? `You can have up to ${max} more tickets in this competition.` : null });
+    out.push({ ...base, quantity: q, bundleId: null, bundleLabel: null, paidQuantity: q, freeQuantity: 0, linePence: q * c.pricePence, problem: q > max ? "Not that many tickets are left. Please choose fewer." : null, upgrade: nextUp(q, q) });
   }
   const sum = out.reduce((s, l) => s + l.linePence, 0);
   const promo = promoCode && String(promoCode).toUpperCase() === "GIMME10" ? { code: "GIMME10", discountPence: Math.floor(sum * 0.1) } : null;
@@ -163,7 +181,7 @@ function issue(u, order) {
 function orderJson(o, u) {
   return {
     number: o.number, status: o.status, needsAttention: false, totalPence: o.totalPence, cardPence: o.cardPence, walletPence: o.walletPence, paidAt: o.paidAt ?? null,
-    lines: o.lines.map((l) => { const c = byId.get(l.competitionId); return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, quantity: l.quantity, tickets: l.tickets ?? [], drawAt: c.drawAt }; }),
+    lines: o.lines.map((l) => { const c = byId.get(l.competitionId); return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, quantity: l.quantity, paidQuantity: l.paidQuantity ?? l.quantity, freeQuantity: l.freeQuantity ?? 0, bundleLabel: l.bundleLabel ?? null, tickets: l.tickets ?? [], drawAt: c.drawAt }; }),
     toPlay: o.status === "paid" ? u.tickets.filter((t) => t.order === o.number && !t.played && byId.get(t.competitionId).type === "instant").length : 0,
   };
 }
@@ -185,7 +203,7 @@ route("GET", "/api/winners/instant", (req, res) => send(res, 200, { data: [0, 1,
 route("GET", "/api/winners/draws", (req, res) => send(res, 200, { data: [{ id: "d1", name: "Natalie B.", prizeName: "£50 Supermarket Voucher", competitionTitle: "Free – Win A £50 Supermarket Voucher", ticketNumber: null, at: iso(now - 6 * DAY), videoUrl: null, verifyUrl: null }] }));
 // Like Laravel: every instant prize's winning number, public from publish; won once its ticket sells.
 function winningNumbers(c) {
-  const max = Math.max(c.maxTickets, 3000);
+  const max = 100000; // the mock instant wins have 100,000 tickets
   const used = new Set();
   let x = [...c.slug].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
   const next = () => { do { x = (x * 1103515245 + 12345) >>> 0; } while (used.has((x % max) + 1)); used.add((x % max) + 1); return (x % max) + 1; };
@@ -203,7 +221,7 @@ route("GET", "/api/competitions/:slug/winning-numbers", (req, res, { params, que
   send(res, 200, { competition: c, data: rows.slice((page - 1) * 100, page * 100), total: all.length, won: all.filter((r) => r.won).length, matching: rows.length, hasMore: rows.length > page * 100 });
 });
 route("GET", "/api/entry-lists", (req, res) => send(res, 200, { data: COMPS }));
-route("GET", "/api/entry-lists/:slug", (req, res, { params }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, { competition: c, data: [{ ticket: 1, name: "N***** B.", source: "paid", prizeName: null }, { ticket: 2, name: "E**** A.", source: "postal", prizeName: c.type === "instant" ? "Bug Bite" : null }], total: 2, hasMore: false }) : fail(res, 404, "Not found"); });
+route("GET", "/api/entry-lists/:slug", (req, res, { params }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, { competition: c, data: [{ ticket: 1, name: "N***** B.", source: "paid", prizeName: null }, { ticket: 2, name: "E**** A.", source: "postal", prizeName: c.type === "instant" ? "Bug Bite" : null }], hasMore: false }) : fail(res, 404, "Not found"); });
 route("GET", "/api/pages/:slug", (req, res, { params }) => send(res, 200, { title: { terms: "Terms & Conditions", privacy: "Privacy Policy", cookies: "Cookie Policy", complaints: "Complaints", "free-entry": "Free Entry Terms" }[params.slug] ?? "Page", updatedAt: iso(now - 10 * DAY), version: "1.0", html: `<h2 id="about">1. About Us</h2><p>Gimme Gimme Prizes is a trading name of GIMMEGIMMEPRIZES LTD.</p><h2 id="who">2. Who Can Enter</h2><p>UK residents aged 18 or over.</p>`, headings: [{ id: "about", text: "1. About Us" }, { id: "who", text: "2. Who Can Enter" }] }));
 route("POST", "/api/contact", async (req, res) => { const b = await readJson(req); if (!b.message || String(b.message).length < 10) return fail(res, 422, "Please check the form.", { message: ["Tell us a bit more (at least 10 characters)."] }); send(res, 201, { ok: true }); });
 route("POST", "/api/basket/price", async (req, res, { user }) => { const b = await readJson(req); send(res, 200, price(b.lines, user, b.promoCode)); });
@@ -289,7 +307,7 @@ route("POST", "/api/checkout", authed(async (req, res, { user }) => {
   if (b.payWith === "wallet" && !p.walletCovers) return fail(res, 422, "Your wallet doesn't cover this order.");
   const cardPart = p.totalPence - walletPart;
   if (cardPart > 0 && cardPart < 100) return fail(res, 422, "Card payments start at £1.");
-  const o = { number, user: user.email, status: "pending_payment", lines: p.lines.map((l) => ({ competitionId: l.competitionId, quantity: l.quantity })), totalPence: p.totalPence, cardPence: cardPart, walletPence: walletPart };
+  const o = { number, user: user.email, status: "pending_payment", lines: p.lines.map((l) => ({ competitionId: l.competitionId, quantity: l.quantity, paidQuantity: l.paidQuantity, freeQuantity: l.freeQuantity, bundleLabel: l.bundleLabel })), totalPence: p.totalPence, cardPence: cardPart, walletPence: walletPart };
   orders.set(number, o);
   spendWallet(user, walletPart);
   if (cardPart === 0) { issue(user, o); return send(res, 201, { order: { number, status: "paid" }, next: "play", redirectUrl: null }); }

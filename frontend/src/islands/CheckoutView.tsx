@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { clearBasket, readBasket, setAside } from "../lib/basket";
-import { formatMoney, formatPence } from "../lib/money";
+import { lineMakeup, topUpFor } from "../lib/bundles";
+import { formatMoney } from "../lib/money";
 import type { BasketLine, CheckoutResult, PricedBasket } from "../lib/types";
 import { Svg } from "./Svg";
 
 function parseBuy(buy: string | null): BasketLine[] | null {
   if (!buy) return null;
-  const m = buy.match(/^([A-Za-z0-9-]{1,64}):(\d{1,5})$/);
-  return m ? [{ competitionId: m[1], quantity: Number(m[2]) }] : null;
+  // "id:10" is ten single tickets; "id:b3" is bundle 3. The server prices both.
+  const m = buy.match(/^([A-Za-z0-9-]{1,64}):(b?)(\d{1,6})$/);
+  if (!m) return null;
+  return m[2] ? [{ competitionId: m[1], quantity: 0, bundleId: Number(m[3]) }] : [{ competitionId: m[1], quantity: Number(m[3]) }];
 }
 
 function requestId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export default function CheckoutView({ buy, walletPence, minCardPence }: { buy: string | null; walletPence: number; minCardPence: number }) {
+export default function CheckoutView({ buy, walletPence, minCardPence, minDepositPence = 500 }: { buy: string | null; walletPence: number; minCardPence: number; minDepositPence?: number }) {
   const direct = useMemo(() => parseBuy(buy), [buy]);
   const [lines, setLines] = useState<BasketLine[] | null>(null);
   const [priced, setPriced] = useState<PricedBasket | null>(null);
@@ -67,9 +70,9 @@ export default function CheckoutView({ buy, walletPence, minCardPence }: { buy: 
     <div className="stack g16">
       <div className="card gg-rise gg-d2" style={{ overflow: "hidden" }}>
         {priced.lines.map((l, i) => (
-          <div key={l.competitionId} className="row g12" style={{ padding: "14px 16px", borderTop: i ? "1px solid rgba(255,255,255,.06)" : 0 }}>
+          <div key={`${l.competitionId}:${l.bundleId ?? "s"}`} className="row g12" style={{ padding: "14px 16px", borderTop: i ? "1px solid rgba(255,255,255,.06)" : 0 }}>
             <img src={l.imageSmall} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: "cover" }} />
-            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 900 }}>{l.title}</div><div className="hint">{l.quantity} × {formatPence(l.unitPence)} · {l.type === "draw" ? "live draw" : "instant win"}</div>{l.problem && <div className="err">{l.problem}</div>}</div>
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 900 }}>{l.title}</div>{l.bundleLabel && <div className="tag tag-y" style={{ marginTop: 4 }}>{l.bundleLabel}</div>}<div className="hint">{lineMakeup(l)} · {l.type === "draw" ? "live draw" : "instant win"}</div>{l.problem && <div className="err">{l.problem}</div>}</div>
             <b>{formatMoney(l.linePence)}</b>
           </div>
         ))}
@@ -83,6 +86,10 @@ export default function CheckoutView({ buy, walletPence, minCardPence }: { buy: 
           <span style={{ flex: 1 }}><b className="d" style={{ fontSize: 18 }}>Wallet</b><span className="hint" style={{ display: "block" }}>{formatMoney(walletPence)} available · {priced.walletCovers ? "instant, no card needed" : "not enough for this order"}</span></span>
           {priced.walletCovers && <span className="tag tag-y">Fastest</span>}
         </label>
+        {!priced.walletCovers && total > 0 && (() => {
+          const topUp = topUpFor(total - priced.walletCanPayPence, minDepositPence);
+          return <a className="btn btn-o btn-block" href={`/account/wallet?topup=${topUp}`} data-testid="top-up-and-pay">Top Up {formatMoney(topUp)} And Pay From Your Wallet</a>;
+        })()}
         <label className="opt">
           <input type="radio" name="pay" checked={pay === "card"} onChange={() => setPay("card")} />
           <span style={{ flex: 1 }}><b className="d" style={{ fontSize: 18 }}>Debit Or Credit Card</b><span className="hint" style={{ display: "block" }}>On Cashflows’ secure payment page · from {formatMoney(minCardPence)}</span></span>

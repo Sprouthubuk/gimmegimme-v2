@@ -8,13 +8,13 @@ import type { PricedBasket } from "../../src/lib/types";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); localStorage.clear(); });
 
-const base: PickerProps = { competitionId: "c1", slug: "c1", type: "instant", pricePence: 25, presets: [5, 10, 25, 50], maxPerPerson: 100, heldByMe: 0, ticketsLeft: 1000, open: true, salesOpen: true, signedIn: true, playBlock: null };
+const base: PickerProps = { competitionId: "c1", slug: "c1", type: "instant", pricePence: 25, presets: [5, 10, 25, 50], soldPercent: 0, soldOut: false, open: true, salesOpen: true, signedIn: true, playBlock: null };
 const qty = () => screen.getByTestId("qty").textContent;
 const total = () => screen.getByTestId("total").textContent;
 
 describe("ticket picker", () => {
   it("starts on the Most popular button, marks it, and keeps to the competition's minimum", () => {
-    render(<TicketPicker {...base} pricePence={1} presets={[500, 1000, 2000, 3000]} popularPreset={1000} minTickets={100} maxPerPerson={1000000} />);
+    render(<TicketPicker {...base} pricePence={1} presets={[500, 1000, 2000, 3000]} popularPreset={1000} minTickets={100} />);
     expect(qty()).toBe("1000");
     expect(total()).toBe("£10.00");
     expect(screen.getAllByTestId("most-popular")).toHaveLength(1);
@@ -28,11 +28,6 @@ describe("ticket picker", () => {
     expect(total()).toBe("£1.00");
     expect((screen.getByLabelText("One fewer ticket") as HTMLButtonElement).disabled).toBe(true);
   });
-  it("when fewer than the minimum are left, the last ones can still be bought together", () => {
-    render(<TicketPicker {...base} pricePence={1} minTickets={100} ticketsLeft={30} />);
-    expect(qty()).toBe("30");
-    expect((screen.getByLabelText("One fewer ticket") as HTMLButtonElement).disabled).toBe(true);
-  });
   it("starts on the second preset and keeps the total in step", () => {
     render(<TicketPicker {...base} />);
     expect(qty()).toBe("10");
@@ -43,26 +38,19 @@ describe("ticket picker", () => {
     fireEvent.click(screen.getByRole("button", { name: /^50/ }));
     expect(total()).toBe("£12.50");
   });
-  it("never goes past what the player may still buy, or below one", () => {
-    render(<TicketPicker {...base} maxPerPerson={30} heldByMe={18} />);
+  it("never shows how many tickets are left, and never goes below one", () => {
+    render(<TicketPicker {...base} />);
     const input = screen.getByLabelText("Or choose your own amount") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "500" } });
-    expect(qty()).toBe("12");
+    expect(qty()).toBe("500"); // the server decides what's available; the picker shows no count
     fireEvent.change(input, { target: { value: "0" } });
-    expect(qty()).toBe("12"); // ignored while typing
-    fireEvent.change(screen.getByLabelText("Number of tickets"), { target: { value: "1" } });
-    expect(qty()).toBe("1");
-    expect((screen.getByLabelText("One fewer ticket") as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: /^25/ }) as HTMLButtonElement).disabled).toBe(true);
-  });
-  it("caps at the tickets left", () => {
-    render(<TicketPicker {...base} ticketsLeft={3} />);
-    expect(qty()).toBe("3");
-    expect((screen.getByLabelText("One more ticket") as HTMLButtonElement).disabled).toBe(true);
+    expect(qty()).toBe("500"); // ignored while typing
+    expect(screen.queryByLabelText("Number of tickets")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/left|limit/i);
   });
   it("sends a signed-out visitor to join first, then straight to checkout", () => {
     render(<TicketPicker {...base} signedIn={false} />);
-    const href = screen.getByRole("link", { name: /Buy & Play/ }).getAttribute("href")!;
+    const href = screen.getByTestId("buy-now").getAttribute("href")!;
     expect(href).toBe("/join?next=" + encodeURIComponent("/checkout?buy=" + encodeURIComponent("c1:10")));
   });
   it("adds to the basket", () => {
@@ -74,15 +62,58 @@ describe("ticket picker", () => {
   it.each([
     [{ salesOpen: false }, "Entries open soon."],
     [{ open: false }, "This competition isn't open for entries."],
-    [{ ticketsLeft: 0 }, "Sold out."],
-    [{ heldByMe: 100 }, "You've reached the 100 ticket limit for this competition."],
+    [{ soldOut: true }, "Sold out."],
     [{ playBlock: "self_excluded" }, "Your account is self-excluded, so you can't enter right now."],
     [{ playBlock: "staff" }, "Staff accounts can't enter competitions."],
   ])("shows why a player can't buy (%o) and offers no buy button", (over, msg) => {
     render(<TicketPicker {...base} {...(over as Partial<PickerProps>)} />);
     expect(screen.getByText(msg)).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /Buy & Play/ })).toBeNull();
+    expect(screen.queryByTestId("buy-now")).toBeNull();
+    expect(screen.queryByTestId("buy-bar")).toBeNull();
     expect(screen.queryByRole("button", { name: "Add To Basket" })).toBeNull();
+  });
+});
+
+describe("bundles", () => {
+  const bundles = [
+    { id: 1, label: "Buy 5 Get 5 Free", paid: 5, free: 5, tickets: 10, pricePence: 295, savePence: 295, bestValue: false },
+    { id: 2, label: "Buy 10 Get 15 Free", paid: 10, free: 15, tickets: 25, pricePence: 590, savePence: 885, bestValue: true },
+    { id: 3, label: "Buy 20 Get 40 Free", paid: 20, free: 40, tickets: 60, pricePence: 1180, savePence: 2360, bestValue: false },
+  ];
+  const draw: PickerProps = { ...base, type: "draw", pricePence: 59, bundles };
+
+  it("shows the bundles, preselects Best Value, and prices from the server's figures", () => {
+    render(<TicketPicker {...draw} />);
+    expect(screen.getAllByTestId("bundle")).toHaveLength(3);
+    expect(screen.getByText("Best Value")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /Buy 10 Get 15 FREE/ }).getAttribute("aria-checked")).toBe("true");
+    expect(total()).toBe("£5.90");
+    expect(screen.getByText("10 paid + 15 free = 25 tickets")).toBeTruthy();
+    expect(screen.getByText("Save £8.85")).toBeTruthy();
+    expect(screen.getByText("Bundle and free tickets are entered into the draw exactly like paid tickets.")).toBeTruthy();
+    expect(screen.getByTestId("buy-bar").textContent).toContain("25 tickets · £5.90");
+  });
+  it("offers one nudge to the next bundle up, and tapping it switches", () => {
+    render(<TicketPicker {...draw} />);
+    expect(screen.getAllByTestId("nudge")).toHaveLength(1);
+    expect(screen.getByTestId("nudge").textContent).toBe("Add 10 more paid tickets (£5.90) and get 40 FREE");
+    fireEvent.click(screen.getByTestId("nudge"));
+    expect(total()).toBe("£11.80");
+    expect(screen.queryByTestId("nudge")).toBeNull(); // nothing bigger
+  });
+  it("singles: the nudge suggests the smallest bundle that gives more", () => {
+    render(<TicketPicker {...draw} />);
+    fireEvent.click(screen.getByLabelText("One more ticket")); // switch to singles
+    fireEvent.click(screen.getByLabelText("One more ticket"));
+    fireEvent.click(screen.getByLabelText("One more ticket"));
+    expect(qty()).toBe("3");
+    expect(screen.getByTestId("nudge").textContent).toBe("Add 2 more paid tickets (£1.18) and get 5 FREE");
+  });
+  it("buys and adds bundles by id only", () => {
+    render(<TicketPicker {...draw} />);
+    expect(screen.getByTestId("buy-now").getAttribute("href")).toBe("/checkout?buy=" + encodeURIComponent("c1:b2"));
+    fireEvent.click(screen.getByRole("button", { name: "Add To Basket" }));
+    expect(readBasket()).toEqual([{ competitionId: "c1", quantity: 0, bundleId: 2 }]);
   });
 });
 
