@@ -80,7 +80,24 @@ describe("site-wide rules", () => {
     expect(html).toContain("data-countdown=");
     expect(html).toContain("Bush Bucks – Jungle Trial");
     expect(html).toContain("Next Draw");
-    expect(html).toContain("Just Won");
+    // The featured section's strip is the live winners feed (names, prize, game, when), not the prize list.
+    expect(html).toMatch(/Live <b>Winners<\/b>/);
+    expect(html).toMatch(/Emmie A\.<\/b> won <b class="ny">£0\.50 site credit<\/b><small>Pop For Pennies · /);
+    expect(html).not.toContain('aria-label="Prize ladder"');
+  });
+  it("competition cards show price per entry, wins, time left and tickets left", async () => {
+    const { html } = await new Browser(site.origin).page("/competitions");
+    const t = text(html);
+    expect(t).toMatch(/25p ?per entry/);
+    expect(t).toMatch(/2,516 instant wins/);
+    expect(t).toMatch(/Ends in \d+d \d+h/);
+    expect(t).toMatch(/98,000 ?left/); // Bush Bucks: 100,000 tickets, 2% sold (from the server, not worked out)
+    expect(html).toContain("data-ends=");
+  });
+  it("the competition page offers the free game once, below the details", async () => {
+    const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");
+    expect(html.match(/Try The Game Free/g)).toHaveLength(1);
+    expect(html.indexOf("Try The Game Free")).toBeGreaterThan(html.indexOf("The <span class=\"nc\">Details"));
   });
   it("home filter chips filter the instant wins without JavaScript", async () => {
     const { html } = await new Browser(site.origin).page("/?filter=under10");

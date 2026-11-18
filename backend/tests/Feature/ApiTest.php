@@ -43,6 +43,7 @@ class ApiTest extends TestCase
         $this->assertSame('live', $list[1]['status']);
         $this->assertSame(10000, $list[1]['topPrizePence']);
         $this->assertSame('Scratch Card', $list[1]['gameLabel']);
+        $this->assertSame(1000, $list[1]['ticketsLeft']);
 
         $d = $this->getJson('/api/competitions/'.$instant->slug)->assertOk()->json();
         $this->assertSame(['£100 Cash', '50p Credit'], array_column($d['prizes'], 'name'));
@@ -379,6 +380,7 @@ class ApiTest extends TestCase
         $this->topUp($u, 1000);
         $this->checkout($u, $c, 20)->assertCreated();
         $mine = \Sprouthub\Verity\Models\Entry::query()->where('competition_id', $v->id)->pluck('number')->all();
+        $this->assertSame(20, $this->getJson('/api/competitions/'.$c->slug)->json('ticketsLeft'));
 
         $list = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers')->json();
         foreach ($list['data'] as $row) {

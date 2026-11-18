@@ -3,14 +3,25 @@ import { gameBadge } from "../lib/gameLabels";
 import Icon from "./Icon.astro";
 import type { CompetitionSummary } from "../lib/types";
 import { formatCount, formatPence } from "../lib/money";
-import { endsIn, ukDate, ukShortDay } from "../lib/time";
+import { endsIn, ukDate, ukWhen } from "../lib/time";
 interface Props { c: CompetitionSummary }
 const { c } = Astro.props;
 const live = c.type === "draw";
 const href = `/competitions/${c.slug}`;
-const closed = c.status !== "live";
 const soon = c.status === "scheduled" && c.opensAt ? c.opensAt : null;
+const open = c.status === "live";
+const sold = Math.max(0, Math.min(100, c.soldPercent));
 const dayMonth = (iso: string) => ukDate(iso).replace(/ \d{4}$/, "");
+// The strip across the foot of the picture: red when it closes within a day and a half.
+const msLeft = new Date(c.closesAt).getTime() - Date.now();
+const hot = open && msLeft > 0 && msLeft < 36 * 36e5;
+// Today / Tomorrow with the time; further off, just the day ("Sat 28 Nov") so it fits a phone card.
+const when = (iso: string) => { const w = ukWhen(iso); return /^(Today|Tomorrow)/.test(w) ? w : w.split(",")[0]; };
+const strip = soon ? `Opens ${when(soon)}` : c.status === "sold_out" ? "Sold out" : !open ? "Closed" : `Ends ${when(c.closesAt)}`;
+// One line on what's drawn: a live draw's date, or an instant win's end prize.
+const drawLine = live
+  ? (c.drawAt ? `Draw ${ukWhen(c.drawAt)}` : null)
+  : c.endPrize ? `+ ${c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}${formatPence(c.endPrize.valuePence, { short: false })} end prize, drawn ${dayMonth(c.drawAt ?? c.closesAt)}` : null;
 ---
 <a class="cc gg-card" href={href}>
   <div class="im">
@@ -19,18 +30,22 @@ const dayMonth = (iso: string) => ukDate(iso).replace(/ \d{4}$/, "");
       ? <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>
       : <span class="gt"><Icon name="bolt" size={10} stroke={3} />{gameBadge(c) ?? "Instant Win"}</span>}
   </div>
+    <div class={`st ${hot ? "hot" : ""}`}><Icon name="clock" size={12} stroke={2.6} />{hot && <><b class="wide">Ending Soon</b><i class="wide" aria-hidden="true"></i></>}<span>{hot ? <><span class="wide">Ends{" "}</span>{when(c.closesAt)}</> : strip}</span></div>
   <div class="bd">
-    <div class="tt">{c.title}</div>
     <div class="pr">
-      <div><div class="sm">Per ticket</div><div class="pp np">{formatPence(c.pricePence)}</div></div>
-      <div><div class="sm" style="text-align:right">{live ? "Draw" : "Top prize"}</div><span class="tp ny">{live ? (c.drawAt ? ukShortDay(c.drawAt) : "Live") : (c.topPrizePence ? formatPence(c.topPrizePence, { short: false }) : "")}</span></div>
+      <div class="pp"><b class={live ? "nc" : "np"}>{formatPence(c.pricePence)}</b><small>per entry</small></div>
+      {live
+        ? (c.topPrizePence ? <span class="pl cy">Worth {formatPence(c.topPrizePence, { short: false })}</span> : null)
+        : (c.prizeCount ? <span class="pl"><Icon name="bolt" size={11} stroke={3} />{formatCount(c.prizeCount)} instant {c.prizeCount === 1 ? "win" : "wins"}</span> : null)}
     </div>
-    <div class="br"><div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${Math.max(0, Math.min(100, c.soldPercent))}%`}></div></div><span class={`pc ${live ? "cy" : ""}`}>{c.soldPercent}%<small>sold</small></span></div>
-    <div class="ch">
-      <span class="tag tag-c en" data-ends={closed || soon ? undefined : c.closesAt}><Icon name="clock" size={11} stroke={2.6} />{soon ? `Opens ${dayMonth(soon)}` : closed ? (c.status === "sold_out" ? "Sold out" : "Closed") : endsIn(c.closesAt)}</span>
-      {c.prizeCount ? <span class="tag tag-y"><Icon name="bolt" size={10} stroke={3} />{formatCount(c.prizeCount)} {c.prizeCount === 1 ? "win" : "wins"}</span> : null}
+    <div class="tt">{c.title}</div>
+    <div class="mt">
+      {!live && c.topPrizePence ? <span>Top prize <b class="ny">{formatPence(c.topPrizePence, { short: false })}</b></span> : null}
+      {drawLine && <span>{drawLine}{live ? " · Live draw" : ""}</span>}
     </div>
-    {!live && <div class="ep">{c.endPrize && <><b>+ {c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}{formatPence(c.endPrize.valuePence, { short: false })}</b><span>drawn {dayMonth(c.drawAt ?? c.closesAt)}</span></>}</div>}
-    <span class="btn btn-y btn-block go">{closed ? "View" : live ? "Enter Draw" : "Play Now"}</span>
+    {open && <div class="en"><span class="dt"></span>Ends in{" "}<b data-ends={c.closesAt}>{endsIn(c.closesAt)}</b></div>}
+    <div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${sold}%`}></div></div>
+    <div class="sl"><span><b>{sold}%</b> sold</span><span><b>{formatCount(c.ticketsLeft)}</b> left</span></div>
+    <span class="btn btn-y btn-block go">{!open && !soon ? "View" : soon ? "See The Prizes" : live ? "Enter Now" : "Play Now"}{(open || soon) && <span aria-hidden="true" class="star">★</span>}</span>
   </div>
 </a>
