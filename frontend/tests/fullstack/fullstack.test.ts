@@ -32,7 +32,7 @@ describe("public pages from real data", () => {
     expect(text(instant.html)).toContain("£500 Cash");
     expect(instant.html).toMatch(/VTY-[A-Z0-9]{6}/);
     // Winning numbers are public from publish, straight from Verity's table.
-    expect(text(instant.html)).toMatch(/Winning Numbers[\s\S]*See All [\d,]+ Winning Numbers/);
+    expect(text(instant.html)).toMatch(/See all [\d,]+ winning numbers/);
     const numbers = (await b.api("/api/competitions/bush-bucks-jungle-trial/winning-numbers")).body;
     expect(numbers.total).toBeGreaterThan(0);
     expect(numbers.data[0].ticket).toBeGreaterThan(0);

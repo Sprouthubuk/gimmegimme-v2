@@ -197,8 +197,8 @@ route("GET", "/api/competitions/:slug/winning-numbers", (req, res, { params, que
   const c = bySlug.get(params.slug);
   if (!c || c.type !== "instant") return fail(res, 404, "Not found");
   const all = winningNumbers(c);
-  const show = query.get("show"), q = query.get("q"), page = Math.max(1, Number(query.get("page")) || 1);
-  const rows = all.filter((r) => (show === "won" ? r.won : show === "left" ? !r.won : true) && (!q || String(r.ticket) === q));
+  const show = query.get("show"), q = query.get("q"), prize = query.get("prize"), page = Math.max(1, Number(query.get("page")) || 1);
+  const rows = all.filter((r) => (show === "won" ? r.won : show === "left" ? !r.won : true) && (!q || String(r.ticket) === q) && (!prize || r.prizeName === prize));
   send(res, 200, { competition: c, data: rows.slice((page - 1) * 100, page * 100), total: all.length, won: all.filter((r) => r.won).length, matching: rows.length, hasMore: rows.length > page * 100 });
 });
 route("GET", "/api/entry-lists", (req, res) => send(res, 200, { data: COMPS }));

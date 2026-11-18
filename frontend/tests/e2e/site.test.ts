@@ -12,7 +12,7 @@ const PUBLIC_PAGES: [string, RegExp][] = [
   ["/competitions", /All Competitions/],
   ["/competitions?type=draw", /Live Draws 3/],
   ["/competitions?q=bush", /Bush Bucks/],
-  ["/competitions/bush-bucks-jungle-trial", /Instant Prizes/],
+  ["/competitions/bush-bucks-jungle-trial", /Instant Wins/],
   ["/competitions/lush-snow-fairy-wonderland", /Drawn Live/],
   ["/instant-winners", /Instant Winners/],
   ["/winners", /Our Winners/],
@@ -94,10 +94,20 @@ describe("site-wide rules", () => {
     expect(t).toMatch(/98,000 ?left/); // Bush Bucks: 100,000 tickets, 2% sold (from the server, not worked out)
     expect(html).toContain("data-ends=");
   });
-  it("the competition page offers the free game once, below the details", async () => {
+  it("the competition page: prize cards, one information box, no demo link", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");
-    expect(html.match(/Try The Game Free/g)).toHaveLength(1);
-    expect(html.indexOf("Try The Game Free")).toBeGreaterThan(html.indexOf("The <span class=\"nc\">Details"));
+    const t = text(html);
+    expect(html).not.toContain("Try The Game Free");
+    expect(html).not.toContain('class="acd"');
+    expect(html).toContain('data-testid="more-information"');
+    expect(t).toMatch(/Instant prizes left to win/);
+    expect(t).toMatch(/Left to win/);
+    expect(t).toMatch(/of 1,500 found/);
+    expect(html).toContain("/competitions/bush-bucks-jungle-trial/winning-numbers?prize=Bug+Bite");
+    expect(html).toContain('href="/free-entry"'); // the free postal route stays visible
+    const one = text((await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial/winning-numbers?prize=Bug+Bite")).html);
+    expect(one).toContain("Show every prize");
+    expect(one).not.toContain("King of the Jungle");
   });
   it("home filter chips filter the instant wins without JavaScript", async () => {
     const { html } = await new Browser(site.origin).page("/?filter=under10");
