@@ -76,9 +76,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   for (const c of latestSetCookies(setCookies)) res.headers.append("Set-Cookie", c);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.headers.set("X-Frame-Options", "DENY");
+  // Game demos may be framed by this site only (the admin's game previewer); every other page never.
+  const framable = path.startsWith("/demo/");
+  res.headers.set("X-Frame-Options", framable ? "SAMEORIGIN" : "DENY");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  if (import.meta.env.PROD) res.headers.set("Content-Security-Policy", CSP);
+  if (import.meta.env.PROD) res.headers.set("Content-Security-Policy", framable ? CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'") : CSP);
   // Browsers only ever use https for the site once they've seen this over https (a year; subdomains not included).
   if (context.url.protocol === "https:" || context.request.headers.get("x-forwarded-proto") === "https") {
     res.headers.set("Strict-Transport-Security", "max-age=31536000");

@@ -56,9 +56,22 @@ class AdminTest extends TestCase
         $this->get((string) $setup->headers->get('Location'))->assertOk()->assertSee('Set up two-factor authentication (2FA)', false);
         $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
         $this->actingAs($admin->refresh())->get('/admin')->assertOk();
-        foreach (['competitions', 'orders', 'users', 'withdrawals', 'prize-claims', 'contact-messages', 'pages', 'promo-codes', 'site-settings', 'postal-entries'] as $p) {
+        foreach (['competitions', 'orders', 'users', 'withdrawals', 'prize-claims', 'contact-messages', 'pages', 'promo-codes', 'site-settings', 'postal-entries', 'games'] as $p) {
             $this->get('/admin/'.$p)->assertOk();
         }
+    }
+
+    public function test_the_games_page_lists_every_game_in_every_look(): void
+    {
+        $this->signInAdmin();
+        $page = Livewire::test(\App\Filament\Pages\Games::class)->assertOk();
+        $games = $page->instance()->games();
+        $this->assertSame(['scratch_card', 'spin_wheel', 'bingo_card', 'balloon_pop', 'hook_a_duck', 'claw_machine', 'coin_drop', 'slots', 'gems', 'whack_a_mole', 'pinata'], array_column($games, 'id'));
+        $looks = collect($games)->mapWithKeys(fn ($g) => [$g['id'] => array_column($g['looks'], 'label')]);
+        $this->assertSame(['Classic', 'Christmas', 'Smash My Cash'], $looks['balloon_pop']);
+        $this->assertSame(['Classic'], $looks['pinata']);
+        $this->assertSame('/demo/spin_wheel?skin=cash_escape', collect($games)->firstWhere('id', 'spin_wheel')['looks'][2]['url']);
+        $page->assertSee('Whack-a-Mole')->assertSee('The Great Cash Escape')->assertSee('Open In New Tab');
     }
 
     public function test_the_competitions_list_offers_open_now_and_a_game_preview(): void
