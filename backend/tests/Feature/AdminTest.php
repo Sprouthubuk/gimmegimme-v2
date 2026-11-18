@@ -294,4 +294,10 @@ class AdminTest extends TestCase
         Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('Sent');
         $this->assertSame(1, AdminAction::query()->where('action', 'email.test_sent')->count());
     }
+
+    public function test_the_resend_api_mailer_is_installed(): void
+    {
+        config(['mail.default' => 'resend', 'services.resend.key' => 're_test_only']);
+        $this->assertSame('resend', (string) app('mail.manager')->mailer('resend')->getSymfonyTransport());
+    }
 }
