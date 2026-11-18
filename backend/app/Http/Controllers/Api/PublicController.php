@@ -79,7 +79,8 @@ class PublicController extends Controller
     {
         $limit = max(1, min(50, (int) $r->query('limit', 20)));
         $page = max(1, (int) $r->query('page', 1));
-        $q = Winner::query()->where('type', 'instant')->where('status', 'active')->with('competition:id,ref,title')->orderByDesc('id');
+        $q = Winner::query()->where('type', 'instant')->where('status', 'active')->with('competition:id,ref,title')->orderByDesc('id')
+            ->whereHas('entry', $this->seenOnly('verity_entries.entry_group_id'));
         $hosts = Competition::query()->published()->get(['id', 'verity_ref', 'title', 'game'])->keyBy('verity_ref');
         if ($game = $r->query('game')) {
             $refs = $hosts->where('game', $game)->keys();
@@ -145,15 +146,16 @@ class PublicController extends Controller
         }
         $total = (clone $q)->count();
         $rows = $q->skip(($page - 1) * $per)->take($per + 1)
-            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name']);
+            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entries.entry_group_id', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name']);
         $names = $this->names($rows->take($per)->pluck('owner_ref'));
+        $unseen = $this->unseenGroups($rows->take($per)->whereNotNull('prize_name')->pluck('entry_group_id'));
 
         return response()->json([
             'competition' => $this->present()->summary($c),
             'data' => $rows->take($per)->map(fn ($e) => [
                 'ticket' => (int) $e->number, 'name' => $this->mask($names[$e->owner_ref] ?? 'Postal entrant'),
                 'source' => in_array($e->source, ['postal', 'free'], true) ? $e->source : 'paid',
-                'prizeName' => $e->prize_name,
+                'prizeName' => isset($unseen[(int) $e->entry_group_id]) ? null : $e->prize_name,
             ])->values(),
             'total' => $total,
             'hasMore' => $rows->count() > $per,
@@ -199,6 +201,7 @@ class PublicController extends Controller
             ->get(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
                 'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at']);
         $names = $this->names($rows->take($per)->pluck('owner_ref')->filter());
+        $unseen = $this->unseenGroups($rows->take($per)->pluck('group_id'));
 
         return response()->json([
             'competition' => $this->present()->summary($c),
@@ -206,7 +209,7 @@ class PublicController extends Controller
                 'ticket' => (int) $t->ticket_number, 'prizeName' => $t->name, 'valuePence' => (int) $t->value_pence,
                 'type' => json_decode((string) $t->meta, true)['type'] ?? 'site_credit',
                 'won' => $t->group_id !== null,
-                'winnerName' => $t->group_id !== null ? ($names[$t->owner_ref] ?? 'Postal entrant') : null,
+                'winnerName' => $t->group_id !== null && ! isset($unseen[(int) $t->group_id]) ? ($names[$t->owner_ref] ?? 'Postal entrant') : null,
                 'wonAt' => $t->won_at ? Carbon::parse($t->won_at)->toIso8601ZuluString() : null,
             ])->values(),
             'total' => $total,
@@ -251,6 +254,30 @@ class PublicController extends Controller
         }
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * A win stays private until its player has watched the reveal game, or for an hour if they haven't:
+     * a win the player hasn't seen yet isn't named in the winners feed, the winning numbers or the entry
+     * list, so the website never spoils their game. Postal entries have no reveal and show at once.
+     * Adds "and the entry group in $groupIdColumn is not an unseen paid win" to a query.
+     */
+    private function seenOnly(string $groupIdColumn): \Closure
+    {
+        return fn ($q) => $q->whereNotExists(fn ($s) => $s->selectRaw('1')->from('order_lines')
+            ->join('verity_entry_groups as seen_g', 'seen_g.reference', '=', 'order_lines.entry_group_ref')
+            ->whereColumn('seen_g.id', $groupIdColumn)->whereNull('order_lines.revealed_at')
+            ->where('seen_g.created_at', '>', now()->subHour()));
+    }
+
+    /** Group ids among $ids that are paid wins their player hasn't seen yet (see seenOnly). @return array<int, true> */
+    private function unseenGroups(\Illuminate\Support\Collection $ids): array
+    {
+        $ids = $ids->filter()->unique()->values();
+
+        return $ids->isEmpty() ? [] : DB::table('order_lines')->join('verity_entry_groups', 'verity_entry_groups.reference', '=', 'order_lines.entry_group_ref')
+            ->whereIn('verity_entry_groups.id', $ids)->whereNull('order_lines.revealed_at')->where('verity_entry_groups.created_at', '>', now()->subHour())
+            ->pluck('verity_entry_groups.id')->mapWithKeys(fn ($id) => [(int) $id => true])->all();
     }
 
     /** "Liam O." for an account; "Postal entrant" otherwise. */

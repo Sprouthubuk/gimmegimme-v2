@@ -75,7 +75,8 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('login', fn (Request $r) => [Limit::perMinute(5)->by('login|'.strtolower(trim((string) $r->input('email'))).'|'.$r->ip()), Limit::perMinute(30)->by('login|'.$r->ip())]);
         RateLimiter::for('password', fn (Request $r) => [Limit::perHour(5)->by('pw|'.strtolower(trim((string) $r->input('email')))), Limit::perHour(30)->by('pw|'.$r->ip())]);
-        RateLimiter::for('signup', fn (Request $r) => Limit::perHour(10)->by($r->ip()));
+        // Mobile networks put many phones behind one address, so this is generous; logins and resets are limited per email.
+        RateLimiter::for('signup', fn (Request $r) => Limit::perHour(50)->by($r->ip()));
         RateLimiter::for('contact', fn (Request $r) => Limit::perHour(5)->by($r->ip()));
         // Astro's server-side calls forward the visitor's IP (X-Forwarded-For from nginx; 127.0.0.1 is a trusted proxy).
         RateLimiter::for('api', fn (Request $r) => Limit::perMinute((int) config('app.api_rate_per_minute', 300))->by($r->user()?->id ?: $r->ip()));

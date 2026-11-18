@@ -56,7 +56,9 @@ class AccountController extends Controller
     /** Lowering a limit is instant; raising or removing it waits 24 hours. */
     public function setLimits(Request $r): JsonResponse
     {
-        $d = $r->validate(['weeklyDepositPence' => ['present', 'nullable', 'integer', 'min:500', 'max:10000000']]);
+        // £0 (pay nothing in at all) or from £5. The Voluntary Code asks that players can set a £0 limit.
+        $d = $r->validate(['weeklyDepositPence' => ['present', 'nullable', 'integer', 'min:0', 'max:10000000',
+            fn ($attr, $v, $fail) => $v !== null && $v > 0 && $v < 500 ? $fail('Set £0, or £5 or more.') : null]]);
         $u = $r->user();
         $l = $u->limits()->firstOrCreate([]);
         $new = $d['weeklyDepositPence'];

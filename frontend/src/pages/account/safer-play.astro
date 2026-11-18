@@ -4,11 +4,23 @@ import AccountShell from "../../components/AccountShell.astro";
 import SaferPlayForms from "../../islands/SaferPlayForms";
 import type { Limits } from "../../lib/types";
 const limits = await Astro.locals.api.get<Limits>("/api/me/limits");
+// Support organisations named in the Terms (11.5) and the Voluntary Code for prize draw operators (1.8).
+const SUPPORT: [string, string, string, string | null][] = [
+  ["GamCare", "Support for anyone worried about gambling or competitions", "https://www.gamcare.org.uk", "0808 8020 133"],
+  ["Citizens Advice", "Free advice on money, debt and your rights", "https://www.citizensadvice.org.uk", null],
+  ["National Debtline", "Free, confidential debt advice", "https://nationaldebtline.org", "0808 808 4000"],
+  ["Money Advice Trust", "Help to manage money and debt", "https://moneyadvicetrust.org", null],
+  ["Samaritans", "Someone to talk to, day or night", "https://www.samaritans.org", "116 123"],
+  ["Mind", "Mental health support and information", "https://www.mind.org.uk", null],
+];
 ---
 <Layout title="Safer Play" active="account" noindex>
   <AccountShell active="safer-play" title="Safer Play" eyebrow="Stay in control" glow="nc">
     <p class="p" style="margin-top:-6px">Set limits that suit you. Lower limits and breaks apply straight away.</p>
     <SaferPlayForms client:load initial={limits} />
-    <div class="card card-p stack g8"><h2 class="h3">Need Someone To Talk To?</h2><p class="p" style="font-size:14px;text-align:left">Free, confidential support is available from GamCare and BeGambleAware.</p><div class="row wrapx g8"><a class="btn btn-o btn-sm" href="https://www.gamcare.org.uk" rel="noopener" target="_blank">GamCare</a><a class="btn btn-o btn-sm" href="https://www.begambleaware.org" rel="noopener" target="_blank">BeGambleAware</a></div></div>
+    <div class="card card-p stack g12"><h2 class="h3">Need Someone To Talk To?</h2><p class="p" style="font-size:14px;text-align:left">Free, confidential support is available any time. If money or competitions are worrying you, you don't have to deal with it alone.</p>
+      <ul class="stack g8" style="list-style:none;margin:0;padding:0">
+        {SUPPORT.map(([name, what, href, tel]) => <li class="row between wrapx g8" style="border-top:1px solid rgba(255,255,255,.06);padding-top:8px"><span style="flex:1;min-width:180px"><a class="tap" style="padding-left:0;font-weight:800" href={href} rel="noopener" target="_blank">{name}</a><span class="hint" style="display:block">{what}</span></span>{tel && <a class="btn btn-o btn-sm" href={`tel:${tel.replace(/\s/g, "")}`}>{tel}</a>}</li>)}
+      </ul></div>
   </AccountShell>
 </Layout>

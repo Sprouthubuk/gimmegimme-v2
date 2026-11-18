@@ -38,7 +38,7 @@ export default function SettingsForms({ me }: { me: Me }) {
         <div className="r2"><div className="field"><label htmlFor="fn">First name</label><input className="inp" id="fn" value={me.firstName} disabled /></div><div className="field"><label htmlFor="ln">Last name</label><input className="inp" id="ln" value={me.lastName} disabled /></div></div>
         <div className="field"><label htmlFor="em">Email</label><input className="inp" id="em" type="email" value={me.email} disabled /></div>
         <div className="field"><label htmlFor="ph">Mobile</label><input className="inp" id="ph" type="tel" autoComplete="tel" placeholder="07…" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-        <div className="field"><label htmlFor="db">Date of birth</label><input className="inp" id="db" value={me.dobVerified ? "Verified" : "Not set"} disabled style={{ opacity: 0.6 }} /><span className="hint">Contact us to change your name, email or date of birth.</span></div>
+        <div className="field"><span className="lbl">Date of birth</span><div style={{ fontWeight: 700, padding: "6px 0" }}>{me.dobVerified ? "Confirmed" : "Not set"}</div><span className="hint">Contact us to change your name, email or date of birth.</span></div>
         {details.note}
         <button type="submit" className="btn btn-y gg-cta" disabled={details.busy}>Save Changes</button>
       </form>

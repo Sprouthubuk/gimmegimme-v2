@@ -24,7 +24,7 @@ const menu = [["My Tickets", "/account/tickets", "ticket"], ["Wallet", "/account
       <div class="card card-p gg-card"><div class="eyebrow">Active tickets</div><div class="d np" style="font-size:34px">{m.stats.activeTickets}</div></div>
       <div class="card card-p gg-card"><div class="eyebrow">Instant wins</div><div class="d nc" style="font-size:34px">{m.stats.instantWins}</div></div>
       <div class="card card-p gg-card"><div class="eyebrow">Total won</div><div class="d ny" style="font-size:34px">{formatMoney(m.stats.totalWonPence)}</div></div>
-      <div class="card card-p gg-card"><div class="eyebrow">This week</div><div class="d" style="font-size:34px">{formatMoney(m.stats.spentThisWeekPence)}</div></div>
+      <div class="card card-p gg-card"><div class="eyebrow">Paid In This Week</div><div class="d" style="font-size:34px">{formatMoney(m.stats.spentThisWeekPence)}</div></div>
     </div>
     <div class="card mob gg-reveal" style="overflow:hidden">
       {menu.map(([n, href, icon]) => <a class="li" href={href}><span class="ico"><Icon name={icon} size={18} /></span>{n}<span class="chev"><Icon name="chev" size={18} /></span></a>)}
