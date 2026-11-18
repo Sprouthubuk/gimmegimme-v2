@@ -45,8 +45,8 @@ class AuthController extends Controller
         $u->forceFill([
             'first_name' => trim($d['firstName']), 'last_name' => trim($d['lastName']), 'email' => Str::lower(trim($d['email'])),
             'password' => $d['password'], 'date_of_birth' => $d['dateOfBirth'],
-            // Marketing is only ever added by a box the player ticked.
-            'marketing_email' => ($d['marketingOptIn'] ?? false) === true, 'marketing_sms' => false,
+            // Marketing is only ever added by a box the player ticked, dated when they ticked it.
+            ...$u->marketingChoices(($d['marketingOptIn'] ?? false) === true, false),
         ])->save();
         try {
             event(new Registered($u)); // sends the confirmation email

@@ -41,6 +41,8 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             'date_of_birth' => 'date',
             'marketing_email' => 'boolean',
             'marketing_sms' => 'boolean',
+            'marketing_email_consent_at' => 'datetime',
+            'marketing_sms_consent_at' => 'datetime',
             'win_notifications' => 'boolean',
             'is_admin' => 'boolean',
             'is_staff' => 'boolean',
@@ -61,6 +63,20 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_admin && $this->closed_at === null && $this->hasVerifiedEmail();
+    }
+
+    /**
+     * The marketing choices with the date each was agreed, ready to save: a choice turned on now gets
+     * today's date, one left on keeps its date, one turned off loses it.
+     *
+     * @return array<string, mixed>
+     */
+    public function marketingChoices(bool $email, bool $sms): array
+    {
+        return [
+            'marketing_email' => $email, 'marketing_email_consent_at' => $email ? ($this->marketing_email ? $this->marketing_email_consent_at : now()) : null,
+            'marketing_sms' => $sms, 'marketing_sms_consent_at' => $sms ? ($this->marketing_sms ? $this->marketing_sms_consent_at : now()) : null,
+        ];
     }
 
     public function getFilamentName(): string

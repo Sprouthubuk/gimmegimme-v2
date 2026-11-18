@@ -234,6 +234,51 @@ class ApiTest extends TestCase
         $this->postJson('/api/me/limits', ['weeklyDepositPence' => 100])->assertStatus(422);
     }
 
+    /** @return array<string, array{bool}> */
+    public static function signUpChoices(): array
+    {
+        return ['box ticked' => [true], 'box left empty' => [false]];
+    }
+
+    /** @dataProvider signUpChoices */
+    public function test_sign_up_dates_the_marketing_box_only_when_it_is_ticked(bool $ticked): void
+    {
+        Notification::fake();
+        Carbon::setTestNow('2026-11-17 10:00:00');
+        $this->postJson('/api/auth/register', ['firstName' => 'Sam', 'lastName' => 'Jones', 'email' => 'sam@example.com', 'password' => 'correct-horse',
+            'dateOfBirth' => '1990-05-05', 'marketingOptIn' => $ticked])->assertCreated();
+        $sam = User::query()->where('email', 'sam@example.com')->firstOrFail();
+        $this->assertSame($ticked ? '2026-11-17 10:00:00' : null, $sam->marketing_email_consent_at?->toDateTimeString());
+        $this->assertNull($sam->marketing_sms_consent_at);
+        Carbon::setTestNow();
+    }
+
+    public function test_the_date_a_player_agrees_to_marketing_is_kept_and_goes_when_they_stop(): void
+    {
+        $sam = $this->player(['marketing_email' => true, 'marketing_email_consent_at' => '2026-11-17 10:00:00']);
+
+        // Turning one on sets its date; leaving it on keeps the first date; turning it off clears it.
+        Carbon::setTestNow('2026-11-18 09:00:00');
+        $this->actingAs($sam)->patchJson('/api/me/preferences', ['email' => true, 'sms' => true, 'winNotifications' => true])->assertOk();
+        $sam->refresh();
+        $this->assertSame('2026-11-17 10:00:00', $sam->marketing_email_consent_at->toDateTimeString());
+        $this->assertSame('2026-11-18 09:00:00', $sam->marketing_sms_consent_at->toDateTimeString());
+        $this->patchJson('/api/me/preferences', ['email' => false, 'sms' => true, 'winNotifications' => true])->assertOk();
+        $this->assertNull($sam->refresh()->marketing_email_consent_at);
+        $this->assertNotNull($sam->marketing_sms_consent_at);
+        $this->patchJson('/api/me/preferences', ['email' => true, 'sms' => true, 'winNotifications' => true])->assertOk();
+        $this->assertNotNull($sam->refresh()->marketing_email_consent_at);
+
+        // Self-exclusion clears both in the same save; after that, ticking the boxes changes nothing.
+        $this->postJson('/api/me/self-exclude', ['months' => 6])->assertOk();
+        $sam->refresh();
+        $this->assertSame([false, false, null, null], [$sam->marketing_email, $sam->marketing_sms, $sam->marketing_email_consent_at, $sam->marketing_sms_consent_at]);
+        $this->patchJson('/api/me/preferences', ['email' => true, 'sms' => true, 'winNotifications' => true])->assertOk();
+        $this->assertNull($sam->refresh()->marketing_email_consent_at);
+        $this->assertNull($sam->marketing_sms_consent_at);
+        Carbon::setTestNow();
+    }
+
     public function test_breaks_and_self_exclusion_apply_at_once_and_cannot_be_shortened(): void
     {
         $u = $this->player(['marketing_email' => true]);
