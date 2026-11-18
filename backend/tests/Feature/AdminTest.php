@@ -61,6 +61,21 @@ class AdminTest extends TestCase
         }
     }
 
+    public function test_the_competitions_list_offers_open_now_and_a_game_preview(): void
+    {
+        $this->signInAdmin();
+        $later = $this->competition('instant', ['opens_at' => now()->addDays(5), 'closes_at' => now()->addDays(20), 'skin' => 'christmas', 'game' => 'slots']);
+        $open = $this->competition('instant');
+        $draw = $this->competition('draw');
+
+        Livewire::test(\App\Filament\Resources\Competitions\Pages\ListCompetitions::class)
+            ->assertTableActionVisible('openNow', $later)->assertTableActionHidden('openNow', $open)
+            ->assertTableActionVisible('previewGame', $later)->assertTableActionHidden('previewGame', $draw)
+            ->assertTableActionHasUrl('previewGame', '/demo/slots?skin=christmas', $later)
+            ->callTableAction('openNow', $later, data: ['reason' => 'Open with the others'])->assertHasNoTableActionErrors();
+        $this->getJson('/api/competitions/'.$later->slug)->assertJsonPath('status', 'live');
+    }
+
     public function test_a_players_marketing_consent_dates_show_read_only(): void
     {
         $this->signInAdmin();

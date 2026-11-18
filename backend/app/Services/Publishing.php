@@ -105,4 +105,31 @@ final class Publishing
             return $c->refresh();
         });
     }
+
+    /**
+     * Open a published competition whose opening time is still to come, now. Verity supports this for a
+     * scheduled draft (goLive): its seed, prize table and terms were fixed at publish and don't change;
+     * nothing can have been sold before it opens. Logged with the admin's reason.
+     */
+    public function openNow(Competition $c, User $admin, string $reason): Competition
+    {
+        if (! $c->verity_ref) {
+            throw new \DomainException('Publish it first: an unpublished competition opens when it is published.');
+        }
+        if (! $c->opens_at || ! $c->opens_at->isFuture()) {
+            throw new \DomainException('It is already open.');
+        }
+
+        return DB::transaction(function () use ($c, $admin, $reason) {
+            $v = Verity::competition($c->verity_ref);
+            $was = $c->opens_at->toIso8601ZuluString();
+            if ($v->status === 'draft') {
+                Verity::goLive($v); // refuses anything not a draft, or past its closing time
+            }
+            $c->forceFill(['opens_at' => null])->saveQuietly(); // open like the others; the old time is in the admin log
+            AdminAction::record($admin, 'competition.opened_early', $c->id, $reason, ['verity_ref' => $c->verity_ref, 'was_opening' => $was]);
+
+            return $c->refresh();
+        });
+    }
 }
