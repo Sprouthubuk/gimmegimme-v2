@@ -190,6 +190,9 @@ class PublicController extends Controller
         if (ctype_digit((string) $r->query('q'))) {
             $q->where('verity_instant_tickets.ticket_number', (int) $r->query('q'));
         }
+        if (is_string($r->query('prize')) && $r->query('prize') !== '') {
+            $q->where('verity_instant_prizes.name', mb_substr($r->query('prize'), 0, 191));
+        }
         $matching = (clone $q)->count();
         $rows = $q->orderByDesc('verity_instant_prizes.value_pence')->orderBy('verity_instant_tickets.ticket_number')
             ->skip(($page - 1) * $per)->take($per + 1)

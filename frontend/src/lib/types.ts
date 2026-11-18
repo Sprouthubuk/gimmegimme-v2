@@ -255,7 +255,7 @@ export interface WinningNumberRow {
   wonAt: string | null;
 }
 
-/** GET /api/competitions/{slug}/winning-numbers?show=all|won|left&q=&page= (100 a page, biggest prize first). */
+/** GET /api/competitions/{slug}/winning-numbers?show=all|won|left&q=&prize=&page= (100 a page, biggest prize first). */
 export interface WinningNumbersPage {
   competition: CompetitionSummary;
   data: WinningNumberRow[];

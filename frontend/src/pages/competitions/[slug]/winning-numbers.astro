@@ -12,9 +12,10 @@ const SHOW = [["all", "All"], ["left", "Still To Win"], ["won", "Won"]] as const
 const raw = Astro.url.searchParams.get("show");
 const show = SHOW.some(([k]) => k === raw) ? raw! : "all";
 const q = (Astro.url.searchParams.get("q") ?? "").replace(/\D/g, "").slice(0, 8);
+const prize = (Astro.url.searchParams.get("prize") ?? "").slice(0, 191);
 const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? 1) || 1);
-const link = (p: Record<string, string>) => `?${new URLSearchParams({ show, q, page: "1", ...p })}`;
-const res = await Astro.locals.api.maybe<WinningNumbersPage>(`/api/competitions/${encodeURIComponent(slug)}/winning-numbers?${new URLSearchParams({ show, q, page: String(page) })}`);
+const link = (p: Record<string, string>) => `?${new URLSearchParams({ show, q, prize, page: "1", ...p })}`;
+const res = await Astro.locals.api.maybe<WinningNumbersPage>(`/api/competitions/${encodeURIComponent(slug)}/winning-numbers?${new URLSearchParams({ show, q, prize, page: String(page) })}`);
 if (!res) return Astro.rewrite("/404");
 const { competition: c, data: rows, total, won, matching, hasMore } = res;
 ---
@@ -25,7 +26,8 @@ const { competition: c, data: rows, total, won, matching, hasMore } = res;
     <div class="card card-cy card-p stack g12">
       <div class="row g12"><img src={c.imageSmall ?? c.image} alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover" /><div style="flex:1;min-width:0"><h2 class="d" style="font-size:22px;margin:0">{c.title}</h2><div class="hint">{formatCount(won)} of {formatCount(total)} prizes won</div></div></div>
       <div class="scrollx" role="group" aria-label="Show">{SHOW.map(([k, n]) => <a class={`chip ${k === show ? "on" : ""}`} href={link({ show: k })} aria-current={k === show ? "true" : undefined}>{n}</a>)}</div>
-      <form method="get" class="row g8"><input type="hidden" name="show" value={show} /><input class="inp" name="q" inputmode="numeric" value={q} placeholder="Check a ticket number" aria-label="Check a ticket number" /><button class="btn btn-o" type="submit">Check</button></form>
+      {prize && <div class="row between g8" style="flex-wrap:wrap"><span class="tag tag-c">{prize}</span><a class="tap" href={link({ prize: "" })}>Show every prize</a></div>}
+      <form method="get" class="row g8"><input type="hidden" name="show" value={show} />{prize && <input type="hidden" name="prize" value={prize} />}<input class="inp" name="q" inputmode="numeric" value={q} placeholder="Check a ticket number" aria-label="Check a ticket number" /><button class="btn btn-o" type="submit">Check</button></form>
       {rows.length ? (
         <div style="overflow-x:auto"><table class="tbl" data-testid="winning-numbers-table"><thead><tr><th>Ticket</th><th>Prize</th><th>Status</th></tr></thead><tbody>
           {rows.map((r) => (

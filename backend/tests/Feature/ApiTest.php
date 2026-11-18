@@ -391,6 +391,9 @@ class ApiTest extends TestCase
         $this->assertSame($won, $list['won']);
         $this->assertSame($won, $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?show=won')->json('matching'));
         $this->assertSame(10 - $won, $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?show=left')->json('matching'));
+        $big = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?prize='.urlencode('£100 Cash'))->json();
+        $this->assertSame(2, $big['matching']);
+        $this->assertSame(['£100 Cash'], array_values(array_unique(array_column($big['data'], 'prizeName'))));
         $one = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?q='.$table[0])->json('data');
         $this->assertSame([$table[0]], array_column($one, 'ticket'));
         // The detail's won counts agree with the list.
