@@ -268,7 +268,7 @@ class PublicController extends Controller
     private function names(\Illuminate\Support\Collection $ownerRefs): array
     {
         $ids = $ownerRefs->unique()->mapWithKeys(fn ($ref) => [$ref => Fulfilment::userIdFromOwner((string) $ref)])->filter();
-        $users = $ids->isEmpty() ? collect() : User::query()->whereIn('id', $ids->values())->whereNull('closed_at')->get(['id', 'first_name', 'last_name'])->keyBy('id');
+        $users = $ids->isEmpty() ? collect() : User::query()->whereIn('id', $ids->values())->whereNull('closed_at')->get(['id', 'first_name', 'last_name', 'name_hidden'])->keyBy('id');
 
         return $ids->map(fn ($id) => $users->get($id)?->publicName())->filter()->all();
     }
@@ -276,6 +276,6 @@ class PublicController extends Controller
     /** "L*** O." in entry lists. */
     private function mask(string $name): string
     {
-        return $name === 'Postal entrant' ? $name : preg_replace('/^(\p{L})\p{L}*/u', '$1***', $name);
+        return in_array($name, ['Postal entrant', 'Anonymous'], true) ? $name : preg_replace('/^(\p{L})\p{L}*/u', '$1***', $name);
     }
 }

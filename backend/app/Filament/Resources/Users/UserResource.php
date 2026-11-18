@@ -17,6 +17,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -65,6 +66,8 @@ class UserResource extends Resource
                 TextInput::make('address_line2')->maxLength(120),
                 TextInput::make('city')->maxLength(80),
                 TextInput::make('postcode')->maxLength(12),
+                Toggle::make('name_hidden')->label('Show as "Anonymous" on the site')
+                    ->helperText('For a player who asked not to be named: winners, winning numbers and entry lists show "Anonymous" (Terms 8.2).'),
             ]),
             // Read only: only the player changes their choices (or self-exclusion clears them).
             Section::make('Marketing Consent')->columns(2)->components([

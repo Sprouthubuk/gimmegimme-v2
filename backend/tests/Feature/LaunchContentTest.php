@@ -24,7 +24,14 @@ class LaunchContentTest extends TestCase
         }
         $terms = Page::query()->findOrFail('terms')->html;
         $this->assertStringContainsString('17496537', $terms);
-        $this->assertStringContainsString('<h2 id="1-the-promoter">', $terms);
+        $this->assertStringContainsString('<h2 id="1-who-we-are">1. Who We Are</h2>', $terms);
+        // Version 2.0 (18 Nov 2026): none of the old template wording, nothing the site doesn't do.
+        $all = strtolower(Page::query()->pluck('html')->implode(' '));
+        foreach (['grievance', 'every ticket wins', 'holiday in question', 'welcome bonus', '£250'] as $gone) {
+            $this->assertStringNotContainsString($gone, $all);
+        }
+        $this->assertStringContainsString('ico.org.uk', Page::query()->findOrFail('privacy')->html);
+        $this->assertSame('2.0', Page::query()->findOrFail('terms')->version);
         $this->assertStringContainsString('57 Oakhanger Drive', Page::query()->findOrFail('free-entry')->html);
     }
 

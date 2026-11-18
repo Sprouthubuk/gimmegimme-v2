@@ -420,6 +420,21 @@ class ApiTest extends TestCase
         $this->assertNotSame(range(1, 30), collect($numbers)->sort()->values()->all());
     }
 
+    public function test_a_player_who_asked_not_to_be_named_shows_as_anonymous(): void
+    {
+        $u = $this->player(['first_name' => 'Liam', 'last_name' => 'Oakes']);
+        $u->forceFill(['name_hidden' => true])->save();
+        $this->topUp($u, 1000);
+        $c = $this->competition('instant', ['max_tickets' => 20, 'max_per_person' => 20], [['£1 Credit', 100, 20, 'site_credit']]);
+        $this->checkout($u, $c, 4)->assertCreated();
+
+        $this->assertSame('Anonymous', $this->getJson('/api/winners/instant')->json('data.0.name'));
+        $this->assertSame('Anonymous', $this->getJson('/api/entry-lists/'.$c->slug)->json('data.0.name'));
+        $won = collect($this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?show=won')->json('data'));
+        $this->assertSame(['Anonymous'], $won->pluck('winnerName')->unique()->values()->all());
+        $this->assertStringNotContainsString('Liam', json_encode([$this->getJson('/api/winners/instant')->json(), $this->getJson('/api/entry-lists/'.$c->slug)->json()]));
+    }
+
     public function test_the_contact_form_bot_trap_saves_nothing(): void
     {
         $this->postJson('/api/contact', ['name' => 'Bot', 'email' => 'b@example.com', 'topic' => 'x', 'message' => 'Buy cheap things now', 'website' => 'spam.example'])->assertNoContent();
