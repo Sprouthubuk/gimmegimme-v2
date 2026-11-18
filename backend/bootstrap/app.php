@@ -2,6 +2,7 @@
 
 use App\Exceptions\RefusedException;
 use Illuminate\Foundation\Application;
+use Sentry\Laravel\Integration;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
@@ -21,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Errors go to Sentry when SENTRY_LARAVEL_DSN is set (nothing is sent without it). Refusals a player
+        // sees (limits, sold out, wrong details) are normal, not errors.
+        Integration::handles($exceptions);
+        $exceptions->dontReport([RefusedException::class, DomainException::class]);
         $exceptions->render(function (RefusedException $e) {
             return response()->json(array_filter(['message' => $e->getMessage(), 'code' => $e->reason, 'errors' => $e->fields ?: null]), $e->status);
         });

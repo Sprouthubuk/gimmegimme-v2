@@ -20,7 +20,7 @@ class LegalPages extends Command
     public const PAGES = [
         'terms' => ['Terms & Conditions', '2.0'],
         'free-entry' => ['Free Entry Terms', '2.0'],
-        'privacy' => ['Privacy Policy', '2.0'],
+        'privacy' => ['Privacy Policy', '2.1'],
         'cookies' => ['Cookie Policy', '2.0'],
         'complaints' => ['Complaints', '2.0'],
     ];
