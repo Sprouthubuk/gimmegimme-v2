@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Mail;
 
 class SiteSettings extends Page
 {
@@ -74,6 +75,10 @@ class SiteSettings extends Page
                 Text::make($open ? 'Sales are OPEN: players can buy, top up and enter.' : 'Sales are CLOSED: the site shows “Entries open soon”. Competitions, prizes and the free postal route stay visible.'),
                 Actions::make([$this->salesAction()]),
             ]),
+            Section::make('Email')->components([
+                Text::make(fn () => 'Sending through '.config('mail.default').(config('mail.default') === 'smtp' ? ' ('.config('mail.mailers.smtp.host').':'.config('mail.mailers.smtp.port').')' : '').' from '.config('mail.from.address').'.'),
+                Actions::make([$this->testEmailAction()]),
+            ]),
             Form::make([EmbeddedSchema::make('form')])->id('form')->livewireSubmitHandler('save')->footer([Actions::make([Action::make('save')->submit('save')->label('Save settings')])]),
         ]);
     }
@@ -88,6 +93,31 @@ class SiteSettings extends Page
                 Setting::put('sales_open', $open ? '0' : '1');
                 AdminAction::record(auth()->user(), $open ? 'sales.closed' : 'sales.opened', null, $data['reason']);
                 Notification::make()->success()->title($open ? 'Sales closed' : 'Sales open')->send();
+            });
+    }
+
+    public function testEmailAction(): Action
+    {
+        return Action::make('testEmail')->label('Send test email')->color('gray')
+            ->schema([TextInput::make('to')->label('Send to')->email()->required()->default(fn () => auth()->user()?->email)])
+            ->action(function (array $data) {
+                $mailer = (string) config('mail.default');
+                if (in_array($mailer, ['log', 'array'], true)) {
+                    Notification::make()->danger()->title('Email is not switched on')
+                        ->body("The site is set to '{$mailer}', so nothing is sent. Set MAIL_MAILER=smtp in Forge → Environment, then run php artisan config:clear.")->persistent()->send();
+
+                    return;
+                }
+                try {
+                    Mail::raw('This is a test email from the Gimme Gimme Prizes admin. If you can read this, email is working.', fn ($m) => $m->to($data['to'])->subject('Gimme Gimme test email'));
+                } catch (\Throwable $e) {
+                    AdminAction::record(auth()->user(), 'email.test_failed', null, null, ['mailer' => $mailer]);
+                    Notification::make()->danger()->title('The email was not sent')->body(mb_substr($e->getMessage(), 0, 500))->persistent()->send();
+
+                    return;
+                }
+                AdminAction::record(auth()->user(), 'email.test_sent', null, null, ['mailer' => $mailer]);
+                Notification::make()->success()->title('Sent')->body('Accepted by the mail server. Check the inbox (and spam), and the Resend dashboard.')->persistent()->send();
             });
     }
 

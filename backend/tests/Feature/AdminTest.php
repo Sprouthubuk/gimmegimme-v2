@@ -280,4 +280,18 @@ class AdminTest extends TestCase
         $r = $this->getJson('/api/pages/terms')->assertOk()->json();
         $this->assertSame([['id' => '1-about-us', 'text' => '1. About Us'], ['id' => '1-about-us-2', 'text' => '1. About Us']], $r['headings']);
     }
+
+    public function test_an_admin_can_send_a_test_email_and_sees_the_result(): void
+    {
+        $this->signInAdmin();
+        config(['mail.default' => 'log']);
+        Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('Email is not switched on');
+
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 2]);
+        Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('The email was not sent');
+
+        \Illuminate\Support\Facades\Mail::fake();
+        Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('Sent');
+        $this->assertSame(1, AdminAction::query()->where('action', 'email.test_sent')->count());
+    }
 }
