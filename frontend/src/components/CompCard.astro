@@ -22,7 +22,7 @@ const strip = soon ? `Opens ${when(soon)}` : c.status === "sold_out" ? "Sold Out
 const money = (p: number) => formatPence(p, { short: false });
 const highlight = live
   ? (c.topPrizePence ? `Worth ${money(c.topPrizePence)}` : null)
-  : c.endPrize ? `Plus ${c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}${money(c.endPrize.valuePence)} End Prize`
+  : c.endPrize ? `${c.endPrize.count > 1 ? `${c.endPrize.count} × ` : ""}${money(c.endPrize.valuePence)} End Prize`
   : c.topPrizePence ? `Top Prize ${money(c.topPrizePence)}` : null;
 // When: the draw date for a live draw or an end prize, otherwise when the game closes.
 const whenLine: [string, string] = (live || c.endPrize) && (c.drawAt ?? c.closesAt) ? ["Draw", ukWhen(c.drawAt ?? c.closesAt)] : ["Ends", ukWhen(c.closesAt)];
