@@ -14,6 +14,8 @@ class EditCompetition extends EditRecord
     {
         return [
             CompetitionResource::publishAction(),
+            CompetitionResource::openNowAction(),
+            CompetitionResource::previewGameAction(),
             DeleteAction::make()->visible(fn () => $this->record->verity_ref === null),
         ];
     }

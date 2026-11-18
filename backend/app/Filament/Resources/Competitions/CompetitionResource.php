@@ -129,6 +129,8 @@ class CompetitionResource extends Resource
             ->recordActions([
                 EditAction::make(),
                 self::publishAction(),
+                self::openNowAction(),
+                self::previewGameAction(),
             ]);
     }
 
@@ -148,6 +150,36 @@ class CompetitionResource extends Resource
                 app(Publishing::class)->publish($record, auth()->user());
                 Notification::make()->success()->title('Published to Verity')->body($record->refresh()->verity_ref)->send();
             });
+    }
+
+    /** A published competition with an opening time still to come goes on sale now (Publishing::openNow). */
+    public static function openNowAction(): Action
+    {
+        return Action::make('openNow')->label('Open Now')->icon(Heroicon::OutlinedLockOpen)->color('warning')
+            ->visible(fn (Competition $record) => $record->verity_ref !== null && $record->opens_at?->isFuture())
+            ->requiresConfirmation()
+            ->modalHeading('Open this competition now?')
+            ->modalDescription(fn (Competition $record) => 'It is set to open '.$record->opens_at->timezone('Europe/London')->format('D j M, g:ia')
+                .'. Opening now puts it on sale straight away (while the sales switch is on). The price, tickets, prizes and closing date stay exactly as published. This can’t be undone.')
+            ->schema([Textarea::make('reason')->label('Reason')->required()->maxLength(300)])
+            ->action(function (Competition $record, array $data) {
+                try {
+                    app(Publishing::class)->openNow($record, auth()->user(), $data['reason']);
+                } catch (\Throwable $e) {
+                    Notification::make()->danger()->title('Not opened')->body($e->getMessage())->send();
+
+                    return;
+                }
+                Notification::make()->success()->title('Open now')->body($record->title.' is on sale.')->send();
+            });
+    }
+
+    /** Plays this competition's reveal game, in its skin, with made-up tickets (the public /demo page; nothing is bought). */
+    public static function previewGameAction(): Action
+    {
+        return Action::make('previewGame')->label('Preview Game')->icon(Heroicon::OutlinedPlay)->color('info')
+            ->visible(fn (Competition $record) => $record->isInstant() && $record->game)
+            ->url(fn (Competition $record) => '/demo/'.$record->game.'?'.http_build_query(['skin' => $record->skin ?? 'classic']), shouldOpenInNewTab: true);
     }
 
     public static function getPages(): array
