@@ -5,9 +5,6 @@ import { Coin } from "../../shell/Coin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { CHUTE_X, useClaw } from "./useClaw";
 import { Splash } from "../../shell/Splash";
-import { Scene3D } from "../../three/Scene3D";
-import { buildClawScene, type ClawState } from "../../three/clawScene";
-import { CLASSIC_CLAW_3D } from "../../three/classicSkins";
 import "./claw.css";
 
 type Tone = "pink" | "cyan" | "yellow";
@@ -69,11 +66,19 @@ export function ClawBoard({ ticket, reducedMotion, onReveal }: BoardProps) {
             <span className="rg-claw-cable" />
             <span className={`rg-claw-head ${closed ? "is-closed" : ""}`}>
               <svg viewBox="0 0 60 50" aria-hidden="true">
-                <rect x="18" y="0" width="24" height="16" rx="7" fill="#e9e9ee" stroke="#141414" strokeWidth="3.5" />
-                <path className="rg-prong is-left" d="M22 14 L8 34 L16 46" fill="none" stroke="#141414" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-                <path className="rg-prong is-left" d="M22 14 L8 34 L16 46" fill="none" stroke="#e9e9ee" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                <path className="rg-prong is-right" d="M38 14 L52 34 L44 46" fill="none" stroke="#141414" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-                <path className="rg-prong is-right" d="M38 14 L52 34 L44 46" fill="none" stroke="#e9e9ee" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <defs>
+                  <linearGradient id="claw-steel" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stopColor="#8f95a6" />
+                    <stop offset="0.5" stopColor="#f4f6fb" />
+                    <stop offset="1" stopColor="#8f95a6" />
+                  </linearGradient>
+                </defs>
+                <rect x="18" y="0" width="24" height="16" rx="7" fill="url(#claw-steel)" stroke="#4a4f5e" strokeWidth="1.5" />
+                <circle cx="30" cy="8" r="3.2" fill="#ff2d95" />
+                <path className="rg-prong is-left" d="M22 14 L8 34 L16 46" fill="none" stroke="#4a4f5e" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path className="rg-prong is-left" d="M22 14 L8 34 L16 46" fill="none" stroke="url(#claw-steel)" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path className="rg-prong is-right" d="M38 14 L52 34 L44 46" fill="none" stroke="#4a4f5e" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path className="rg-prong is-right" d="M38 14 L52 34 L44 46" fill="none" stroke="url(#claw-steel)" strokeWidth="3.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               {cap && carrying && (
                 <span className="rg-claw-held">
@@ -134,34 +139,10 @@ export function ClawBoard({ ticket, reducedMotion, onReveal }: BoardProps) {
       </div>
     </>
   );
-  const state: ClawState = { x, phase, target, swing, cracked, label, steer: (pct: number) => move(pct - x) };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildClawScene(ctx, CLASSIC_CLAW_3D, PILE)}
-        seed={`claw:${ticket.ticketNumber}`}
-        reducedMotion={reducedMotion}
-        aspect={1.18}
-        fallback={flat}
-        label="Claw machine"
-        controls={
-          <>
-          <div className="rg3-controls">
-            <button type="button" className="rg3-btn is-cyan rg3-arrow" aria-label="Move claw left" disabled={phase !== "aim"} onPointerDown={() => startHold(-1)} onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(-8)}>
-              ◀
-            </button>
-            <button type="button" className="rg3-btn is-yellow rg3-grab" onClick={grab} disabled={phase !== "aim"}>
-              GRAB
-            </button>
-            <button type="button" className="rg3-btn is-cyan rg3-arrow" aria-label="Move claw right" disabled={phase !== "aim"} onPointerDown={() => startHold(1)} onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && move(8)}>
-              ▶
-            </button>
-          </div>
-          </>
-        }
-      />
+      {flat}
       {phase === "aim" ? (
         <GamePrompt title="Move the claw, then press GRAB" sub={RESULT_SET_NOTE} />
       ) : phase === "open" && !cracked ? (

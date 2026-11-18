@@ -1,6 +1,6 @@
 {
   "comment": "The only values a competition's reveal game (competitions.game) and game skin (competitions.skin) may hold, and which games each skin has its own version of. The backend validates against this file (App\\Support\\GameIds) and its migrations build the database check from it; frontend/tests/games/shared-lists.test.ts compares it with src/games/gameIds.ts and skinIds.ts. To widen a list: change it here and in skinIds.ts/gameIds.ts, then add a migration that calls GameIds::replaceDatabaseChecks().",
-  "games": ["classic", "scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems"],
+  "games": ["classic", "scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole", "pinata"],
   "skins": ["classic", "christmas", "pirates", "cash_escape", "hip_hop", "smash_cash"],
   "skinLabels": {
     "classic": "Classic",

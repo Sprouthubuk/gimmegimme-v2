@@ -29,6 +29,8 @@ class OrderResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Players & Money';
+
     public static function getNavigationBadge(): ?string
     {
         $n = Order::query()->where('needs_attention', true)->count();

@@ -10,7 +10,8 @@ const files = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
   const p = path.join(dir, f);
   return statSync(p).isDirectory() ? files(p) : [p];
 });
-const code = files(ROOT).filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => ({ f: path.relative(ROOT, f), src: readFileSync(f, "utf8") }));
+// Paths are kept with "/" so the checks below read the same on Windows.
+const code = files(ROOT).filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => ({ f: path.relative(ROOT, f).split(path.sep).join("/"), src: readFileSync(f, "utf8") }));
 
 describe("the games only present results", () => {
   it("no game file talks to the network (results arrive from the page, already decided)", () => {

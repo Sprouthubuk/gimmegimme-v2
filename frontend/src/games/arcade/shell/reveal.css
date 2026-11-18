@@ -212,7 +212,9 @@
 .rg-board-loading { margin-top: 80px; font-weight: 800; color: var(--rg-muted); }
 .rg-board.is-compact .rg-prompt { opacity: 0; }
 
-.rg-prompt { margin-top: 18px; text-align: center; transition: opacity 0.2s; padding: 0 8px; }
+.rg-prompt { position: relative; z-index: 2; margin-top: 18px; text-align: center; transition: opacity 0.2s; padding: 0 8px; }
+/* Positioned so a machine's soft shadow above never dims the words. */
+.rg-note { position: relative; z-index: 2; }
 .rg-prompt-title {
   font-family: var(--rg-font-display);
   font-size: 26px;
@@ -497,10 +499,13 @@ html.rg-lock, html.rg-lock body { overflow: hidden; overscroll-behavior: none; }
 .rg-reveal.rg-fullscreen .rg-sheet,
 .rg-reveal.rg-fill .rg-sheet { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 
-/* Shorter phones: the board is drawn a little smaller so the controls under it stay on screen. */
-@media (max-height: 760px) { .rg-reveal.rg-fullscreen .rg-board, .rg-reveal.rg-fill .rg-board { zoom: 0.9; } }
-@media (max-height: 680px) { .rg-reveal.rg-fullscreen .rg-board, .rg-reveal.rg-fill .rg-board { zoom: 0.8; } }
-@media (max-height: 600px) { .rg-reveal.rg-fullscreen .rg-board, .rg-reveal.rg-fill .rg-board { zoom: 0.7; } }
+/* Shorter phones: the board is drawn a little smaller so the controls under it stay on screen.
+   --rg-z carries the zoom, so a board that fits itself to the screen height can divide by it. */
+@media (max-height: 760px) { .rg-reveal.rg-fullscreen .rg-board, .rg-reveal.rg-fill .rg-board { zoom: 0.9; --rg-z: 0.9; } }
+@media (max-height: 680px) { .rg-reveal.rg-fullscreen .rg-board, .rg-reveal.rg-fill .rg-board { zoom: 0.8; --rg-z: 0.8; } }
+@media (max-height: 600px) { .rg-reveal.rg-fullscreen .rg-board, .rg-reveal.rg-fill .rg-board { zoom: 0.7; --rg-z: 0.7; } }
+/* Short desktop windows (a 13" laptop): the card is shorter than usual, so its board is drawn a little smaller too. */
+@media (min-width: 768px) and (max-height: 740px) { .rg-reveal:not(.rg-fullscreen):not(.rg-fill) .rg-board { zoom: 0.92; } }
 
 /* ---------- closing buttons and tap targets ---------- */
 .rg-closing { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
@@ -628,3 +633,47 @@ html.rg-lock, html.rg-lock body { overflow: hidden; overscroll-behavior: none; }
 .rg-reveal .rg-btn-white { background: #120c18; color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: none; }
 .rg-reveal.is-result::after,
 .rg-reveal.is-summary::after { background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55)); }
+
+/* ---------- The main call to action in every game: a glossy gold pill ---------- */
+.rg-cta {
+  position: relative;
+  min-width: 200px;
+  min-height: 58px;
+  padding: 0 34px;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--rg-font-display);
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  color: #3a1d00;
+  background: linear-gradient(180deg, #fff6b8 0%, #ffd84a 38%, #f5a300 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -4px 0 rgba(160, 80, 0, 0.45),
+    0 6px 0 #9a5a00,
+    0 12px 28px rgba(255, 190, 40, 0.35);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s;
+  animation: rg-cta-breathe 2.2s ease-in-out infinite;
+}
+.rg-cta::after {
+  content: "";
+  position: absolute;
+  inset: 4px 14% auto;
+  height: 40%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.rg-cta:hover { filter: brightness(1.05); }
+.rg-cta:active { transform: translateY(4px); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.85), inset 0 -3px 0 rgba(160, 80, 0, 0.45), 0 2px 0 #9a5a00, 0 6px 16px rgba(255, 190, 40, 0.3); }
+.rg-cta:disabled { filter: grayscale(0.6) brightness(0.8); animation: none; cursor: default; }
+.rg-cta.is-pink { color: #fff; background: linear-gradient(180deg, #ffb3dc 0%, #ff3ea4 40%, #c40a6e 100%); box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7), inset 0 -4px 0 rgba(90, 0, 50, 0.4), 0 6px 0 #7a0444, 0 12px 28px rgba(255, 45, 170, 0.4); }
+.rg-cta:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+@keyframes rg-cta-breathe { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.12) drop-shadow(0 0 14px rgba(255, 214, 74, 0.55)); } }
+.rg-reveal.is-reduced-motion .rg-cta { animation: none; }
+/* Words that sit on a scene. */
+.rg-reveal.has-scenery .rg-note { color: rgba(255, 255, 255, 0.72); }
+
+/* A plain wrapper some boards keep round their content. */
+.rg-board-wrap-in > * { margin-left: auto; margin-right: auto; }

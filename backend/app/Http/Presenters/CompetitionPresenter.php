@@ -14,7 +14,7 @@ final class CompetitionPresenter
     public const GAME_LABELS = [
         'claw_machine' => 'Claw Machine', 'slots' => 'Slots', 'scratch_card' => 'Scratch Card', 'coin_drop' => 'Coin Drop',
         'balloon_pop' => 'Balloon Pop', 'gems' => 'Gems', 'hook_a_duck' => 'Hook a Duck', 'spin_wheel' => 'Spin the Wheel',
-        'bingo_card' => 'Bingo Card', 'classic' => 'Scratch Card',
+        'bingo_card' => 'Bingo Card', 'whack_a_mole' => 'Whack-a-Mole', 'pinata' => 'Piñata', 'classic' => 'Scratch Card',
     ];
 
     public function __construct(private CompetitionState $state) {}

@@ -15,7 +15,7 @@ import { expect, test, type Page } from "@playwright/test";
  * The board generators themselves are proven across thousands of seeds in tests/reveal-games.
  */
 
-const CLASSIC_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems"];
+const CLASSIC_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole", "pinata"];
 const CHRISTMAS_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "gems", "claw_machine", "slots"];
 /** The games each skin draws its own way. */
 const SKIN_GAMES: Record<string, string[]> = {
@@ -82,7 +82,7 @@ async function playBoard(page: Page, game: string) {
       await press(".rg-wheel-controls button:not([disabled]), .rg-ce-controls button:not([disabled]), .rg-sleigh-controls .rg-btn:not([disabled])");
       break;
     case "bingo_card":
-      await press(".rg-bingo-controls .rg-btn");
+      await press(".rg-bingo-controls .rg-btn, .rg-bingo-controls .rg-cta");
       break;
     case "balloon_pop":
       await press(".rg-balloon-all, .rg-cracker-all, .rg-smash-all");
@@ -97,7 +97,21 @@ async function playBoard(page: Page, game: string) {
       await press(".rg-coin-board");
       break;
     case "slots":
-      await press(".rg-board .rg-btn-yellow, .rg-lever");
+      await press(".rg-board .rg-cta, .rg-board .rg-btn-yellow, .rg-lever");
+      break;
+    case "whack_a_mole":
+      await press(".rg-whack-controls .rg-cta");
+      for (let k = 0; k < 300 && !(await page.locator(".rg-hole.is-final").count()); k++) {
+        const up = page.locator(".rg-hole.is-up:not([disabled])").first();
+        if (await up.count()) await up.dispatchEvent("pointerdown").catch(() => {});
+        await page.waitForTimeout(80);
+      }
+      break;
+    case "pinata":
+      for (let k = 0; k < 20 && !(await page.locator(".rg-pinata.is-broken").count()); k++) {
+        await page.locator(".rg-pinata-swing").dispatchEvent("pointerdown").catch(() => {});
+        await page.waitForTimeout(120);
+      }
       break;
     case "gems":
       for (let k = 0; k < 9 && !(await sheetOrSummary.isVisible()); k++) {
@@ -256,8 +270,9 @@ test.describe("awkward play", () => {
       await open(page, "spin_wheel", skin, "win", "full");
       const btn = page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls .rg-btn").first();
       await btn.click();
-      await btn.click({ force: true }).catch(() => {});
-      await btn.dblclick({ force: true }).catch(() => {});
+      // The button goes once the wheel is spinning; extra taps find nothing to press.
+      await btn.click({ force: true, timeout: 1000 }).catch(() => {});
+      await btn.dblclick({ force: true, timeout: 1000 }).catch(() => {});
       await expect(page.locator(".rg-sheet .rg-prize-big")).toHaveText("£10 credit", { timeout: 20_000 });
       expect(errors).toEqual([]);
     });
@@ -399,9 +414,11 @@ test.describe("the themed looks are laid out properly on a fresh page", () => {
   // Each test starts on a freshly loaded page, so no classic game's styles are already
   // loaded: a board must look right on its own (the vault's button once sat off-centre
   // unless the classic wheel had been opened first).
+  // Every game in every look it has: the classic games, the Christmas games and the other themes.
   const LOOKS: [string, string, string][] = [
+    ...CLASSIC_GAMES.map((g): [string, string, string] => ["classic", g, "win"]),
+    ...["balloon_pop", "spin_wheel", "scratch_card", "bingo_card", "gems", "claw_machine", "slots"].map((g): [string, string, string] => ["christmas", g, "win"]),
     ["pirates", "gems", "win"],
-    ["christmas", "slots", "win"],
     ["cash_escape", "spin_wheel", "win"],
     ["hip_hop", "coin_drop", "win"],
     ["smash_cash", "balloon_pop", "mixed"],
@@ -409,7 +426,7 @@ test.describe("the themed looks are laid out properly on a fresh page", () => {
   const SIZES: [number, number][] = [[320, 568], [360, 640], [375, 667], [390, 844], [430, 932], [768, 1024], [1280, 720], [1366, 768], [1440, 900]];
   for (const [w, h] of SIZES) {
     for (const [skin, game, sample] of LOOKS) {
-      test(`${skin} at ${w}x${h}: centred, nothing off screen, cut off or covered`, async ({ page }) => {
+      test(`${skin} ${game} at ${w}x${h}: centred, nothing off screen, cut off or covered`, async ({ page }) => {
         const errors = watchErrors(page);
         await page.setViewportSize({ width: w, height: h });
         await open(page, game, skin, sample, "full");
@@ -541,7 +558,7 @@ test.describe("smoothness on a slowed-down phone", () => {
       const cdp = await page.context().newCDPSession(page);
       await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
       await page.waitForTimeout(500);
-      if (game === "bingo_card") await page.locator(".rg-bingo-controls .rg-btn").click();
+      if (game === "bingo_card") await page.locator(".rg-bingo-controls .rg-btn, .rg-bingo-controls .rg-cta").first().click();
       // Measured while the board is busy: bags bursting, or the claw on its way down.
       if (game === "gems") for (const k of [0, 5, 10]) await page.locator(".rg-gem-tile").nth(k).click();
       if (game === "claw_machine") await page.locator(".rg-grab").click();

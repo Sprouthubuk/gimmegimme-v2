@@ -15,7 +15,7 @@ const SIZES = [
   { name: "390x844", width: 390, height: 844 },
   { name: "390x667 (short phone, board drawn smaller)", width: 390, height: 667 },
 ];
-const GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems"] as const;
+const GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole", "pinata"] as const;
 const SKINS = ["classic", "christmas", "pirates", "cash_escape", "hip_hop", "smash_cash"] as const;
 /** The games each skin draws its own way (null: all of them). Any other game falls back to the classic look. */
 const SKIN_GAMES: Record<(typeof SKINS)[number], readonly string[] | null> = {
@@ -60,6 +60,26 @@ async function scratchAll(page: Page) {
   await page.mouse.up();
 }
 
+/** Presses START, then whacks each mole as it pops up until the result shows. */
+async function whackAll(page: Page) {
+  await expect(page.locator(".rg-whack")).toBeVisible({ timeout: 10_000 });
+  if (await page.locator(".rg-whack.is-ready").count()) await page.locator(".rg-whack-controls .rg-cta").click();
+  for (let k = 0; k < 300 && !(await page.locator(".rg-hole.is-final").count()); k++) {
+    const up = page.locator(".rg-hole.is-up:not([disabled])").first();
+    if (await up.count()) await up.dispatchEvent("pointerdown").catch(() => {});
+    await page.waitForTimeout(80);
+  }
+}
+
+/** Taps the piñata until it breaks. */
+async function hitPinata(page: Page) {
+  await expect(page.locator(".rg-pinata")).toBeVisible({ timeout: 10_000 });
+  for (let k = 0; k < 20 && !(await page.locator(".rg-pinata.is-broken").count()); k++) {
+    await page.locator(".rg-pinata-swing").dispatchEvent("pointerdown").catch(() => {});
+    await page.waitForTimeout(120);
+  }
+}
+
 /** Plays the board on screen until the result sheet shows. */
 async function play(page: Page, game: string) {
   const click = (sel: string) => page.locator(sel).first().click();
@@ -71,7 +91,7 @@ async function play(page: Page, game: string) {
       await page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls .rg-btn").first().click();
       break;
     case "bingo_card":
-      await page.locator(".rg-bingo-controls .rg-btn").click();
+      await page.locator(".rg-bingo-controls .rg-btn, .rg-bingo-controls .rg-cta").first().click();
       break;
     case "balloon_pop":
       await click(".rg-balloon-all, .rg-cracker-all, .rg-smash-all");
@@ -81,6 +101,12 @@ async function play(page: Page, game: string) {
       break;
     case "coin_drop":
       await click(".rg-coin-board");
+      break;
+    case "whack_a_mole":
+      await whackAll(page);
+      break;
+    case "pinata":
+      await hitPinata(page);
       break;
     default: {
       // The other classic games: press whatever the board offers until it lands.
@@ -215,20 +241,22 @@ for (const size of SIZES) {
         await open(page, "claw_machine", "christmas", sample);
         const rig = page.locator(".rg-claw-rig");
         const startX = (await rig.boundingBox())!.x;
+        // The machine fits the screen height, so measure moves against its glass, not in fixed pixels.
+        const step = (await page.locator(".rg-claw-glass").boundingBox())!.width * 0.05;
         // Hold the joystick right, then drag across the glass to the left.
         const right = page.locator(".rg-joy-btn.is-right");
         await right.hover();
         await page.mouse.down();
-        await page.waitForTimeout(500);
+        // Held down, the claw keeps moving: wait for it rather than a fixed time (a busy test machine is slower).
+        await expect.poll(async () => (await rig.boundingBox())!.x, { timeout: 3000 }).toBeGreaterThan(startX + step);
         await page.mouse.up();
-        expect((await rig.boundingBox())!.x).toBeGreaterThan(startX + 20);
         const glass = (await page.locator(".rg-claw-glass").boundingBox())!;
         await page.mouse.move(glass.x + glass.width * 0.6, glass.y + glass.height * 0.5);
         await page.mouse.down();
         await page.mouse.move(glass.x + glass.width * 0.2, glass.y + glass.height * 0.5, { steps: 8 });
         await page.mouse.up();
         await page.waitForTimeout(200);
-        expect((await rig.boundingBox())!.x).toBeLessThan(startX - 20);
+        expect((await rig.boundingBox())!.x).toBeLessThan(startX - step);
         await page.locator(".rg-grab").click();
         await page.locator(".rg-grab").click({ force: true }).catch(() => {});
         await expect(page.locator(".rg-claw-held .rg-bauble")).toBeVisible({ timeout: 5_000 });
@@ -427,4 +455,63 @@ test.describe("reduced motion", () => {
       await expect(page.locator(".rg-snow:not(.is-still)")).toHaveCount(0);
     });
   }
+});
+
+test.describe("whack-a-mole", () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference" });
+
+  test("the result shows only after the third whack, and earlier moles carry nothing", async ({ page }) => {
+    await open(page, "whack_a_mole", "classic", "win");
+    await page.locator(".rg-whack-controls .rg-cta").click();
+    let whacked = 0;
+    for (let k = 0; k < 300 && whacked < 2; k++) {
+      const up = page.locator(".rg-hole.is-up:not([disabled])").first();
+      if (await up.count()) {
+        await expect(page.locator(".rg-mole-sign")).toHaveCount(0);
+        await up.dispatchEvent("pointerdown");
+        whacked++;
+      }
+      await page.waitForTimeout(80);
+    }
+    await expect(page.locator(".rg-whack-count i.is-done")).toHaveCount(2);
+    await expect(page.locator(".rg-mole-sign")).toHaveCount(0);
+    await expect(page.locator(".rg-sheet")).toHaveCount(0);
+    await whackAll(page);
+    await expect(page.locator(".rg-mole-sign")).toHaveText("£10");
+    await expect(page.locator(".rg-sheet")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("a mole that is not whacked goes back down and another comes up", async ({ page }) => {
+    await open(page, "whack_a_mole", "classic", "lose");
+    await page.locator(".rg-whack-controls .rg-cta").click();
+    const first = page.locator(".rg-hole.is-up");
+    await expect(first).toHaveCount(1, { timeout: 3000 });
+    const firstIndex = await page.locator(".rg-hole").evaluateAll((els) => els.findIndex((e) => e.classList.contains("is-up")));
+    await expect.poll(async () => page.locator(".rg-hole").evaluateAll((els) => els.findIndex((e) => e.classList.contains("is-up"))), { timeout: 4000 }).not.toBe(firstIndex);
+    await expect(page.locator(".rg-whack-count i.is-done")).toHaveCount(0);
+  });
+});
+
+test.describe("piñata", () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference" });
+
+  test("the prize shows only when the last hit breaks it", async ({ page }) => {
+    await open(page, "pinata", "classic", "win");
+    const swing = page.locator(".rg-pinata-swing");
+    for (let i = 1; i < 5; i++) {
+      await swing.dispatchEvent("pointerdown");
+      await expect(page.locator(".rg-pinata-count i.is-done")).toHaveCount(i);
+      await expect(page.locator(".rg-pinata-prize")).toHaveCount(0);
+    }
+    await swing.dispatchEvent("pointerdown");
+    await expect(page.locator(".rg-pinata-prize")).toHaveText("£10");
+    await expect(page.locator(".rg-sheet")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("a losing piñata says so plainly", async ({ page }) => {
+    await open(page, "pinata", "classic", "lose");
+    await hitPinata(page);
+    await expect(page.locator(".rg-pinata-prize")).toHaveText("No prize");
+    await expect(page.locator(".rg-pinata-prize")).not.toHaveClass(/is-win/);
+  });
 });

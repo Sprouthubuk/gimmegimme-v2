@@ -268,3 +268,74 @@ export function balloonLooks(count: number, seed: string): BalloonLook[] {
     sway: 4 + Math.round(rng() * 8),
   }));
 }
+
+/* ---------- Whack-a-Mole ---------- */
+export const WHACK_HOLES = 9;
+/** Moles to whack before the result shows. The first ones only bonk; the result is on the last. */
+export const WHACK_TARGET = 3;
+
+export interface WhackLayout {
+  /** The order moles pop up in: hole indexes 0–8, never the same hole twice running. Looks only. */
+  pops: number[];
+  /** The result, shown only when the last mole is whacked: the ticket's own prize label, or null for no win. */
+  label: string | null;
+}
+
+/**
+ * Where moles appear. Seeded, so a ticket always plays the same garden. The pop-ups never
+ * carry a prize or a value: nothing a player sees before the last whack hints at a result.
+ */
+export function generateWhack(prize: RevealPrize | null, seed: string): WhackLayout {
+  const rng = createRng(`whack:${seed}`);
+  const pops: number[] = [];
+  for (let i = 0; i < 40; i++) {
+    let h = Math.floor(rng() * WHACK_HOLES);
+    if (h === pops[pops.length - 1]) h = (h + 1 + Math.floor(rng() * (WHACK_HOLES - 1))) % WHACK_HOLES;
+    pops.push(h);
+  }
+  return { pops, label: winLabel(prize) };
+}
+
+/* ---------- Piñata ---------- */
+/** Hits to break the piñata. The earlier hits only crack it; the result is inside. */
+export const PINATA_HITS = 5;
+
+export interface PinataSweet {
+  /** Where the sweet flies to from the middle of the piñata, in px, and how far it spins. Looks only. */
+  dx: number;
+  dy: number;
+  spin: number;
+  colour: "pink" | "yellow" | "cyan" | "white" | "purple";
+  shape: "wrap" | "round" | "star";
+}
+
+export interface PinataLayout {
+  /** How hard each hit swings the piñata (degrees, + or −). Looks only. */
+  swings: number[];
+  sweets: PinataSweet[];
+  /** The ticket's own prize label, or null for no win. Shown only once the piñata breaks. */
+  label: string | null;
+}
+
+/**
+ * The look of one piñata: seeded swings and a seeded shower of sweets. Nothing here depends on
+ * the prize except `label`, and the board shows that only after the last hit.
+ */
+export function generatePinata(prize: RevealPrize | null, seed: string): PinataLayout {
+  const rng = createRng(`pinata:${seed}`);
+  const swings = Array.from({ length: PINATA_HITS }, (_, i) => (i % 2 ? -1 : 1) * (9 + Math.round(rng() * 9)));
+  const colours: PinataSweet["colour"][] = ["pink", "yellow", "cyan", "white", "purple"];
+  const shapes: PinataSweet["shape"][] = ["wrap", "round", "star"];
+  const sweets = Array.from({ length: 22 }, (_, i): PinataSweet => {
+    const angle = (i / 22) * Math.PI * 2 + rng() * 0.4;
+    const dist = 90 + rng() * 90;
+    return {
+      dx: Math.round(Math.cos(angle) * dist),
+      dy: Math.round(Math.sin(angle) * dist * 0.7 + 160 + rng() * 90),
+      spin: Math.round((rng() - 0.5) * 720),
+      colour: colours[Math.floor(rng() * colours.length)],
+      shape: shapes[Math.floor(rng() * shapes.length)],
+    };
+  });
+  return { swings, sweets, label: winLabel(prize) };
+}

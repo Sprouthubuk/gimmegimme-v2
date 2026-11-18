@@ -237,3 +237,9 @@
 .rg-grinch .rg-claw-stage-item { width: 40%; }
 .rg-grinch .rg-claw-stage .rg-bauble { translate: 0 0; }
 .rg-grinch .rg-claw-stage.is-win .rg-claw-prize { filter: drop-shadow(0 0 16px rgba(255, 210, 63, 0.95)); }
+
+/* Fit the height as well as the width (the machine is about 1.65 times as tall as it is wide):
+   on a phone the header takes about 180px and the prompt and sound switch about 130px (zoomed with the board). */
+.rg-skin-christmas .rg-claw-machine { width: min(100%, 370px, calc((min(820px, 100svh) - 330px) / 1.65)); margin-inline: auto; }
+.rg-reveal.rg-fullscreen.rg-skin-christmas .rg-claw-machine,
+.rg-reveal.rg-fill.rg-skin-christmas .rg-claw-machine { width: min(100%, 370px, calc(((100svh - 180px) / var(--rg-z, 1) - 130px) / 1.65)); }

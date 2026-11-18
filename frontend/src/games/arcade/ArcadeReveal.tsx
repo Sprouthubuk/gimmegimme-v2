@@ -14,6 +14,8 @@ import { CLASSIC_SKIN } from "./skins/classic";
 import { SkinContext } from "./skins/SkinContext";
 import type { GameSkin } from "./skins/types";
 import "./shell/reveal.css";
+import "./shell/premium.css";
+import { Scenery } from "./shell/scenery/Scenery";
 
 export interface ArcadeRevealProps extends RevealGameProps {
   /** Public facts about each competition in the purchase (game, prize list). */
@@ -202,11 +204,12 @@ export default function ArcadeReveal({ outcome, context, onComplete, onResultSho
 
   const view = (
     <div
-      className={`rg-reveal rg-skin-${skin.id} rg-theme-${def?.theme ?? "pink"} rg-game-${def?.id ?? "none"} is-${phase} ${reducedMotion ? "is-reduced-motion" : ""} ${fullScreen ? "rg-fullscreen" : presentation === "fill" ? "rg-fill" : ""}`}
+      className={`rg-reveal rg-skin-${skin.id} rg-theme-${def?.theme ?? "pink"} rg-game-${def?.id ?? "none"} ${!Backdrop && def && phase !== "summary" ? "has-scenery" : ""} is-${phase} ${reducedMotion ? "is-reduced-motion" : ""} ${fullScreen ? "rg-fullscreen" : presentation === "fill" ? "rg-fill" : ""}`}
       role="group"
       aria-label={def ? `${def.name} reveal` : "Your results"}
     >
       {Backdrop && <Backdrop reducedMotion={reducedMotion} />}
+      {!Backdrop && def && phase !== "summary" && <Scenery game={def.id} reducedMotion={reducedMotion} />}
       {phase === "summary" || !step || !def ? (
         <>
           <Header counter="Your results" balancePence={balanceShown} onClose={onComplete} closeLabel="Close" />

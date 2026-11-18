@@ -73,3 +73,28 @@
 .rg-gem-dots i { width: 18px; height: 18px; border: var(--rg-outline); border-radius: 50%; background: var(--rg-pink); }
 .rg-gem-dots i.is-used { background: var(--rg-white); }
 .rg-gem-dots span { margin-left: 6px; }
+
+/* ---------- premium classic: stone tiles in a gem cave ---------- */
+.rg-skin-classic .rg-gem-pay { border: 0; color: #fff; background: rgba(10, 4, 20, 0.6); box-shadow: inset 0 0 0 1.5px rgba(255, 211, 77, 0.7); }
+.rg-skin-classic .rg-gem-pay.is-hit { color: #3a1500; background: linear-gradient(180deg, #fff3a8, #ffd23a); box-shadow: 0 0 18px rgba(255, 216, 74, 0.8); animation: none; }
+.rg-skin-classic .rg-gem-grid {
+  border: 0;
+  background: linear-gradient(180deg, #2c1a40 0%, #170c26 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 0 0 6px #4a2a6e, 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 46px rgba(120, 220, 255, 0.18);
+}
+.rg-skin-classic .rg-gem-face { border: 0; border-radius: 12px; }
+.rg-skin-classic .rg-gem-back {
+  color: rgba(255, 220, 140, 0.85);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.15);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.18), transparent 45%),
+    linear-gradient(160deg, #6a5a82 0%, #43355c 50%, #2b2140 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2), inset 0 -4px 0 rgba(0, 0, 0, 0.35), 0 3px 6px rgba(0, 0, 0, 0.45);
+}
+.rg-skin-classic .rg-gem-back::before { display: none; }
+.rg-skin-classic .rg-gem-front { background: radial-gradient(circle at 50% 40%, #3b2458, #160a26); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.12); }
+.rg-skin-classic .rg-gem-front .rg-gem { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35)); }
+.rg-skin-classic .rg-gem-tile.is-hit .rg-gem-front { background: radial-gradient(circle, #fff4b0, #e9a300); box-shadow: 0 0 0 2px #fff, 0 0 20px rgba(255, 216, 74, 0.85); animation: none; }
+.rg-skin-classic .rg-gem-dots { color: #fff; }
+.rg-skin-classic .rg-gem-dots i { border: 0; background: radial-gradient(circle at 35% 30%, #ffb3dc, #ff2d95 55%, #a8005a); box-shadow: 0 0 8px rgba(255, 45, 149, 0.6); }
+.rg-skin-classic .rg-gem-dots i.is-used { background: rgba(255, 255, 255, 0.18); box-shadow: none; }

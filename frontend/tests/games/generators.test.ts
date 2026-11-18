@@ -23,6 +23,10 @@ import {
   generateScratch,
   generateSlots,
   generateWheel,
+  generateWhack,
+  generatePinata,
+  PINATA_HITS,
+  WHACK_HOLES,
   symbolKey,
 } from "../../src/games/arcade/games/generators";
 import { usableDecoys } from "../../src/games/arcade/games/symbols";
@@ -216,6 +220,53 @@ describe("balloon pop", () => {
       expect(["s", "m", "l"]).toContain(l.size);
       expect(l.duration).toBeGreaterThanOrEqual(10);
       expect(l.duration).toBeLessThanOrEqual(12.5);
+    }
+  });
+});
+
+describe("whack-a-mole", () => {
+  it("shows only this ticket's own prize (or none), and moles carry nothing before the last whack", () => {
+    for (const prize of [...PRIZES, null]) {
+      for (const seed of SEEDS) {
+        const w = generateWhack(prize, seed);
+        expect(w.label).toBe(prize ? prizeShortLabel(prize) : null);
+        expect(Object.keys(w).sort()).toEqual(["label", "pops"]);
+        expect(w.pops.length).toBeGreaterThanOrEqual(20);
+        w.pops.forEach((h, i) => {
+          expect(Number.isInteger(h) && h >= 0 && h < WHACK_HOLES).toBe(true);
+          if (i) expect(h).not.toBe(w.pops[i - 1]);
+        });
+      }
+    }
+  });
+
+  it("the garden is the same every time for a ticket, and the pop order does not depend on the prize", () => {
+    for (const seed of SEEDS.slice(0, 200)) {
+      expect(generateWhack(PRIZES[0], seed)).toEqual(generateWhack(PRIZES[0], seed));
+      expect(generateWhack(PRIZES[0], seed).pops).toEqual(generateWhack(null, seed).pops);
+    }
+  });
+});
+
+describe("piñata", () => {
+  it("shows only this ticket's own prize (or none); swings and sweets carry no value", () => {
+    for (const prize of [...PRIZES, null]) {
+      for (const seed of SEEDS) {
+        const p = generatePinata(prize, seed);
+        expect(p.label).toBe(prize ? prizeShortLabel(prize) : null);
+        expect(Object.keys(p).sort()).toEqual(["label", "sweets", "swings"]);
+        expect(p.swings).toHaveLength(PINATA_HITS);
+        for (const s of p.sweets) expect(Object.keys(s).sort()).toEqual(["colour", "dx", "dy", "shape", "spin"]);
+      }
+    }
+  });
+
+  it("the same ticket always breaks the same way, whatever it won", () => {
+    for (const seed of SEEDS.slice(0, 200)) {
+      expect(generatePinata(PRIZES[0], seed)).toEqual(generatePinata(PRIZES[0], seed));
+      const { label: _a, ...won } = generatePinata(PRIZES[0], seed);
+      const { label: _b, ...lost } = generatePinata(null, seed);
+      expect(won).toEqual(lost);
     }
   });
 });

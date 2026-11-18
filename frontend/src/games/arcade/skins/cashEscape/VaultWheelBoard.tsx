@@ -5,9 +5,6 @@ import { useWheelSpin } from "../../games/wheel/useWheelSpin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound, useSoundLater } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
-import { Scene3D } from "../../three/Scene3D";
-import { buildWheelScene, type WheelState } from "../../three/wheelScene";
-import { CASH_ESCAPE_SKIN_3D } from "./cashEscape3d";
 import "../shared/themed.css";
 import "./cashEscape.css";
 
@@ -32,8 +29,8 @@ const polar = (deg: number, r: number) => {
 
 /** How wide a label may be: the slice's width where the label sits, less a little breathing room. */
 const LABEL_ROOM = 2 * (R - 21) * Math.sin(Math.PI / WHEEL_SEGMENTS) - 4;
-/** Roughly how wide each character is, as a share of the font size (the display font, measured). */
-const CHAR_EM = 0.6;
+/** Roughly how wide each character is, as a share of the font size (the body font at weight 800, measured). */
+const CHAR_EM = 0.68;
 /**
  * Fits a prize label inside its slice so neighbouring labels never run into each other:
  * short amounts stay big, longer ones shrink, and a long name splits over two lines.
@@ -183,6 +180,13 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
               );
             })}
 
+            <defs>
+              <radialGradient id="ce-shade" cx="0" cy="0" r={R} gradientUnits="userSpaceOnUse">
+                <stop offset="0.25" stopColor="#fff" stopOpacity="0.12" />
+                <stop offset="0.7" stopColor="#fff" stopOpacity="0" />
+                <stop offset="1" stopColor="#1a0030" stopOpacity="0.3" />
+              </radialGradient>
+            </defs>
             <g className="rg-ce-rotor" style={{ transform: `rotate(${rotation}deg)`, transition }}>
               <circle r={R + 3} fill="#141414" />
               {layout.segments.map((s, i) => {
@@ -216,6 +220,7 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
                   </g>
                 );
               })}
+              <circle r={R} fill="url(#ce-shade)" pointerEvents="none" />
               <circle r={R} fill="none" stroke="#141414" strokeWidth="3" />
               {/* The vault's spoked handle turns with the door. */}
               <g className="rg-ce-handle">
@@ -252,22 +257,13 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
       </div>
     </>
   );
-  const state: WheelState = { phase, rotation, spinMs: SPIN_MS, winLabel: landed.kind === "prize" ? landed.label : null, spin: crack };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildWheelScene(ctx, CASH_ESCAPE_SKIN_3D, layout)}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.25}
-        fallback={flat}
-        label="The Great Cash Escape vault wheel"
-      />
+      {flat}
       {phase === "ready" ? (
         <div className="rg-ce-controls">
-          <button type="button" className="rg3-btn is-gold rg3-spin rg-ce-spin" onClick={crack}>
+          <button type="button" className="rg-cta rg-ce-spin" onClick={crack}>
             CRACK THE VAULT
           </button>
           <p className="rg-note">{RESULT_SET_NOTE}</p>
@@ -276,7 +272,7 @@ export function VaultWheelBoard({ ticket, seed, decoys, reducedMotion, onReveal 
         <div className="rg-ce-controls">
           <GamePrompt title={phase === "spinning" ? "Cracking the vault…" : landed.kind === "none" ? "No win" : `${landed.label}!`} tone={phase === "landed" && landed.kind === "none" ? "ink" : "pink"} />
           {phase === "spinning" && (
-            <button type="button" className="rg3-btn is-gold rg3-spin rg-ce-spin" disabled>
+            <button type="button" className="rg-cta rg-ce-spin" disabled>
               CRACK THE VAULT
             </button>
           )}

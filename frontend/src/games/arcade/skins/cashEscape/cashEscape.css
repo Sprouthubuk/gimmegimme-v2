@@ -69,7 +69,8 @@
 /* The vault door. */
 .rg-ce-vault { position: relative; padding-top: 34px; }
 .rg-ce-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 6px 0 var(--rg-ink)) drop-shadow(0 0 18px rgba(42, 212, 255, 0.35)); }
-.rg-ce.is-spinning .rg-ce-svg { animation: rg-ce-rumble 0.18s linear infinite; }
+/* No filter while the door turns: a filter over moving artwork repaints every frame on slow phones. */
+.rg-ce.is-spinning .rg-ce-svg { animation: rg-ce-rumble 0.18s linear infinite; filter: none; }
 @keyframes rg-ce-rumble {
   0%, 100% { translate: 0 0; }
   25% { translate: 0.8px -0.6px; }
@@ -176,3 +177,7 @@
   .rg-ce-vault { padding-top: 30px; }
   .rg-ce-controls { margin-top: 10px; }
 }
+
+/* Premium labels: the same clean, thinner lettering as the classic wheel. */
+.rg-ce-seg-text { font-family: var(--rg-font-body); font-weight: 800; letter-spacing: -0.01em; stroke: rgba(0, 0, 0, 0.18); }
+.rg-ce-seg-text.is-none { font-weight: 800; letter-spacing: 0.08em; opacity: 0.9; }

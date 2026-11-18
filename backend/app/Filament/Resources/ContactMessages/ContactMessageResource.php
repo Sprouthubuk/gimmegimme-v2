@@ -25,6 +25,8 @@ class ContactMessageResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Site';
+
     public static function canCreate(): bool
     {
         return false;

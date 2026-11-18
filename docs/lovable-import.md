@@ -24,7 +24,9 @@ select p.user_id                                   as legacy_id,
        p.phone                                     as phone,
        p.address_line1, p.address_line2, p.city, p.postcode,
        p.marketing_opt_in                          as marketing_email,
+       p.marketing_opt_in_at                       as marketing_email_at,
        p.sms_marketing_opt_in                      as marketing_sms,
+       p.sms_marketing_opt_in_at                   as marketing_sms_at,
        (u.email_confirmed_at is not null)          as email_confirmed,
        u.encrypted_password                        as password_hash,
        l.self_excluded_until, l.cool_off_until,
@@ -33,12 +35,16 @@ select p.user_id                                   as legacy_id,
        exists (select 1 from user_roles r where r.user_id = p.user_id and r.role = 'admin') as is_admin,
        public.is_account_suspended(p.user_id)      as on_hold,
        public.is_identity_verified(p.user_id)      as id_verified,
-       p.created_at
+       p.created_at,
+       ca.closed_at                                as closed_at
 from profiles p
 join auth.users u on u.id = p.user_id
 left join user_limits l on l.user_id = p.user_id
-where p.closed_at is null;  -- drop this line if the column doesn't exist
+left join public.closed_accounts ca on ca.user_id = p.id;
 ```
+
+Closed accounts are exported too, not filtered out, so the import can see them and check their
+balances (see [Closed accounts](#closed-accounts)).
 
 **balances.csv**
 
@@ -63,8 +69,26 @@ import refuses it.
 the first space if there are no `first_name` / `last_name` columns. True/false columns accept
 `true/false`, `t/f`, `1/0` or `yes/no`. Dates are any format PHP reads (ISO 8601 is best).
 
+`marketing_email_at` and `marketing_sms_at` are when the player agreed to each. A date is kept only
+while that choice is on, and an empty one stays empty. The old site used the sign-up date in place of a
+missing email date when it sent marketing; don't do that in the export: take the column as it is
+stored. On the new site the date is set when a player ticks the box, cleared when they
+turn it off, and both are cleared when they self-exclude. The admin shows both on the player's page.
+
 `balances.csv` needs `legacy_id`, `deposit_pence`, `bonus_pence`, `winnings_pence` (whole pence);
 `bonus_expires_at` is optional (30 days from the import otherwise).
+
+## Closed accounts
+
+A row with a `closed_at` date is a closed account (a row in the old site's `public.closed_accounts`).
+The old site has already blanked its name and address, so its details aren't checked.
+
+- It is left out: no account is made here and the import says how many were left out.
+- If it still has money in `balances.csv`, the import stops and imports nothing. Sort that balance out
+  by hand on the old site first, as with a negative balance.
+- If it was brought across by an earlier run and closed on the old site since, the import leaves it as
+  it is (the blanked details are not copied over) and names it. Close it in the admin, with a reason:
+  the import never closes an account itself.
 
 ## What isn't moved
 

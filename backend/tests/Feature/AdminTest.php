@@ -8,8 +8,13 @@ use App\Filament\Resources\Competitions\Pages\CreateCompetition;
 use App\Filament\Resources\Competitions\Pages\EditCompetition;
 use App\Filament\Resources\Competitions\Pages\ListCompetitions;
 use App\Filament\Resources\Orders\Pages\ListOrders;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Withdrawals\Pages\ListWithdrawals;
+use App\Filament\Widgets\LatestOrders;
+use App\Filament\Widgets\LiveCompetitions;
+use App\Filament\Widgets\Overview;
+use App\Filament\Widgets\SalesChart;
 use App\Models\AdminAction;
 use App\Models\Competition;
 use App\Models\Order;
@@ -53,6 +58,43 @@ class AdminTest extends TestCase
         $this->actingAs($admin->refresh())->get('/admin')->assertOk();
         foreach (['competitions', 'orders', 'users', 'withdrawals', 'prize-claims', 'contact-messages', 'pages', 'promo-codes', 'site-settings', 'postal-entries'] as $p) {
             $this->get('/admin/'.$p)->assertOk();
+        }
+    }
+
+    public function test_a_players_marketing_consent_dates_show_read_only(): void
+    {
+        $this->signInAdmin();
+        $p = $this->player(['marketing_email' => true, 'marketing_email_consent_at' => '2025-03-12 10:00:00', 'marketing_sms' => true]);
+
+        // Shown in UK time; an opt-in with no date kept says so rather than guessing one.
+        Livewire::test(EditUser::class, ['record' => $p->getKey()])->assertOk()
+            ->assertSee('Marketing Consent')->assertSee('Agreed 12 Mar 2025, 10:00')->assertSee('Agreed, date not known')
+            ->fillForm(['first_name' => 'Pat'])->call('save')->assertHasNoFormErrors();
+        $p->refresh();
+        $this->assertSame('2025-03-12 10:00:00', $p->marketing_email_consent_at->toDateTimeString(), 'saving the form never changes a consent date');
+        $this->assertNull($p->marketing_sms_consent_at);
+
+        $q = $this->player(['email' => 'no-marketing@example.com']);
+        Livewire::test(EditUser::class, ['record' => $q->getKey()])->assertSee('Not agreed');
+    }
+
+    public function test_the_dashboard_shows_the_gimme_gimme_look_and_nothing_from_other_sites(): void
+    {
+        $admin = $this->admin();
+        $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
+        $page = $this->actingAs($admin->refresh())->get('/admin')->assertOk();
+        $page->assertSee('css/filament/gimme/admin.css', false)->assertSee('css/filament/gimme/logo.webp', false)
+            ->assertSee('Good ', false);
+        $html = (string) $page->getContent();
+        foreach (['ui-avatars.com', 'fonts.bunny.net', 'fonts.googleapis.com'] as $host) {
+            $this->assertStringNotContainsString($host, $html, "the admin must not load anything from {$host}");
+        }
+        foreach (['admin.css', 'fonts.css', 'logo.webp', 'favicon.png', 'nunito-latin.woff2', 'lilita-one-latin.woff2'] as $f) {
+            $this->assertFileExists(public_path('css/filament/gimme/'.$f));
+        }
+        Filament::setCurrentPanel('admin');
+        foreach ([Overview::class, SalesChart::class, LiveCompetitions::class, LatestOrders::class] as $w) {
+            Livewire::test($w)->assertOk();
         }
     }
 

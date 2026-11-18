@@ -239,3 +239,7 @@
   .rg-heist-street { gap: 4px; padding-top: 10px; }
   .rg-heist-paytable { margin-bottom: 6px; }
 }
+
+/* Fit the height as well as the width on short phones (the board is about 1.2 times as tall as it is wide). */
+.rg-reveal.rg-fullscreen .rg-heist,
+.rg-reveal.rg-fill .rg-heist { width: min(100%, 380px, calc(((100svh - 180px) / var(--rg-z, 1) - 150px) / 1.2)); margin-inline: auto; }
