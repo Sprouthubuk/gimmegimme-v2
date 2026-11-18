@@ -41,6 +41,7 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             'date_of_birth' => 'date',
             'marketing_email' => 'boolean',
             'marketing_sms' => 'boolean',
+            'name_hidden' => 'boolean',
             'marketing_email_consent_at' => 'datetime',
             'marketing_sms_consent_at' => 'datetime',
             'win_notifications' => 'boolean',
@@ -90,8 +91,13 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     }
 
     /** "Liam O." — the only form of a player's name ever shown publicly. */
+    /** "Liam O.", or "Anonymous" for a player who asked not to be named (Terms 8.2). */
     public function publicName(): string
     {
+        if ($this->name_hidden) {
+            return 'Anonymous';
+        }
+
         return trim($this->first_name.' '.mb_substr((string) $this->last_name, 0, 1).'.');
     }
 
