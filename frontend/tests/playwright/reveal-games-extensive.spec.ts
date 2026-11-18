@@ -15,7 +15,7 @@ import { expect, test, type Page } from "@playwright/test";
  * The board generators themselves are proven across thousands of seeds in tests/reveal-games.
  */
 
-const CLASSIC_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole"];
+const CLASSIC_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole", "pinata"];
 const CHRISTMAS_GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "gems", "claw_machine", "slots"];
 /** The games each skin draws its own way. */
 const SKIN_GAMES: Record<string, string[]> = {
@@ -105,6 +105,12 @@ async function playBoard(page: Page, game: string) {
         const up = page.locator(".rg-hole.is-up:not([disabled])").first();
         if (await up.count()) await up.dispatchEvent("pointerdown").catch(() => {});
         await page.waitForTimeout(80);
+      }
+      break;
+    case "pinata":
+      for (let k = 0; k < 20 && !(await page.locator(".rg-pinata.is-broken").count()); k++) {
+        await page.locator(".rg-pinata-swing").dispatchEvent("pointerdown").catch(() => {});
+        await page.waitForTimeout(120);
       }
       break;
     case "gems":
@@ -408,9 +414,11 @@ test.describe("the themed looks are laid out properly on a fresh page", () => {
   // Each test starts on a freshly loaded page, so no classic game's styles are already
   // loaded: a board must look right on its own (the vault's button once sat off-centre
   // unless the classic wheel had been opened first).
+  // Every game in every look it has: the classic games, the Christmas games and the other themes.
   const LOOKS: [string, string, string][] = [
+    ...CLASSIC_GAMES.map((g): [string, string, string] => ["classic", g, "win"]),
+    ...["balloon_pop", "spin_wheel", "scratch_card", "bingo_card", "gems", "claw_machine", "slots"].map((g): [string, string, string] => ["christmas", g, "win"]),
     ["pirates", "gems", "win"],
-    ["christmas", "slots", "win"],
     ["cash_escape", "spin_wheel", "win"],
     ["hip_hop", "coin_drop", "win"],
     ["smash_cash", "balloon_pop", "mixed"],
@@ -418,7 +426,7 @@ test.describe("the themed looks are laid out properly on a fresh page", () => {
   const SIZES: [number, number][] = [[320, 568], [360, 640], [375, 667], [390, 844], [430, 932], [768, 1024], [1280, 720], [1366, 768], [1440, 900]];
   for (const [w, h] of SIZES) {
     for (const [skin, game, sample] of LOOKS) {
-      test(`${skin} at ${w}x${h}: centred, nothing off screen, cut off or covered`, async ({ page }) => {
+      test(`${skin} ${game} at ${w}x${h}: centred, nothing off screen, cut off or covered`, async ({ page }) => {
         const errors = watchErrors(page);
         await page.setViewportSize({ width: w, height: h });
         await open(page, game, skin, sample, "full");

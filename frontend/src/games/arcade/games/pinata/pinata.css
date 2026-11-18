@@ -1,0 +1,123 @@
+/* Piñata: a paper star hanging from a rope; each tap swings and cracks it, the last one bursts it open. */
+.rg-pinata { width: min(100%, 360px); display: flex; flex-direction: column; align-items: center; }
+.rg-pinata-stage { position: relative; width: 100%; height: clamp(300px, 52svh, 420px); }
+.rg-pinata-rope {
+  position: absolute;
+  left: 50%;
+  top: -40px;
+  width: 4px;
+  height: 92px;
+  translate: -50% 0;
+  border-radius: 2px;
+  background: repeating-linear-gradient(170deg, #e9c98a 0 5px, #b58a45 5px 9px);
+}
+.rg-pinata.is-broken .rg-pinata-rope { opacity: 0.6; }
+.rg-pinata-swing {
+  position: absolute;
+  left: 50%;
+  top: 46px;
+  width: min(78%, 270px);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transform-origin: 50% -46px;
+  animation: rg-pinata-sway 3.2s ease-in-out infinite;
+}
+.rg-pinata.is-playing .rg-pinata-swing { animation: none; }
+.rg-pinata-swing:focus-visible { outline: 3px solid #fff; outline-offset: 6px; border-radius: 24px; }
+.rg-pinata-body { display: block; width: 100%; height: 100%; transform-origin: 50% -46px; }
+.rg-pinata-body.is-hit { animation: rg-pinata-hit 0.7s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.rg-pinata-art { display: block; width: 100%; height: 100%; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.45)); overflow: visible; }
+.rg-pinata-tassel { transform-box: fill-box; transform-origin: 50% 0; animation: rg-pinata-tassel 1.6s ease-in-out infinite alternate; }
+.rg-pinata-crack { stroke-dasharray: 60; animation: rg-pinata-crack 0.25s ease-out both; }
+
+/* The stick, swung in from the side on each hit. */
+.rg-pinata-bat { position: absolute; top: 46%; right: -30%; width: 62%; transform-origin: 100% 50%; animation: rg-pinata-bat 0.36s ease-out both; pointer-events: none; }
+.rg-pinata-bat.is-left { right: auto; left: -30%; transform-origin: 0 50%; animation-name: rg-pinata-bat-l; }
+.rg-pinata-bat svg { display: block; width: 100%; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.4)); }
+
+/* The break: two halves fly apart, sweets shower out, the prize card drops in. */
+.rg-pinata-burst { position: absolute; left: 50%; top: 46px; width: min(78%, 270px); aspect-ratio: 1; translate: -50% 0; }
+.rg-pinata-half { position: absolute; inset: 0; animation: rg-pinata-half-l 1s cubic-bezier(0.2, 0.7, 0.4, 1) both; }
+.rg-pinata-half.is-right { animation-name: rg-pinata-half-r; }
+.rg-pinata-pop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 20%, rgba(255, 230, 120, 0.9) 40%, rgba(255, 79, 168, 0) 70%);
+  animation: rg-pinata-pop 0.5s ease-out both;
+}
+.rg-sweet {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 14px;
+  margin: -7px 0 0 -9px;
+  animation: rg-sweet 1.3s cubic-bezier(0.25, 0.6, 0.45, 1) both;
+}
+.rg-sweet i { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0 15%, var(--c) 45%, var(--c2)); }
+.rg-sweet.is-wrap i::before,
+.rg-sweet.is-wrap i::after { content: ""; position: absolute; top: 2px; width: 8px; height: 10px; background: var(--c); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.rg-sweet.is-wrap i::before { left: -6px; rotate: 180deg; }
+.rg-sweet.is-wrap i::after { right: -6px; }
+.rg-sweet.is-star svg { width: 18px; height: 18px; fill: var(--c); filter: drop-shadow(0 1px 0 var(--c2)); }
+.rg-sweet.is-pink { --c: #ff4fa8; --c2: #b8006a; }
+.rg-sweet.is-yellow { --c: #ffd23a; --c2: #c98500; }
+.rg-sweet.is-cyan { --c: #3fd0f7; --c2: #0a86b8; }
+.rg-sweet.is-white { --c: #ffffff; --c2: #b9b3c9; }
+.rg-sweet.is-purple { --c: #b86bff; --c2: #6b1fb8; }
+
+.rg-pinata-prize {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  translate: -50% -50%;
+  padding: 12px 22px;
+  border-radius: 18px;
+  font-family: var(--rg-font-display);
+  font-size: 26px;
+  white-space: nowrap;
+  color: #2b0f45;
+  background: #fffdf6;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  animation: rg-pinata-prize 0.6s 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.rg-pinata-prize.is-win {
+  font-size: 40px;
+  color: #3a1500;
+  background: linear-gradient(180deg, #fff3a8, #ffd23a 55%, #e9a300);
+  box-shadow: 0 0 0 3px #fff, 0 0 32px rgba(255, 216, 74, 0.85), 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+.rg-pinata-count { display: flex; gap: 8px; margin-top: 4px; }
+.rg-pinata-count i { width: 16px; height: 16px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35); }
+.rg-pinata-count i.is-done { background: radial-gradient(circle at 35% 30%, #ffb3dc, #ff2d95 55%, #a8005a); box-shadow: 0 0 8px rgba(255, 45, 149, 0.7); }
+.rg-pinata-controls { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 340px; }
+
+@keyframes rg-pinata-sway { 0%, 100% { rotate: -4deg; } 50% { rotate: 4deg; } }
+@keyframes rg-pinata-hit { 0% { rotate: 0deg; scale: 0.94 1.04; } 25% { rotate: var(--swing); scale: 1; } 60% { rotate: calc(var(--swing) * -0.45); } 100% { rotate: 0deg; } }
+@keyframes rg-pinata-tassel { from { rotate: -10deg; } to { rotate: 10deg; } }
+@keyframes rg-pinata-crack { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
+@keyframes rg-pinata-bat { 0% { rotate: -60deg; opacity: 0; } 30% { opacity: 1; } 55% { rotate: 6deg; } 100% { rotate: 0deg; opacity: 0; } }
+@keyframes rg-pinata-bat-l { 0% { rotate: 60deg; opacity: 0; } 30% { opacity: 1; } 55% { rotate: -6deg; } 100% { rotate: 0deg; opacity: 0; } }
+@keyframes rg-pinata-half-l { to { translate: -90px 220px; rotate: -38deg; opacity: 0.15; } }
+@keyframes rg-pinata-half-r { to { translate: 90px 220px; rotate: 38deg; opacity: 0.15; } }
+@keyframes rg-pinata-pop { 0% { scale: 0.2; opacity: 1; } 100% { scale: 7; opacity: 0; } }
+@keyframes rg-sweet { 0% { translate: 0 0; rotate: 0deg; opacity: 1; } 85% { opacity: 1; } 100% { translate: var(--dx) var(--dy); rotate: var(--spin); opacity: 0.85; } }
+@keyframes rg-pinata-prize { from { scale: 0.3; opacity: 0; } to { scale: 1; opacity: 1; } }
+
+.rg-reveal.is-reduced-motion .rg-pinata *,
+.rg-reveal.is-reduced-motion .rg-pinata { animation: none !important; }
+.rg-reveal.is-reduced-motion .rg-pinata-half,
+.rg-reveal.is-reduced-motion .rg-sweet,
+.rg-reveal.is-reduced-motion .rg-pinata-pop { display: none; }

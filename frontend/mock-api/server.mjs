@@ -21,7 +21,7 @@ const iso = (ms) => new Date(ms).toISOString();
 const closes = iso(now + 18 * DAY + 10 * 36e5);
 const drawAt = iso(now + 9 * DAY + 10 * 36e5);
 
-const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Scratch Card", coin_drop: "Coin Drop", balloon_pop: "Balloon Pop", gems: "Gems", hook_a_duck: "Hook a Duck", spin_wheel: "Spin the Wheel", bingo_card: "Bingo Card", whack_a_mole: "Whack-a-Mole", classic: "Scratch Card" };
+const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Scratch Card", coin_drop: "Coin Drop", balloon_pop: "Balloon Pop", gems: "Gems", hook_a_duck: "Hook a Duck", spin_wheel: "Spin the Wheel", bingo_card: "Bingo Card", whack_a_mole: "Whack-a-Mole", pinata: "Piñata", classic: "Scratch Card" };
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {

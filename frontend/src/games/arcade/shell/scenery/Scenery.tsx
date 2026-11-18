@@ -338,7 +338,57 @@ function Fairground() {
   );
 }
 
+/** A party: a warm room with bunting, balloons and confetti. (Piñata) */
+function Party() {
+  const flags = ["#ff4fa8", "#ffd23a", "#3fd0f7", "#b86bff", "#5be37d"];
+  const balloons: [number, number, string, number][] = [[34, 560, "#ff4fa8", 1], [74, 610, "#ffd23a", 0.8], [356, 540, "#3fd0f7", 1], [318, 600, "#b86bff", 0.85]];
+  const confetti = Array.from({ length: 34 }, (_, i) => {
+    const h = (i * 2654435761) >>> 0;
+    return { x: h % 400, y: 160 + ((h >>> 9) % 640), r: (h >>> 3) % 180, c: flags[i % flags.length] };
+  });
+  return (
+    <>
+      <defs>
+        <BokehDefs />
+        <radialGradient id="pt-bg" cx="0.5" cy="0.35" r="0.8">
+          <stop offset="0" stopColor="#5a1f8e" />
+          <stop offset="0.6" stopColor="#2e0d55" />
+          <stop offset="1" stopColor="#12051f" />
+        </radialGradient>
+      </defs>
+      <rect width="400" height="860" fill="url(#pt-bg)" />
+      <Bokeh items={[[80, 220, 60, "pink", 0.35], [330, 180, 70, "gold", 0.3], [200, 520, 120, "pink", 0.12], [40, 420, 40, "cyan", 0.3], [370, 420, 44, "gold", 0.25]]} />
+      {[[0, 150, 26]].map(([x0, y, sag], row) => (
+        <g key={row}>
+          <path d={`M${x0} ${y} Q200 ${y + sag * 2} 400 ${y}`} fill="none" stroke="#ffe7a8" strokeWidth="1.5" />
+          {Array.from({ length: 11 }, (_, i) => {
+            const t = (i + 0.5) / 11;
+            const x = t * 400;
+            const yy = y + (1 - (2 * t - 1) ** 2) * sag;
+            return <path key={i} d={`M${x - 13} ${yy} L${x + 13} ${yy} L${x} ${yy + 26} Z`} fill={flags[(i + row * 2) % flags.length]} opacity={row ? 0.7 : 0.95} />;
+          })}
+        </g>
+      ))}
+      {balloons.map(([x, y, c, k], i) => (
+        <g key={i} transform={`translate(${x} ${y}) scale(${k})`}>
+          <g className="rg-sc-cloud" style={{ animationDelay: `${i * -5}s`, animationDuration: "7s" }}>
+            <path d="M0 40 q-6 30 4 60" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" fill="none" />
+            <ellipse cx="0" cy="0" rx="26" ry="32" fill={c} />
+            <ellipse cx="-9" cy="-12" rx="6" ry="10" fill="#fff" opacity="0.45" />
+            <path d="M-4 31 L4 31 L0 38 Z" fill={c} />
+          </g>
+        </g>
+      ))}
+      {confetti.map((f, i) => (
+        <rect key={i} x={f.x} y={f.y} width="7" height="3.5" rx="1" fill={f.c} opacity="0.7" transform={`rotate(${f.r} ${f.x} ${f.y})`} />
+      ))}
+      <Sparkles n={12} seed={3} color="#ffe9a3" />
+    </>
+  );
+}
+
 const SCENES: Record<string, SceneFn> = {
+  pinata: Party,
   whack_a_mole: Garden,
   gems: Cave,
   hook_a_duck: Fairground,

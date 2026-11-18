@@ -49,3 +49,7 @@
   100% { transform: translate(var(--dx), calc(var(--dy) + 14px)) scale(0.9); opacity: 0; }
 }
 @keyframes rg-aurora { 50% { opacity: 0.35; } }
+
+/* Premium labels: the same clean, thinner lettering as the classic wheel. */
+.rg-sleigh-text { font-family: var(--rg-font-body); font-weight: 800; letter-spacing: -0.01em; stroke: rgba(0, 0, 0, 0.18); stroke-width: 0.5px; }
+.rg-sleigh-text.is-none { font-weight: 800; letter-spacing: 0.08em; opacity: 0.9; stroke: none; }

@@ -26,7 +26,7 @@ const [featured, { data: winners }] = await Promise.all([
 
 const FILTERS: [string, string, (c: CompetitionSummary) => boolean][] = [
   ["all", "All", () => true],
-  ["arcade", "Arcade", (c) => ["claw_machine", "slots", "coin_drop", "balloon_pop", "hook_a_duck", "spin_wheel", "whack_a_mole"].includes(c.game ?? "")],
+  ["arcade", "Arcade", (c) => ["claw_machine", "slots", "coin_drop", "balloon_pop", "hook_a_duck", "spin_wheel", "whack_a_mole", "pinata"].includes(c.game ?? "")],
   ["reveal", "Scratch & Reveal", (c) => ["scratch_card", "classic", "gems", "bingo_card"].includes(c.game ?? "")],
   ["christmas", "Christmas", (c) => c.skin === "christmas"],
   ["under10", "Under 10p", (c) => c.pricePence < 10],
