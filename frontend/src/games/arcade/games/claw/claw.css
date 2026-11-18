@@ -330,3 +330,54 @@
 .is-reduced-motion .rg-claw-arm { rotate: 0deg; transition: none; }
 .is-reduced-motion .rg-claw-stage-item, .is-reduced-motion .rg-claw-stage-bauble, .is-reduced-motion .rg-claw-stage-rays { animation: none; }
 .is-reduced-motion .rg-claw-aim { animation: none; }
+
+/* ---------- premium classic: a lit arcade cabinet ---------- */
+.rg-skin-classic .rg-claw-machine { filter: none; border-radius: 24px 24px 26px 26px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 46px rgba(170, 70, 255, 0.3); }
+.rg-skin-classic .rg-claw-top {
+  border: 0;
+  padding: 10px 12px 8px;
+  background: radial-gradient(120% 140% at 50% 0%, #ff5fb8 0%, #d1006f 60%, #8a0048 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 3px 0 6px rgba(255, 255, 255, 0.12);
+}
+.rg-skin-classic .rg-claw-title {
+  background: linear-gradient(180deg, #fffbe0 0%, #ffd84a 55%, #f59e00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 3px 0 #7a003e) drop-shadow(0 0 10px rgba(255, 220, 90, 0.5));
+}
+.rg-skin-classic .rg-claw-top .rg-marquee i { border: 0; background: #fff6c8; box-shadow: 0 0 8px #ffe27a; }
+.rg-skin-classic .rg-claw-glass {
+  border: 0;
+  background:
+    radial-gradient(70% 40% at 50% 0%, rgba(255, 255, 255, 0.25), transparent 70%),
+    linear-gradient(180deg, #3a1a6e 0%, #1d0a3a 100%);
+  box-shadow: inset 6px 0 0 #7a2fd0, inset -6px 0 0 #7a2fd0, inset 9px 0 0 #ffd34d, inset -9px 0 0 #ffd34d;
+}
+.rg-skin-classic .rg-claw-glass::after { background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.08) 22%, transparent 32%); }
+.rg-skin-classic .rg-claw-rail { background: linear-gradient(180deg, #e9ecf3, #8f95a6); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+.rg-skin-classic .rg-claw-carriage { border: 0; background: linear-gradient(180deg, #fff3a8, #e0a400); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); }
+.rg-skin-classic .rg-claw-cable { background: linear-gradient(90deg, #8f95a6, #e9ecf3, #8f95a6); }
+.rg-skin-classic .rg-capsule-top,
+.rg-skin-classic .rg-capsule-bottom { border: 0; }
+.rg-skin-classic .rg-capsule-top { background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.85) 0 10%, var(--rg-cap) 45%, color-mix(in srgb, var(--rg-cap) 55%, #1a0030)); }
+.rg-skin-classic .rg-capsule-bottom { background: linear-gradient(180deg, #fffdf6, #cfc6dd); box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.12); }
+.rg-skin-classic .rg-capsule { filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)); }
+.rg-skin-classic .rg-claw-panel {
+  border: 0;
+  background: linear-gradient(180deg, #7a1fd0 0%, #4c129a 60%, #2a0866 100%);
+  box-shadow: inset 0 0 0 3px #ffd34d, inset 0 0 0 6px #6b1fb8;
+}
+.rg-skin-classic .rg-joy-base { background: radial-gradient(ellipse, #1a0730, #0b0216); }
+.rg-skin-classic .rg-joy-stick { background: linear-gradient(90deg, #8f95a6, #e9ecf3, #8f95a6); border-radius: 4px; }
+.rg-skin-classic .rg-joy-stick::before { border: 0; background: radial-gradient(circle at 35% 30%, #ffb3dc, #ff2d95 50%, #8a004a); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 45, 149, 0.6); }
+.rg-skin-classic .rg-claw-chute { background: linear-gradient(180deg, #0b0216, #1a0730); box-shadow: inset 0 0 0 2px rgba(255, 211, 77, 0.6), inset 0 6px 10px rgba(0, 0, 0, 0.6); color: #ffd84a; }
+.rg-skin-classic .rg-grab {
+  border: 0;
+  color: #3a1500;
+  background: radial-gradient(circle at 35% 28%, #fff7c2, #ffcf33 50%, #c47f00);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.6), 0 0 0 4px #8a5200, 0 6px 0 4px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 216, 74, 0.6);
+}
+.rg-skin-classic .rg-grab:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.5), 0 0 0 4px #8a5200, 0 2px 0 4px rgba(0, 0, 0, 0.4); }
+.rg-skin-classic .rg-claw-aim { opacity: 0.6; }

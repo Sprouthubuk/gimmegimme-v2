@@ -7,8 +7,6 @@ import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "./sleigh.css";
-import { Scene3D } from "../../three/Scene3D";
-import { buildSleighScene, type SleighState3D } from "./sleigh3d";
 
 const SEG = 360 / WHEEL_SEGMENTS;
 /** The ring of rooftops: inner and outer edge of the twelve panels. */
@@ -257,7 +255,6 @@ export function SleighBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
   }, [seed]);
   const [cx, cy] = polar(layout.target * SEG, CHIMNEY_R + 4);
 
-  const state3d: SleighState3D = { phase, angle, height, segments: layout.segments, target: layout.target, stop };
   const flat = (
     <>
       <div className="rg-xmas-title rg-sleigh-title">DASHER'S DOSH DROP</div>
@@ -378,15 +375,7 @@ export function SleighBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
 
   return (
     <>
-      <Scene3D
-        state={state3d}
-        setup={(ctx) => buildSleighScene(ctx)}
-        seed={`sleigh:${seed}`}
-        reducedMotion={reducedMotion}
-        aspect={1.0}
-        fallback={flat}
-        label={phase === "landed" ? `Landed on ${landed.kind === "none" ? "no win" : landed.label}` : "Dasher pulling the sleigh round the rooftops"}
-      />
+      {flat}
       {phase === "flying" ? (
         <div className="rg-sleigh-controls">
           <button type="button" className="rg-btn rg-btn-xmas" onClick={stop}>

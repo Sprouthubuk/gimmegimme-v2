@@ -10,23 +10,7 @@ import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "../../games/scratch/scratch.css";
 import "./vault.css";
-import { Scene3D } from "../../three/Scene3D";
-import { buildStageScene, type StageState, type StageSkin3D } from "../../three/stageScene";
-import { GOLD_FILL, GREEN_FILL } from "../../three/signs";
 
-const VAULT_STAGE_3D: StageSkin3D = {
-  bg: [
-    [0, "#06281a"],
-    [0.55, "#0c3f29"],
-    [1, "#020d08"],
-  ],
-  sign: [
-    { text: "SCROOGE'S", size: 0.3, fill: GREEN_FILL, y: 0.3 },
-    { text: "SECRET STASH", size: 0.4, fill: GOLD_FILL, y: 0.72 },
-  ],
-  rays: 0xffc23d,
-  floaters: "bars",
-};
 
 /** A thin frost over the vault wall, so the doors show through it: icy white with crystals, the same every time it is painted. */
 const paintFrost: PaintCover = (c, width, height) => {
@@ -108,7 +92,6 @@ export function VaultScratchBoard({ ticket, seed, decoys, reducedMotion, onRevea
     return () => clearTimeout(t);
   }, [allRevealed, onReveal, reducedMotion, layout.winningCells.length]);
 
-  const stage: StageState = { done: allRevealed, won: layout.winningCells.length > 0 };
   const progress = scratchProgress(layout, revealed, started);
   let prompt: React.ReactNode;
   if (progress.kind === "done") prompt = <GamePrompt title={progress.won ? "Match 3!" : "No match this time"} tone={progress.won ? "pink" : "ink"} />;
@@ -119,20 +102,8 @@ export function VaultScratchBoard({ ticket, seed, decoys, reducedMotion, onRevea
 
   return (
     <>
-      <div className="rg3-backdrop-wrap">
-        <Scene3D
-          state={stage}
-          setup={(ctx) => buildStageScene(ctx, VAULT_STAGE_3D)}
-          seed={`vault:${ticket.ticketNumber}`}
-          reducedMotion={reducedMotion}
-          fill
-          maxFps={30}
-          maxPixelRatio={1.5}
-          className="rg3-backdrop"
-          fallback={null}
-          label="Scrooge's vault"
-        />
-        <div className="rg3-backdrop-content">
+      <div className="rg-board-wrap">
+        <div className="rg-board-wrap-in">
   <div className="rg-vault">
           <Candle side="left" />
           <Candle side="right" />

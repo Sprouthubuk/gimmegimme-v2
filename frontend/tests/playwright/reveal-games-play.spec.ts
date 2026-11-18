@@ -15,7 +15,7 @@ const SIZES = [
   { name: "390x844", width: 390, height: 844 },
   { name: "390x667 (short phone, board drawn smaller)", width: 390, height: 667 },
 ];
-const GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems"] as const;
+const GAMES = ["scratch_card", "spin_wheel", "bingo_card", "balloon_pop", "hook_a_duck", "claw_machine", "coin_drop", "slots", "gems", "whack_a_mole"] as const;
 const SKINS = ["classic", "christmas", "pirates", "cash_escape", "hip_hop", "smash_cash"] as const;
 /** The games each skin draws its own way (null: all of them). Any other game falls back to the classic look. */
 const SKIN_GAMES: Record<(typeof SKINS)[number], readonly string[] | null> = {
@@ -60,6 +60,17 @@ async function scratchAll(page: Page) {
   await page.mouse.up();
 }
 
+/** Presses START, then whacks each mole as it pops up until the result shows. */
+async function whackAll(page: Page) {
+  await expect(page.locator(".rg-whack")).toBeVisible({ timeout: 10_000 });
+  if (await page.locator(".rg-whack.is-ready").count()) await page.locator(".rg-whack-controls .rg-cta").click();
+  for (let k = 0; k < 300 && !(await page.locator(".rg-hole.is-final").count()); k++) {
+    const up = page.locator(".rg-hole.is-up:not([disabled])").first();
+    if (await up.count()) await up.dispatchEvent("pointerdown").catch(() => {});
+    await page.waitForTimeout(80);
+  }
+}
+
 /** Plays the board on screen until the result sheet shows. */
 async function play(page: Page, game: string) {
   const click = (sel: string) => page.locator(sel).first().click();
@@ -71,7 +82,7 @@ async function play(page: Page, game: string) {
       await page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls .rg-btn").first().click();
       break;
     case "bingo_card":
-      await page.locator(".rg-bingo-controls .rg-btn").click();
+      await page.locator(".rg-bingo-controls .rg-btn, .rg-bingo-controls .rg-cta").first().click();
       break;
     case "balloon_pop":
       await click(".rg-balloon-all, .rg-cracker-all, .rg-smash-all");
@@ -81,6 +92,9 @@ async function play(page: Page, game: string) {
       break;
     case "coin_drop":
       await click(".rg-coin-board");
+      break;
+    case "whack_a_mole":
+      await whackAll(page);
       break;
     default: {
       // The other classic games: press whatever the board offers until it lands.
@@ -427,4 +441,39 @@ test.describe("reduced motion", () => {
       await expect(page.locator(".rg-snow:not(.is-still)")).toHaveCount(0);
     });
   }
+});
+
+test.describe("whack-a-mole", () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: "no-preference" });
+
+  test("the result shows only after the third whack, and earlier moles carry nothing", async ({ page }) => {
+    await open(page, "whack_a_mole", "classic", "win");
+    await page.locator(".rg-whack-controls .rg-cta").click();
+    let whacked = 0;
+    for (let k = 0; k < 300 && whacked < 2; k++) {
+      const up = page.locator(".rg-hole.is-up:not([disabled])").first();
+      if (await up.count()) {
+        await expect(page.locator(".rg-mole-sign")).toHaveCount(0);
+        await up.dispatchEvent("pointerdown");
+        whacked++;
+      }
+      await page.waitForTimeout(80);
+    }
+    await expect(page.locator(".rg-whack-count i.is-done")).toHaveCount(2);
+    await expect(page.locator(".rg-mole-sign")).toHaveCount(0);
+    await expect(page.locator(".rg-sheet")).toHaveCount(0);
+    await whackAll(page);
+    await expect(page.locator(".rg-mole-sign")).toHaveText("£10");
+    await expect(page.locator(".rg-sheet")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("a mole that is not whacked goes back down and another comes up", async ({ page }) => {
+    await open(page, "whack_a_mole", "classic", "lose");
+    await page.locator(".rg-whack-controls .rg-cta").click();
+    const first = page.locator(".rg-hole.is-up");
+    await expect(first).toHaveCount(1, { timeout: 3000 });
+    const firstIndex = await page.locator(".rg-hole").evaluateAll((els) => els.findIndex((e) => e.classList.contains("is-up")));
+    await expect.poll(async () => page.locator(".rg-hole").evaluateAll((els) => els.findIndex((e) => e.classList.contains("is-up"))), { timeout: 4000 }).not.toBe(firstIndex);
+    await expect(page.locator(".rg-whack-count i.is-done")).toHaveCount(0);
+  });
 });

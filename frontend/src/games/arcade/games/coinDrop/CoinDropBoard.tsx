@@ -4,9 +4,6 @@ import { COIN_BINS, generateCoinDrop } from "../generators";
 import { BIN_TOP, BIN_W, COIN_R, H, LABEL_TOP, PEG_R, ROWS, ROW_DY, ROW_Y0, W, binX, pegsFor, useCoinDrop } from "./useCoinDrop";
 import { sizeClass } from "../symbols";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
-import { Scene3D } from "../../three/Scene3D";
-import { buildCoinDropScene, type CoinDropState } from "../../three/coinDropScene";
-import { CLASSIC_COIN_3D } from "../../three/classicSkins";
 import "./coinDrop.css";
 
 export function CoinDropBoard({ ticket, seed, decoys, reducedMotion, onReveal }: BoardProps) {
@@ -50,33 +47,53 @@ export function CoinDropBoard({ ticket, seed, decoys, reducedMotion, onReveal }:
 
       <div className={`rg-coin-board is-${phase}`} onClick={drop}>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={landedBin != null ? `Coin landed on ${layout.bins[landedBin].label ?? "no prize"}` : "Coin drop board"}>
+          <defs>
+            <radialGradient id="cd-peg" cx="0.35" cy="0.3" r="0.8">
+              <stop offset="0" stopColor="#fffbe0" />
+              <stop offset="0.5" stopColor="#ffd23a" />
+              <stop offset="1" stopColor="#a86400" />
+            </radialGradient>
+            <radialGradient id="cd-coin" cx="0.35" cy="0.3" r="0.8">
+              <stop offset="0" stopColor="#fff7c2" />
+              <stop offset="0.45" stopColor="#ffcf33" />
+              <stop offset="1" stopColor="#c47f00" />
+            </radialGradient>
+            <linearGradient id="cd-bin-yellow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff3a8" /><stop offset="1" stopColor="#e9a300" /></linearGradient>
+            <linearGradient id="cd-bin-cyan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#a8ecff" /><stop offset="1" stopColor="#0a8cc0" /></linearGradient>
+            <linearGradient id="cd-bin-pink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffa8d6" /><stop offset="1" stopColor="#c4006a" /></linearGradient>
+            <linearGradient id="cd-bin-none" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a1f5c" /><stop offset="1" stopColor="#1f0b36" /></linearGradient>
+          </defs>
           {Array.from({ length: ROWS }, (_, r) =>
             pegsFor(r).map((x, i) => (
-              <circle key={`${r}-${i}`} cx={x} cy={ROW_Y0 + r * ROW_DY} r={PEG_R} fill={(r + i) % 2 ? "#ff2d95" : "#1fc4f4"} stroke="#141414" strokeWidth="2.2" />
+              <g key={`${r}-${i}`}>
+                <circle cx={x} cy={ROW_Y0 + r * ROW_DY + 1.5} r={PEG_R} fill="rgba(0,0,0,0.45)" />
+                <circle cx={x} cy={ROW_Y0 + r * ROW_DY} r={PEG_R} fill="url(#cd-peg)" />
+              </g>
             )),
           )}
           {layout.bins.map((b, i) => (
             <g key={i} className={landedBin === i ? "rg-bin-hit" : ""}>
-              <rect x={i * BIN_W} y={LABEL_TOP} width={BIN_W} height={H - LABEL_TOP} className={`rg-bin rg-bin-${b.label ? b.tone : "none"}`} />
+              <rect x={i * BIN_W + 2} y={LABEL_TOP + 2} width={BIN_W - 4} height={H - LABEL_TOP - 4} rx="8" fill={`url(#cd-bin-${b.label ? b.tone : "none"})`} className="rg-bin" />
               {b.label ? (
-                <text x={binX(i)} y={LABEL_TOP + 27} textAnchor="middle" dominantBaseline="middle" className={`rg-bin-label ${sizeClass(b.label)}`}>
+                <text x={binX(i)} y={LABEL_TOP + 27} textAnchor="middle" dominantBaseline="middle" className={`rg-bin-label is-${b.tone} ${sizeClass(b.label)}`}>
                   {b.label.length > 6 ? `${b.label.slice(0, 5)}…` : b.label}
                 </text>
               ) : (
-                <path d={`M${binX(i) - 7} ${LABEL_TOP + 20} l14 14 m0 -14 l-14 14`} stroke="#141414" strokeWidth="2.2" strokeLinecap="round" />
+                <path d={`M${binX(i) - 5} ${LABEL_TOP + 22} l10 10 m0 -10 l-10 10`} stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" />
               )}
             </g>
           ))}
           {Array.from({ length: COIN_BINS - 1 }, (_, i) => (
-            <line key={i} x1={(i + 1) * BIN_W} x2={(i + 1) * BIN_W} y1={BIN_TOP} y2={H} stroke="#141414" strokeWidth="3" />
+            <rect key={i} x={(i + 1) * BIN_W - 1.5} y={BIN_TOP} width="3" height={H - BIN_TOP} rx="1.5" fill="#ffd23a" opacity="0.85" />
           ))}
-          <line x1="0" x2={W} y1={LABEL_TOP} y2={LABEL_TOP} stroke="#141414" strokeWidth="3" />
           {trail.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r={COIN_R * 0.9} fill="#ffe11a" opacity={0.12 + i * 0.08} />
+            <circle key={i} cx={p.x} cy={p.y} r={COIN_R * 0.9} fill="#ffd84a" opacity={0.08 + i * 0.06} />
           ))}
           {coin && (
             <g transform={`translate(${coin.x} ${coin.y})`}>
-              <circle r={COIN_R} fill="#ffe11a" stroke="#141414" strokeWidth="2.5" />
+              <circle r={COIN_R} cy="1.5" fill="#7a4a00" />
+              <circle r={COIN_R} fill="url(#cd-coin)" />
+              <circle r={COIN_R * 0.72} fill="none" stroke="#b97500" strokeWidth="1.2" opacity="0.7" />
               <text textAnchor="middle" dominantBaseline="central" className="rg-coin-glyph">£</text>
             </g>
           )}
@@ -84,34 +101,10 @@ export function CoinDropBoard({ ticket, seed, decoys, reducedMotion, onReveal }:
       </div>
     </>
   );
-  const state: CoinDropState = { phase, aim, coin, landedBin, setAim, drop };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildCoinDropScene(ctx, CLASSIC_COIN_3D, layout)}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.28}
-        fallback={flat}
-        label="Coin drop"
-        controls={
-          <>
-          <div className="rg3-controls">
-            <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.max(0, a - 1))} disabled={phase !== "aim"} aria-label="Aim left">
-              ◀
-            </button>
-            <button type="button" className="rg3-btn rg3-grab" onClick={drop} disabled={phase !== "aim"}>
-              DROP
-            </button>
-            <button type="button" className="rg3-btn is-cyan rg3-arrow" onClick={() => setAim((a) => Math.min(COIN_BINS - 1, a + 1))} disabled={phase !== "aim"} aria-label="Aim right">
-              ▶
-            </button>
-          </div>
-          </>
-        }
-      />
+      {flat}
       {phase === "aim" ? (
         <GamePrompt title="Slide to aim, tap to drop" sub={RESULT_SET_NOTE} />
       ) : phase === "dropping" ? (

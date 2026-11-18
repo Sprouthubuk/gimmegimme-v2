@@ -5,10 +5,6 @@ import { useGemPicks } from "../../games/gems/useGemPicks";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound, useSoundLater } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
-import { Scene3D } from "../../three/Scene3D";
-import { buildPickScene, type PickState } from "../../three/pickScene";
-import { svgElementToImage } from "../../three/svgImage";
-import { piratesSkin3D } from "./pirates3d";
 import "../shared/themed.css";
 import "./pirates.css";
 
@@ -280,37 +276,13 @@ export function PiratesBoard({ ticket, seed, decoys, reducedMotion, onReveal }: 
       </div>
     </>
   );
-  const state: PickState = { kinds: Array.from({ length: 16 }, (_, i) => kindAt(i)), done, winGem: layout.winGem, open: openChest };
 
   return (
     <>
-      <Scene3D
-        state={state}
-        setup={(ctx) => buildPickScene(ctx, piratesSkin3D(lootImage))}
-        seed={seed}
-        reducedMotion={reducedMotion}
-        aspect={1.05}
-        fallback={flat}
-        label="Pirates of the Prizeibbean treasure chests"
-        controls={
-          layout.paytable.length > 0 && (
-            <div className="rg3-paytable">
-              {layout.paytable.map((p) => (
-                <span key={p.gem} className={`rg3-pay ${done && p.gem === layout.winGem ? "is-hit" : ""}`}>
-                  <Treasure kind={p.gem} className="rg-slot-icon" />
-                  <b>×3</b>
-                  <span>{p.label}</span>
-                </span>
-              ))}
-            </div>
-          )
-        }
-      />
+      {flat}
       {prompt}
       <SoundToggle />
     </>
   );
 }
 
-/** The board's own loot picture, for the 3D board. */
-const lootImage = (kind: GemKind) => svgElementToImage(<Treasure kind={kind} />, { defs: <SharedDefs /> });

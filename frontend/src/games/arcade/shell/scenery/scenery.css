@@ -1,0 +1,46 @@
+/* The illustrated scene behind each game (shell/scenery/Scenery.tsx). */
+.rg-scenery {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.rg-scenery > svg,
+.rg-scenery > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+/* Soft dark at the bottom so the prompt and notes read on any scene. */
+.rg-scenery::after {
+  content: "";
+  position: absolute;
+  inset: 55% 0 0 0;
+  background: linear-gradient(180deg, transparent, rgba(6, 3, 10, 0.55));
+}
+
+.rg-sc-sparkles path { transform-box: fill-box; transform-origin: center; animation: rg-sc-twinkle 2.6s ease-in-out infinite; }
+.rg-sc-bokeh circle { animation: rg-sc-drift 9s ease-in-out infinite alternate; }
+.rg-sc-bulbs g { animation: rg-sc-blink 1.4s steps(2, end) infinite; }
+.rg-sc-beam { transform-origin: 40px 70px; animation: rg-sc-sweep 7s ease-in-out infinite alternate; mix-blend-mode: screen; }
+.rg-sc-beam.is-r { transform-origin: 360px 70px; animation-direction: alternate-reverse; }
+.rg-sc-rays { animation: rg-sc-spin 60s linear infinite; }
+
+@keyframes rg-sc-twinkle { 0%, 100% { opacity: 0.25; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes rg-sc-drift { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+@keyframes rg-sc-blink { 0% { opacity: 1; } 100% { opacity: 0.55; } }
+@keyframes rg-sc-sweep { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@keyframes rg-sc-spin { to { transform: rotate(360deg); } }
+
+.rg-scenery.is-still *,
+.rg-reveal.is-reduced-motion .rg-scenery * { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .rg-scenery * { animation: none !important; } }
+
+/* Classic games sit on their scene: the plain classic background is not needed under it. */
+.rg-reveal.rg-skin-classic.has-scenery { background: #07050b; }
+.rg-sc-cloud { animation: rg-sc-cloud 18s ease-in-out infinite alternate; }
+@keyframes rg-sc-cloud { from { transform: translateX(-12px); } to { transform: translateX(14px); } }
+.rg-reveal.is-reduced-motion .rg-sc-cloud { animation: none; }

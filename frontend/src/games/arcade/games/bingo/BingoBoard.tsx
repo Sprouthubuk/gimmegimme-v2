@@ -5,8 +5,6 @@ import { Mascot } from "../../shell/Mascot";
 import { GamePrompt } from "../../shell/GamePrompt";
 import { useBingoDraw } from "./useBingoDraw";
 import "./bingo.css";
-import { Scene3D } from "../../three/Scene3D";
-import { buildBingoScene, CLASSIC_BINGO_3D, type BingoState } from "../../three/bingoScene";
 
 const LETTER_TONE: Record<string, string> = { B: "pink", I: "cyan", N: "yellow", G: "pink", O: "cyan" };
 
@@ -26,7 +24,6 @@ export function BingoBoard({ ticket, seed, reducedMotion, onReveal }: BoardProps
   const layout = useMemo(() => generateBingo(ticket.prize, seed), [ticket.prize, seed]);
   const { started, start, drawn, done, isMarked, lastBall, waitingOn, winCells, left, recent } = useBingoDraw(layout, reducedMotion, onReveal);
 
-  const state3d: BingoState = { started, drawn, draws: layout.draws, done, win: !!layout.winLine, left, start };
   const tray = (
       <div className="rg-bingo-tray" aria-live="polite">
         {recent.length ? (
@@ -58,18 +55,7 @@ export function BingoBoard({ ticket, seed, reducedMotion, onReveal }: BoardProps
 
   return (
     <>
-      <Scene3D
-        state={state3d}
-        setup={(ctx) => buildBingoScene(ctx, CLASSIC_BINGO_3D)}
-        seed={`bingo:${ticket.ticketNumber}`}
-        reducedMotion={reducedMotion}
-        aspect={0.74}
-        fallback={tray}
-        label="Bingo ball machine"
-      >
-        {waitingOn && <span className="rg3-sticker">{waitingOn} to win!</span>}
-        <span className="rg-sr-only" aria-live="polite">{lastBall ? `${bingoLetter(lastBall)} ${lastBall}. ${left} left.` : ""}</span>
-      </Scene3D>
+      {tray}
 
       <div className="rg-bingo-card" role="grid" aria-label="Bingo card">
         {"BINGO".split("").map((l) => (
@@ -93,7 +79,7 @@ export function BingoBoard({ ticket, seed, reducedMotion, onReveal }: BoardProps
 
       {!started ? (
         <div className="rg-bingo-controls">
-          <button type="button" className="rg-btn rg-btn-yellow" onClick={start}>
+          <button type="button" className="rg-cta" onClick={start}>
             DRAW BALLS
           </button>
           <p className="rg-note">{BINGO_BALLS} balls per card. Any full line wins. Result set when you bought.</p>

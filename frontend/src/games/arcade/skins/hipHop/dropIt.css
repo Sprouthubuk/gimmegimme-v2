@@ -147,3 +147,7 @@
 @media (max-height: 600px) {
   .rg-di-title { width: 56%; }
 }
+/* Tall phones (390x844): a touch smaller title keeps the sound button fully on screen. */
+@media (min-height: 741px) and (max-height: 880px) {
+  .rg-di-title { width: 78%; }
+}

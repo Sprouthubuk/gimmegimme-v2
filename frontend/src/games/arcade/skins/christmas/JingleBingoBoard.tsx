@@ -9,9 +9,6 @@ import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "../../games/bingo/bingo.css";
 import "./jingleBingo.css";
-import { Scene3D } from "../../three/Scene3D";
-import { buildBingoScene, type BingoState } from "../../three/bingoScene";
-import { JINGLE_BINGO_3D } from "./jingleBingo3d";
 
 /** Candy-cane red, mint and gold. */
 const LETTER_TONE: Record<string, string> = { B: "red", I: "mint", N: "gold", G: "red", O: "mint" };
@@ -62,7 +59,6 @@ export function JingleBingoBoard({ ticket, seed, reducedMotion, onReveal }: Boar
     if (done && layout.winLine) playSound("bells");
   }, [done, layout.winLine]);
 
-  const state3d: BingoState = { started, drawn, draws: layout.draws, done, win: !!layout.winLine, left, start };
   const tray = (
     <>
       <div className="rg-xmas-title rg-jingle-title">JINGLE BELL BINGO BONANZA</div>
@@ -99,17 +95,7 @@ export function JingleBingoBoard({ ticket, seed, reducedMotion, onReveal }: Boar
 
   return (
     <>
-      <Scene3D
-        state={state3d}
-        setup={(ctx) => buildBingoScene(ctx, JINGLE_BINGO_3D)}
-        seed={`jingle:${ticket.ticketNumber}`}
-        reducedMotion={reducedMotion}
-        aspect={0.74}
-        fallback={tray}
-        label="Jingle Bell Bingo Bonanza bauble machine"
-      >
-        {waitingOn && <span className="rg3-sticker">{waitingOn} to win!</span>}
-      </Scene3D>
+      {tray}
       <p className="rg-jingle-call" aria-live="polite">
         {lastBall === null ? " " : call ? `${lastBall}: ${call}` : `${bingoLetter(lastBall)} ${lastBall}`}
       </p>
