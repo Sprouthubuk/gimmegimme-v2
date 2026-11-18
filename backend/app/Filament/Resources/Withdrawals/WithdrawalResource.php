@@ -6,6 +6,7 @@ use App\Filament\Resources\Withdrawals\Pages\ListWithdrawals;
 use App\Filament\Support\Money;
 use App\Models\AdminAction;
 use App\Models\Withdrawal;
+use App\Notifications\WithdrawalUpdate;
 use App\Services\Wallet;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -47,6 +48,10 @@ class WithdrawalResource extends Resource
             ->columns([
                 TextColumn::make('user.email')->label('Player')->searchable(),
                 TextColumn::make('amount_pence')->label('Amount')->formatStateUsing(fn ($state) => Money::show($state)),
+                // Shown only while there's a payment to make; encrypted in the database.
+                TextColumn::make('account_name')->label('Pay to')->copyable()->state(fn (Withdrawal $w) => $w->status === 'requested' ? $w->account_name : null)->placeholder('—'),
+                TextColumn::make('sort_code')->label('Sort code')->copyable()->state(fn (Withdrawal $w) => $w->status === 'requested' && $w->sort_code ? implode('-', str_split($w->sort_code, 2)) : null)->placeholder('—'),
+                TextColumn::make('account_number')->label('Account')->copyable()->state(fn (Withdrawal $w) => $w->status === 'requested' ? $w->account_number : null)->placeholder('—'),
                 TextColumn::make('status')->badge()->color(fn ($state) => ['requested' => 'warning', 'paid' => 'success', 'rejected' => 'danger'][$state] ?? 'gray'),
                 TextColumn::make('note')->wrap(),
                 TextColumn::make('created_at')->label('Requested')->dateTime('j M Y, H:i', 'Europe/London')->sortable(),
@@ -77,6 +82,13 @@ class WithdrawalResource extends Resource
                 app(Wallet::class)->credit($w->user_id, 'winnings', $w->amount_pence, 'Withdrawal returned', 'withdrawal:'.$w->id.':returned');
             }
             AdminAction::record(auth()->user(), 'withdrawal.'.$status, $w->id, $note, ['pence' => $w->amount_pence]);
+            DB::afterCommit(function () use ($w) {
+                try {
+                    $w->user->notify(new WithdrawalUpdate($w));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Withdrawal email not sent', ['withdrawal' => $w->id]);
+                }
+            });
         });
         Notification::make()->success()->title('Withdrawal '.$status)->send();
     }

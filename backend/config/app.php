@@ -63,6 +63,9 @@ return [
     // The address that receives contact-form messages.
     'contact_inbox' => env('CONTACT_INBOX'),
 
+    // Who is emailed when something in the admin needs a person (comma separated; falls back to the contact inbox).
+    'alert_emails' => env('ADMIN_ALERT_EMAILS'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

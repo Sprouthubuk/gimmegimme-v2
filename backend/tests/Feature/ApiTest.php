@@ -322,11 +322,11 @@ class ApiTest extends TestCase
         $this->postJson('/api/me/deposits', ['amountPence' => 400])->assertStatus(422);
 
         $this->topUp($u, 5000, 'winnings');
-        $this->postJson('/api/me/withdrawals', ['amountPence' => 1999])->assertStatus(422)->assertJsonPath('code', 'withdrawal_minimum');
-        $this->postJson('/api/me/withdrawals', ['amountPence' => 2000])->assertStatus(403)->assertJsonPath('code', 'id_required');
+        $this->postJson('/api/me/withdrawals', ['amountPence' => 1999, 'accountName' => 'Liam Player', 'sortCode' => '12-34-56', 'accountNumber' => '12345678'])->assertStatus(422)->assertJsonPath('code', 'withdrawal_minimum');
+        $this->postJson('/api/me/withdrawals', ['amountPence' => 2000, 'accountName' => 'Liam Player', 'sortCode' => '12-34-56', 'accountNumber' => '12345678'])->assertStatus(403)->assertJsonPath('code', 'id_required');
         $u->forceFill(['id_verified_at' => now()])->save();
-        $this->postJson('/api/me/withdrawals', ['amountPence' => 9000])->assertStatus(422);
-        $this->postJson('/api/me/withdrawals', ['amountPence' => 2000])->assertCreated();
+        $this->postJson('/api/me/withdrawals', ['amountPence' => 9000, 'accountName' => 'Liam Player', 'sortCode' => '12-34-56', 'accountNumber' => '12345678'])->assertStatus(422);
+        $this->postJson('/api/me/withdrawals', ['amountPence' => 2000, 'accountName' => 'Liam Player', 'sortCode' => '12-34-56', 'accountNumber' => '12345678'])->assertCreated();
         $this->assertSame(1, Withdrawal::query()->count());
         $this->getJson('/api/me')->assertJsonPath('wallet.winningsPence', 3000);
     }

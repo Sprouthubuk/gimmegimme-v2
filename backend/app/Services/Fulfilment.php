@@ -140,6 +140,9 @@ final class Fulfilment
 
     public function flag(Order $order, string $reason): void
     {
+        if (! $order->needs_attention) {
+            DB::afterCommit(fn () => \App\Notifications\AdminAlert::send('Order '.$order->number.' needs attention', [$reason], '/admin/orders'));
+        }
         $order->forceFill(['needs_attention' => true, 'attention_reason' => mb_substr(trim(($order->attention_reason ? $order->attention_reason.' ' : '').$reason), 0, 300)])->save();
     }
 

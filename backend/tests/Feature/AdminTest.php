@@ -56,7 +56,7 @@ class AdminTest extends TestCase
         $this->get((string) $setup->headers->get('Location'))->assertOk()->assertSee('Set up two-factor authentication (2FA)', false);
         $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
         $this->actingAs($admin->refresh())->get('/admin')->assertOk();
-        foreach (['competitions', 'orders', 'users', 'withdrawals', 'prize-claims', 'contact-messages', 'pages', 'promo-codes', 'site-settings', 'postal-entries', 'games'] as $p) {
+        foreach (['competitions', 'orders', 'users', 'withdrawals', 'prize-claims', 'contact-messages', 'pages', 'promo-codes', 'site-settings', 'postal-entries', 'games', 'id-checks'] as $p) {
             $this->get('/admin/'.$p)->assertOk();
         }
     }
@@ -212,7 +212,7 @@ class AdminTest extends TestCase
         $this->signInAdmin();
         $u = $this->player(['id_verified_at' => now()]);
         $this->topUp($u, 5000, 'winnings');
-        $this->actingAs($u)->postJson('/api/me/withdrawals', ['amountPence' => 3000])->assertCreated();
+        $this->actingAs($u)->postJson('/api/me/withdrawals', ['amountPence' => 3000, 'accountName' => 'Pat Player', 'sortCode' => '123456', 'accountNumber' => '12345678'])->assertCreated();
         $this->signInAdmin();
         $w = Withdrawal::query()->first();
         Livewire::test(ListWithdrawals::class)->callTableAction('reject', $w, ['note' => 'Bank details did not match']);

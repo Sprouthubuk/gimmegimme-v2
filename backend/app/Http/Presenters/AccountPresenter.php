@@ -39,6 +39,7 @@ final class AccountPresenter
             'emailVerified' => $u->hasVerifiedEmail(),
             'phone' => $u->phone,
             'dobVerified' => $u->date_of_birth !== null,
+            ...$this->idCheck($u),
             'address' => ['line1' => $u->address_line1, 'line2' => $u->address_line2, 'city' => $u->city, 'postcode' => $u->postcode],
             'marketing' => ['email' => (bool) $u->marketing_email, 'sms' => (bool) $u->marketing_sms, 'winNotifications' => (bool) $u->win_notifications],
             'memberSince' => $u->created_at?->toIso8601ZuluString(),
@@ -219,5 +220,20 @@ final class AccountPresenter
             'selfExcludedUntil' => $u->self_excluded_until?->isFuture() ? $u->self_excluded_until->toIso8601ZuluString() : null,
             'reminders' => ['sessionMinutes' => $l?->session_minutes, 'weeklySummary' => (bool) ($l?->weekly_summary)],
         ];
+    }
+
+    /** Where the player's ID check stands: verified, pending (we're looking), rejected (send again) or needed. */
+    private function idCheck(\App\Models\User $u): array
+    {
+        if ($u->id_verified_at) {
+            return ['idCheck' => 'verified', 'idCheckNote' => null];
+        }
+        $last = \App\Models\IdCheck::query()->where('user_id', $u->id)->latest()->first();
+
+        return match ($last?->status) {
+            'pending' => ['idCheck' => 'pending', 'idCheckNote' => null],
+            'rejected' => ['idCheck' => 'rejected', 'idCheckNote' => $last->note],
+            default => ['idCheck' => 'needed', 'idCheckNote' => null],
+        };
     }
 }

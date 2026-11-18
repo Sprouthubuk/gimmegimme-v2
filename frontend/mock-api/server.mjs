@@ -91,7 +91,7 @@ function playBlock(u) {
 function meJson(u) {
   const active = u.tickets.filter((t) => byId.get(t.competitionId)?.status === "live");
   return {
-    id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, emailVerified: u.emailVerified, phone: u.phone, dobVerified: !!u.dateOfBirth,
+    id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, emailVerified: u.emailVerified, phone: u.phone, dobVerified: !!u.dateOfBirth, idCheck: u.idCheck ?? "needed", idCheckNote: null,
     address: u.address, marketing: u.marketing, memberSince: u.memberSince,
     wallet: { depositPence: u.deposit, bonusPence: u.bonus, winningsPence: u.winnings, totalPence: total(u), withdrawablePence: u.winnings },
     gamesWaiting: u.tickets.filter((t) => byId.get(t.competitionId)?.type === "instant" && !t.played).length,
@@ -273,7 +273,9 @@ route("PATCH", "/api/me/address", authed(async (req, res, { user }) => { const b
 route("PATCH", "/api/me/preferences", authed(async (req, res, { user }) => { const b = await readJson(req); user.marketing = { email: !!b.email, sms: !!b.sms, winNotifications: !!b.winNotifications }; send(res, 200, meJson(user)); }));
 route("POST", "/api/me/password", authed(async (req, res, { user }) => { const b = await readJson(req); if (b.currentPassword !== user.password) return fail(res, 422, "Your current password is wrong.", { currentPassword: ["Your current password is wrong."] }); user.password = b.password; send(res, 200, { ok: true }); }));
 route("POST", "/api/me/deposits", authed(async (req, res, { user }) => { const b = await readJson(req); if (!(b.amountPence >= 500)) return fail(res, 422, "The minimum top up is £5.", { amountPence: ["The minimum top up is £5."] }); const n = `GD-${++orderSeq}`; orders.set(n, { number: n, deposit: b.amountPence, user: user.email, status: "pending_payment", lines: [], totalPence: b.amountPence, cardPence: b.amountPence, walletPence: 0 }); send(res, 201, { redirectUrl: `${SELF}/mock-pay/${n}` }); }));
-route("POST", "/api/me/withdrawals", authed(async (req, res, { user }) => { const b = await readJson(req); if (!(b.amountPence >= 2000) || b.amountPence > user.winnings) return fail(res, 422, "You can withdraw winnings from £20.", { amountPence: ["You can withdraw winnings from £20."] }); send(res, 201, { ok: true }); }));
+// Like Laravel: ID documents first (multipart, accepted as they are here), then bank details with each withdrawal.
+route("POST", "/api/me/id-check", authed(async (req, res, { user }) => { for await (const _ of req); if (user.idCheck === "pending") return fail(res, 422, "We already have your documents and are checking them."); user.idCheck = "pending"; send(res, 201, { idCheck: "pending" }); }));
+route("POST", "/api/me/withdrawals", authed(async (req, res, { user }) => { const b = await readJson(req); if ((user.idCheck ?? "needed") !== "verified") return fail(res, 403, "We need to check your ID before your first withdrawal. Send your documents below."); const bad = {}; if (!/^[A-Za-z .'-]{2,70}$/.test(b.accountName ?? "")) bad.accountName = ["Use the name on the account, letters only."]; if (!/^\d{6}$/.test(String(b.sortCode ?? "").replace(/\D/g, ""))) bad.sortCode = ["A sort code is 6 numbers."]; if (!/^\d{8}$/.test(String(b.accountNumber ?? "").replace(/\D/g, ""))) bad.accountNumber = ["An account number is 8 numbers."]; if (Object.keys(bad).length) return fail(res, 422, "Please check the form.", bad); if (!(b.amountPence >= 2000) || b.amountPence > user.winnings) return fail(res, 422, "You can withdraw winnings from £20.", { amountPence: ["You can withdraw winnings from £20."] }); send(res, 201, { ok: true }); }));
 
 route("POST", "/api/checkout", authed(async (req, res, { user }) => {
   const b = await readJson(req);

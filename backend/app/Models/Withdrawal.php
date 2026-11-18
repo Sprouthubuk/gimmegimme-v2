@@ -12,7 +12,8 @@ class Withdrawal extends Model
 
     protected function casts(): array
     {
-        return ['decided_at' => 'datetime'];
+        // Bank details are encrypted in the database and never sent back to the browser.
+        return ['decided_at' => 'datetime', 'account_name' => 'encrypted', 'sort_code' => 'encrypted', 'account_number' => 'encrypted'];
     }
 
     public function user(): BelongsTo
@@ -23,4 +24,6 @@ class Withdrawal extends Model
     protected $table = 'withdrawals';
 
     protected $guarded = ['id'];
+
+    protected $hidden = ['account_name', 'sort_code', 'account_number'];
 }

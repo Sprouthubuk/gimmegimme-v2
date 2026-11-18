@@ -6,7 +6,10 @@ use App\Exceptions\RefusedException;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
 use App\Models\OrderLine;
+use App\Models\IdCheck;
 use App\Models\Withdrawal;
+use App\Notifications\AdminAlert;
+use App\Notifications\WithdrawalUpdate;
 use App\Services\Orders;
 use App\Services\Settings;
 use App\Services\Wallet;
@@ -145,24 +148,80 @@ class AccountController extends Controller
     }
 
     /** Winnings only, from the minimum, ID checked first; paid by hand by an admin. */
+    /**
+     * Withdraw winnings to the player's own UK bank account (Terms 9.5). Needs a completed ID check. The
+     * money leaves the winnings balance now; an admin pays it, or rejects it and it goes back.
+     */
     public function withdraw(Request $r, Wallet $wallet): JsonResponse
     {
-        $d = $r->validate(['amountPence' => ['required', 'integer', 'min:1']]);
+        $r->merge(['sortCode' => preg_replace('/\D/', '', (string) $r->input('sortCode')), 'accountNumber' => preg_replace('/\D/', '', (string) $r->input('accountNumber'))]);
+        $d = $r->validate([
+            'amountPence' => ['required', 'integer', 'min:1'],
+            'accountName' => ['required', 'string', 'min:2', 'max:70', "regex:/^[\pL .'’\-]+$/u"],
+            'sortCode' => ['required', 'digits:6'],
+            'accountNumber' => ['required', 'digits:8'],
+        ], [
+            'accountName.regex' => 'Use the name on the account, letters only.',
+            'sortCode.digits' => 'A sort code is 6 numbers.',
+            'accountNumber.digits' => 'An account number is 8 numbers.',
+        ]);
         $u = $r->user();
         if ($d['amountPence'] < Settings::minWithdrawal()) {
             throw new RefusedException('You can withdraw winnings from £'.number_format(Settings::minWithdrawal() / 100, 2).'.', 'withdrawal_minimum', 422, ['amountPence' => ['Below the minimum withdrawal.']]);
         }
         if (! $u->id_verified_at) {
-            throw new RefusedException('We need to check your ID before your first withdrawal. Contact us and we’ll walk you through it.', 'id_required', 403);
+            throw new RefusedException('We need to check your ID before your first withdrawal. Send your documents below.', 'id_required', 403);
         }
         if ($u->on_hold_at || $u->closed_at) {
             throw new RefusedException('Your account is on hold. Please contact us.', 'on_hold', 403);
         }
-        DB::transaction(function () use ($u, $d, $wallet) {
-            $w = Withdrawal::query()->create(['user_id' => $u->id, 'amount_pence' => $d['amountPence']]);
+        $w = DB::transaction(function () use ($u, $d, $wallet) {
+            $w = Withdrawal::query()->create(['user_id' => $u->id, 'amount_pence' => $d['amountPence'],
+                'account_name' => trim($d['accountName']), 'sort_code' => $d['sortCode'], 'account_number' => $d['accountNumber']]);
             $wallet->debitWinnings($u, $d['amountPence'], 'Withdrawal requested', 'withdrawal:'.$w->id);
+
+            return $w;
         });
+        $this->tell($u, new WithdrawalUpdate($w->refresh()));
+        AdminAlert::send('Withdrawal to pay: £'.number_format($w->amount_pence / 100, 2), ['A player has asked to withdraw £'.number_format($w->amount_pence / 100, 2).' of winnings.'], '/admin/withdrawals');
 
         return response()->json(null, 201);
+    }
+
+    /** Photo ID and proof of address before the first withdrawal (Terms 3.5, 9.5). Kept on the private disk. */
+    public function idCheck(Request $r): JsonResponse
+    {
+        $file = ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,heic,heif,pdf'];
+        $r->validate(['photoId' => $file, 'proofOfAddress' => $file], [
+            'photoId.required' => 'Add a photo of your passport or driving licence.',
+            'proofOfAddress.required' => 'Add a bank statement or utility bill from the last 3 months.',
+            '*.mimes' => 'Send a photo (JPG, PNG, HEIC) or a PDF.',
+            '*.max' => 'Each file can be up to 10MB.',
+        ]);
+        $u = $r->user();
+        if ($u->id_verified_at) {
+            throw new RefusedException('Your ID is already checked.', 'id_checked', 422);
+        }
+        if (IdCheck::query()->where('user_id', $u->id)->where('status', 'pending')->exists()) {
+            throw new RefusedException('We already have your documents and are checking them.', 'id_pending', 422);
+        }
+        $dir = 'id-checks/'.$u->id;
+        $check = IdCheck::query()->create([
+            'user_id' => $u->id,
+            'photo_path' => $r->file('photoId')->store($dir, 'local'),
+            'address_path' => $r->file('proofOfAddress')->store($dir, 'local'),
+        ]);
+        AdminAlert::send('ID to check', [$u->first_name.' '.$u->last_name.' has sent photo ID and proof of address for their first withdrawal.'], '/admin/id-checks');
+
+        return response()->json(['idCheck' => 'pending'], 201);
+    }
+
+    private function tell($user, $notification): void
+    {
+        try {
+            $user->notify($notification);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Player email not sent', ['user' => $user->id, 'mail' => class_basename($notification)]);
+        }
     }
 }
