@@ -1,0 +1,45 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Icon from "../../../components/Icon.astro";
+import type { WinningNumbersPage } from "../../../lib/types";
+import { formatCount, formatPence } from "../../../lib/money";
+import { ukDateTime } from "../../../lib/time";
+
+// Every instant prize's winning ticket number, public from publish. Tickets are given out at random,
+// so a public number gives nobody an edge. A prize is won once its ticket is sold.
+const slug = Astro.params.slug!;
+const SHOW = [["all", "All"], ["left", "Still To Win"], ["won", "Won"]] as const;
+const raw = Astro.url.searchParams.get("show");
+const show = SHOW.some(([k]) => k === raw) ? raw! : "all";
+const q = (Astro.url.searchParams.get("q") ?? "").replace(/\D/g, "").slice(0, 8);
+const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? 1) || 1);
+const link = (p: Record<string, string>) => `?${new URLSearchParams({ show, q, page: "1", ...p })}`;
+const res = await Astro.locals.api.maybe<WinningNumbersPage>(`/api/competitions/${encodeURIComponent(slug)}/winning-numbers?${new URLSearchParams({ show, q, page: String(page) })}`);
+if (!res) return Astro.rewrite("/404");
+const { competition: c, data: rows, total, won, matching, hasMore } = res;
+---
+<Layout title={`Winning Numbers — ${c.title}`} active="competitions" description={`Every winning ticket number for ${c.title}, public from the start.`}>
+  <section class="sec" style="padding-top:20px"><div class="mid stack g16">
+    <a href={`/competitions/${c.slug}`} class="row g8" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />Back To The Competition</a>
+    <div class="gg-rise"><div class="eyebrow">Full Transparency</div><h1 class="h1">Winning <span class="nc gg-flicker">Numbers</span></h1><p class="p" style="margin-top:6px">Every instant prize and the ticket number that wins it, public from the start. Tickets are given out at random when you pay, so knowing a number never helps anyone get it.</p></div>
+    <div class="card card-cy card-p stack g12">
+      <div class="row g12"><img src={c.imageSmall ?? c.image} alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover" /><div style="flex:1;min-width:0"><h2 class="d" style="font-size:22px;margin:0">{c.title}</h2><div class="hint">{formatCount(won)} of {formatCount(total)} prizes won</div></div></div>
+      <div class="scrollx" role="group" aria-label="Show">{SHOW.map(([k, n]) => <a class={`chip ${k === show ? "on" : ""}`} href={link({ show: k })} aria-current={k === show ? "true" : undefined}>{n}</a>)}</div>
+      <form method="get" class="row g8"><input type="hidden" name="show" value={show} /><input class="inp" name="q" inputmode="numeric" value={q} placeholder="Check a ticket number" aria-label="Check a ticket number" /><button class="btn btn-o" type="submit">Check</button></form>
+      {rows.length ? (
+        <div style="overflow-x:auto"><table class="tbl" data-testid="winning-numbers-table"><thead><tr><th>Ticket</th><th>Prize</th><th>Status</th></tr></thead><tbody>
+          {rows.map((r) => (
+            <tr>
+              <td><span class="tn">#{r.ticket}</span></td>
+              <td><b style="display:block">{formatPence(r.valuePence)}</b><span class="hint">{r.prizeName}</span></td>
+              <td>{r.won ? <><span class="tag tag-p">Won</span><span class="hint" style="display:block;margin-top:4px">{r.winnerName}{r.wonAt && ` · ${ukDateTime(r.wonAt)}`}</span></> : <span class="hint">Still to win</span>}</td>
+            </tr>
+          ))}
+        </tbody></table></div>
+      ) : <div class="empty">{q ? `Ticket #${q} isn't a winning number${show === "all" ? "" : " in this list"}.` : show === "won" ? "No prizes won yet." : "Every prize has been won."}</div>}
+      {(page > 1 || hasMore) && <div class="row g8" style="justify-content:center">{page > 1 && <a class="btn btn-o btn-sm" href={link({ page: String(page - 1) })}>Previous</a>}{hasMore && <a class="btn btn-o btn-sm" href={link({ page: String(page + 1) })}>Next</a>}</div>}
+      {matching > 0 && <div class="hint" style="text-align:center">{formatCount(matching)} {matching === 1 ? "number" : "numbers"}</div>}
+    </div>
+    <a class="tap" style="padding-left:0" href={`/entry-lists/${c.slug}`}>See every ticket sold in the entry list</a>
+  </div></section>
+</Layout>

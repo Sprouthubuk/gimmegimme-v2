@@ -237,6 +237,32 @@ export interface EntryRow {
   ticket: number;
   name: string;
   source: "paid" | "postal" | "free";
+  /** Instant wins: the prize this ticket won, or null. */
+  prizeName: string | null;
+}
+
+/** One instant prize and its winning ticket number, public from publish. Won once that ticket is sold. */
+export interface WinningNumberRow {
+  ticket: number;
+  prizeName: string;
+  valuePence: Pence;
+  type: "cash" | "site_credit" | "physical";
+  won: boolean;
+  /** "Amy B." (or "Postal entrant") once won; null until then. */
+  winnerName: string | null;
+  wonAt: string | null;
+}
+
+/** GET /api/competitions/{slug}/winning-numbers?show=all|won|left&q=&page= (100 a page, biggest prize first). */
+export interface WinningNumbersPage {
+  competition: CompetitionSummary;
+  data: WinningNumberRow[];
+  /** Every winning number in the competition, and how many are won. */
+  total: number;
+  won: number;
+  /** Rows matching show and q. */
+  matching: number;
+  hasMore: boolean;
 }
 
 export interface Limits {

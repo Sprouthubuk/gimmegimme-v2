@@ -31,6 +31,13 @@ describe("public pages from real data", () => {
     expect(instant.res.status).toBe(200);
     expect(text(instant.html)).toContain("£500 Cash");
     expect(instant.html).toMatch(/VTY-[A-Z0-9]{6}/);
+    // Winning numbers are public from publish, straight from Verity's table.
+    expect(text(instant.html)).toMatch(/Winning Numbers[\s\S]*See All [\d,]+ Winning Numbers/);
+    const numbers = (await b.api("/api/competitions/bush-bucks-jungle-trial/winning-numbers")).body;
+    expect(numbers.total).toBeGreaterThan(0);
+    expect(numbers.data[0].ticket).toBeGreaterThan(0);
+    expect(text((await b.page("/competitions/bush-bucks-jungle-trial/winning-numbers")).html)).toContain(`#${numbers.data[0].ticket}`);
+    expect((await b.page("/entry-lists/bush-bucks-jungle-trial")).res.status).toBe(200);
     expect(text((await b.page("/competitions/lush-snow-fairy-wonderland")).html)).toContain("Lush Snow Fairy Wonderland");
     expect((await b.page("/competitions/not-real")).res.status).toBe(404);
     expect(text((await b.page("/legal/terms")).html)).toContain("Terms & Conditions");

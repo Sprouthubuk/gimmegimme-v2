@@ -20,6 +20,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Card payments are confirmed only by asking Cashflows about the job reference stored on the order,
   matching job, order number and amount. The webhook finds orders only by that stored reference.
 - Tickets and instant-win results come only from Verity, inside the payment-confirm transaction.
+  Winning ticket numbers and entry lists are public from publish (`/winning-numbers`, `/entry-lists`):
+  safe only with random ticket numbers, so publishing always uses `ticket_allocation` `random`.
   Reveal games are presentation only (`frontend/src/games/`); `tests/games` proves a board can only
   show the result it was given.
 - One play check on every path: sales switch (off by default), staff can't play, 18+, email

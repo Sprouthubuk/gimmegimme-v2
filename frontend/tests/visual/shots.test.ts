@@ -10,7 +10,7 @@ import { startSite, type Site } from "../e2e/harness";
 
 const OUT = process.env.SHOTS_DIR ?? "/tmp/gg-shots";
 const VIEWPORTS = { phone: { width: 390, height: 844 }, small: { width: 320, height: 640 }, tablet: { width: 820, height: 1180 }, desktop: { width: 1440, height: 900 } } as const;
-const PUBLIC = ["/", "/competitions", "/competitions?type=instant", "/competitions/bush-bucks-jungle-trial", "/competitions/lush-snow-fairy-wonderland", "/instant-winners", "/winners", "/entry-lists", "/how-it-works", "/faq", "/contact", "/free-entry", "/legal/terms", "/menu", "/join", "/login", "/forgot-password", "/basket", "/demo/balloon_pop", "/payment/failed", "/verify-email?status=verified", "/nope-404"];
+const PUBLIC = ["/", "/competitions", "/competitions?type=instant", "/competitions/bush-bucks-jungle-trial", "/competitions/lush-snow-fairy-wonderland", "/instant-winners", "/winners", "/entry-lists", "/competitions/bush-bucks-jungle-trial/winning-numbers", "/entry-lists/bush-bucks-jungle-trial", "/how-it-works", "/faq", "/contact", "/free-entry", "/legal/terms", "/menu", "/join", "/login", "/forgot-password", "/basket", "/demo/balloon_pop", "/payment/failed", "/verify-email?status=verified", "/nope-404"];
 const MEMBER = ["/account", "/account/tickets", "/account/wallet", "/account/safer-play", "/account/settings", "/checkout"];
 
 let site: Site;
