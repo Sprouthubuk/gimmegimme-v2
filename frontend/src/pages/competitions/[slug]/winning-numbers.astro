@@ -34,7 +34,7 @@ const { competition: c, data: rows, total, won, matching, hasMore } = res;
             <tr>
               <td><span class="tn">#{r.ticket}</span></td>
               <td><b style="display:block">{formatPence(r.valuePence)}</b><span class="hint">{r.prizeName}</span></td>
-              <td>{r.won ? <><span class="tag tag-p">Won</span><span class="hint" style="display:block;margin-top:4px">{r.winnerName}{r.wonAt && ` · ${ukDateTime(r.wonAt)}`}</span></> : <span class="hint">Still to win</span>}</td>
+              <td>{r.won ? <><span class="tag tag-p">Won</span><span class="hint" style="display:block;margin-top:4px">{r.winnerName ?? "Named once they've played"}{r.wonAt && ` · ${ukDateTime(r.wonAt)}`}</span></> : <span class="hint">Still to win</span>}</td>
             </tr>
           ))}
         </tbody></table></div>

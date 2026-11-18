@@ -35,7 +35,7 @@ export default function CheckoutView({ buy, walletPence, minCardPence }: { buy: 
       .catch((e) => setError(errorText(e)));
   }, [lines, promoApplied]);
 
-  if (lines && !lines.length) return <div className="card card-p stack g12" style={{ alignItems: "center", textAlign: "center" }}><div className="h3">Nothing To Pay For</div><p className="p">Your basket is empty.</p><a className="btn btn-y" href="/competitions">Browse Competitions</a></div>;
+  if (lines && !lines.length) return <div data-empty-checkout className="card card-p stack g12" style={{ alignItems: "center", textAlign: "center" }}><div className="h3">Nothing To Pay For</div><p className="p">Your basket is empty.</p><a className="btn btn-y" href="/competitions">Browse Competitions</a></div>;
   if (!priced) return <div className="card empty">{error ?? <><span className="spin" /> Getting your order ready…</>}</div>;
 
   const total = priced.totalPence;

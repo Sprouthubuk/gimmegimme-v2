@@ -9,6 +9,6 @@ export const FAQS: [string, string, string][] = [
   ["Entering", "Is There A Free Way To Enter?", "Yes — every competition has a free postal entry route with exactly the same chance of winning."],
   ["Account", "Who Can Play?", "UK residents aged 18 and over."],
   ["Account", "Can I Set Spending Limits?", "Yes. Go to Account › Safer Play to set a weekly deposit limit, take a break or self-exclude."],
-  ["Account", "I Used The Old Site — Do I Need A New Account?", "No. Log in with the same email and password; your wallet and tickets have moved across."],
+  ["Account", "I Used The Old Site — Do I Need A New Account?", "No. Log in with the same email and password. Your account and wallet balance have moved across."],
 ];
 export const FAQ_CATEGORIES = ["Entering", "Instant wins", "Live draws", "Wallet", "Account"];

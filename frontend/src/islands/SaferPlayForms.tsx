@@ -31,12 +31,13 @@ export default function SaferPlayForms({ initial }: { initial: Limits }) {
     <>
       <div className="split" style={{ gap: 16 }}>
         <div className="card card-cy card-p stack g12">
-          <div className="row between"><h2 className="h3">Weekly Deposit Limit</h2><span className="tag tag-w">{limits.weeklyDepositPence ? formatMoney(limits.weeklyDepositPence) : "Not set"}</span></div>
-          <div className="r4">{[1000, 2500, 5000, 10000].map((p) => <button key={p} type="button" className={!custom && pick === p ? "pick on" : "pick"} onClick={() => { setPick(p); setCustom(""); }}>{formatMoney(p).replace(".00", "")}</button>)}</div>
+          <div className="row between"><h2 className="h3">Weekly Deposit Limit</h2><span className="tag tag-w">{limits.weeklyDepositPence !== null ? formatMoney(limits.weeklyDepositPence) : "Not set"}</span></div>
+          <div className="r4">{[0, 1000, 2500, 5000].map((p) => <button key={p} type="button" className={!custom && pick === p ? "pick on" : "pick"} onClick={() => { setPick(p); setCustom(""); }}>{p === 0 ? "£0" : formatMoney(p).replace(".00", "")}</button>)}</div>
           <div className="field"><label htmlFor="cl">Custom amount</label><input className="inp" id="cl" inputMode="decimal" placeholder="£" value={custom} onChange={(e) => setCustom(e.target.value)} /></div>
-          <button type="button" className="btn btn-c btn-block" disabled={!chosen} onClick={() => run("limit", "/api/me/limits", { weeklyDepositPence: chosen }, "Saved. A lower limit applies straight away; a higher one after 24 hours.")}>Save Limit</button>
-          {limits.weeklyDepositPence && <button type="button" className="btn btn-o btn-sm" onClick={() => run("limit", "/api/me/limits", { weeklyDepositPence: null }, "Your limit will be removed in 24 hours.")}>Remove Limit</button>}
-          {limits.pending && <p className="hint" style={{ margin: 0 }}>Change to {limits.pending.weeklyDepositPence ? formatMoney(limits.pending.weeklyDepositPence) : "no limit"} applies {ukDateTime(limits.pending.appliesAt)}.</p>}
+          <button type="button" className="btn btn-c btn-block" disabled={chosen === null} onClick={() => run("limit", "/api/me/limits", { weeklyDepositPence: chosen }, "Saved. A lower limit applies straight away; a higher one after 24 hours.")}>Save Limit</button>
+          {limits.weeklyDepositPence !== null && <button type="button" className="btn btn-o btn-sm" onClick={() => run("limit", "/api/me/limits", { weeklyDepositPence: null }, "Your limit will be removed in 24 hours.")}>Remove Limit</button>}
+          {limits.pending && <p className="hint" style={{ margin: 0 }}>Change to {limits.pending.weeklyDepositPence !== null ? formatMoney(limits.pending.weeklyDepositPence) : "no limit"} applies {ukDateTime(limits.pending.appliesAt)}.</p>}
+          <p className="hint" style={{ margin: 0 }}>£0 stops all top-ups and card payments. You can still play with what's already in your wallet.</p>
           {note("limit")}
           <p className="hint" style={{ margin: 0 }}>Raising or removing a limit takes 24 hours to apply.</p>
         </div>

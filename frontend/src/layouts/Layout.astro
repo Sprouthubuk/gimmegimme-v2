@@ -16,8 +16,10 @@ interface Props {
   /** Only the page itself: no header, footer, tab bar or cookie banner (the admin's game previewer frames it). */
   bare?: boolean;
   noindex?: boolean;
+  /** The picture shown when the page is shared (Facebook, WhatsApp); the logo when not given. */
+  shareImage?: string | null;
 }
-const { title, description = "Tiny tickets, ginormous prizes. Instant win games and live draws from 1p. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false, bare = false } = Astro.props;
+const { title, description = "Tiny tickets, ginormous prizes. Instant win games and live draws from 1p. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false, bare = false, shareImage = null } = Astro.props;
 const full = title === "Home" ? "Gimme Gimme Prizes | Tiny Tickets, Ginormous Prizes" : `${title} | Gimme Gimme Prizes`;
 const robots = noindex || import.meta.env.PUBLIC_SEARCH_INDEXING !== "on" ? "noindex, nofollow" : "index, follow";
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
@@ -39,7 +41,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString(
   <meta property="og:title" content={full}>
   <meta property="og:description" content={description}>
   <meta property="og:type" content="website">
-  <meta property="og:image" content={new URL("/logo.png", Astro.site ?? Astro.url).toString()}>
+  <meta property="og:image" content={new URL(shareImage || "/logo.png", Astro.site ?? Astro.url).toString()}>
+  <meta name="twitter:card" content={shareImage ? "summary_large_image" : "summary"}>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>

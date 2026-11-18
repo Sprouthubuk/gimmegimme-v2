@@ -250,7 +250,7 @@ export interface WinningNumberRow {
   valuePence: Pence;
   type: "cash" | "site_credit" | "physical";
   won: boolean;
-  /** "Amy B." (or "Postal entrant") once won; null until then. */
+  /** "Amy B." (or "Postal entrant" / "Anonymous") once won; null until then, and for a paid win its player hasn't played yet (up to an hour). */
   winnerName: string | null;
   wonAt: string | null;
 }

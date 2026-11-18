@@ -16,7 +16,7 @@ const [first, ...rest] = title.split(" ");
     <div class="stack g12" style="max-width:760px;min-width:0">
       <div class="gg-rise"><div class="eyebrow">{page?.updatedAt ? `Last updated ${ukDate(page.updatedAt)}` : "Gimme Gimme Prizes"}{page?.version ? ` · version ${page.version}` : ""}</div><h1 class="h1">{first}{" "}<span class="np">{rest.join(" ")}</span></h1></div>
       <div class="scrollx mob">{PAGES.map(([s, n]) => <a class={`chip ${s === slug ? "on" : ""}`} href={`/legal/${s}`}>{n}</a>)}</div>
-      {page && page.headings.length > 2 && <details class="acd mob"><summary>On This Page <Icon name="down" /></summary><div class="ab stack g8">{page.headings.map((h) => <a href={`#${h.id}`}>{h.text}</a>)}</div></details>}
+      {page && page.headings.length > 2 && <details class="acd mob"><summary>On This Page <Icon name="down" /></summary><div class="ab stack g8">{page.headings.map((h) => <a class="tap" style="padding-left:0" href={`#${h.id}`}>{h.text}</a>)}</div></details>}
       {page ? <article class="legal" set:html={page.html} /> : <div class="card empty">This page is being updated. Please check back soon or <a href="/contact">contact us</a>.</div>}
     </div>
   </div></section>

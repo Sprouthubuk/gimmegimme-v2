@@ -234,6 +234,17 @@ class ApiTest extends TestCase
         $this->postJson('/api/me/limits', ['weeklyDepositPence' => 100])->assertStatus(422);
     }
 
+    public function test_a_zero_limit_applies_at_once_and_stops_all_paying_in(): void
+    {
+        $u = $this->player();
+        $this->actingAs($u)->postJson('/api/me/limits', ['weeklyDepositPence' => 0])->assertOk()->assertJsonPath('weeklyDepositPence', 0)->assertJsonPath('pending', null);
+        $this->postJson('/api/me/deposits', ['amountPence' => 500])->assertStatus(403)->assertJsonPath('code', 'spend_limit');
+        $c = $this->competition('draw');
+        $this->checkout($u, $c, 4, ['payWith' => 'card', 'useWallet' => false])->assertStatus(403)->assertJsonPath('code', 'spend_limit');
+        // Raising it from £0 waits 24 hours like any other raise.
+        $this->postJson('/api/me/limits', ['weeklyDepositPence' => 1000])->assertJsonPath('weeklyDepositPence', 0)->assertJsonPath('pending.weeklyDepositPence', 1000);
+    }
+
     /** @return array<string, array{bool}> */
     public static function signUpChoices(): array
     {
@@ -378,8 +389,14 @@ class ApiTest extends TestCase
 
         $u = $this->player(['first_name' => 'Amy', 'last_name' => 'Brook']);
         $this->topUp($u, 1000);
-        $this->checkout($u, $c, 20)->assertCreated();
+        $number = $this->checkout($u, $c, 20)->assertCreated()->json('order.number');
         $mine = \Sprouthub\Verity\Models\Entry::query()->where('competition_id', $v->id)->pluck('number')->all();
+        // Until Amy has played her reveal, her wins are marked won but not named anywhere.
+        $early = collect($this->getJson('/api/competitions/'.$c->slug.'/winning-numbers?show=won')->json('data'));
+        $this->assertTrue($early->every(fn ($r) => $r['won'] && $r['winnerName'] === null));
+        $this->assertSame([], $this->getJson('/api/winners/instant')->json('data'));
+        $this->assertSame(0, collect($this->getJson('/api/entry-lists/'.$c->slug)->json('data'))->whereNotNull('prizeName')->count());
+        $this->postJson("/api/orders/{$number}/play")->assertOk();
         $this->assertSame(20, $this->getJson('/api/competitions/'.$c->slug)->json('ticketsLeft'));
 
         $list = $this->getJson('/api/competitions/'.$c->slug.'/winning-numbers')->json();
@@ -427,6 +444,7 @@ class ApiTest extends TestCase
         $this->topUp($u, 1000);
         $c = $this->competition('instant', ['max_tickets' => 20, 'max_per_person' => 20], [['£1 Credit', 100, 20, 'site_credit']]);
         $this->checkout($u, $c, 4)->assertCreated();
+        Carbon::setTestNow(now()->addMinutes(61)); // not played, but an hour on: shown anyway
 
         $this->assertSame('Anonymous', $this->getJson('/api/winners/instant')->json('data.0.name'));
         $this->assertSame('Anonymous', $this->getJson('/api/entry-lists/'.$c->slug)->json('data.0.name'));

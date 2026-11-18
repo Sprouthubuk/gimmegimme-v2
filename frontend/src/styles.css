@@ -370,6 +370,8 @@ select.inp{appearance:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* ---- additions for the built site ---- */
+.narrow:has([data-empty-checkout]) .steps{display:none}
+label:has(> .sw),label:has(.sw){min-height:44px;align-items:center}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .skip{position:absolute;left:-999px;top:8px;z-index:100;background:#FFF23A;color:#07050B;padding:10px 14px;border-radius:999px;font-weight:900}
 .skip:focus{left:8px}
