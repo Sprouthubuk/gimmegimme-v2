@@ -395,3 +395,7 @@ label:has(> .sw),label:has(.sw){min-height:44px;align-items:center}
 @media (max-width:899px){.ft-cols a{display:inline-flex;align-items:center;min-height:36px;padding:0 6px}.ft-cols>div{gap:0!important}}
 /* Small links that stand alone get a full-height tap area. */
 .tap{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}
+
+.pay-marks{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pay-marks li{background:#fff;border-radius:6px;height:32px;min-width:56px;padding:0 10px;display:flex;align-items:center;justify-content:center}
+.pay-marks img{display:block;height:auto;max-height:20px;width:auto}
