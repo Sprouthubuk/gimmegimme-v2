@@ -7,10 +7,9 @@ import HeroImage from "../components/HeroImage.astro";
 import Icon from "../components/Icon.astro";
 import type { CompetitionSummary, CompetitionDetail, InstantWinnerRow } from "../lib/types";
 import { formatPence, formatCount } from "../lib/money";
-import { ago, ukDateTime, ukShortDay } from "../lib/time";
+import { ago, ukDateTime } from "../lib/time";
 
 const { api, site } = Astro.locals;
-const filter = Astro.url.searchParams.get("filter") ?? "all";
 // The independent calls run side by side once the visitor has a session (see api.hasSession).
 const winnersCall = () => api.get<{ data: InstantWinnerRow[] }>("/api/winners/instant?limit=12");
 const early = api.hasSession() ? winnersCall() : null;
@@ -24,15 +23,6 @@ const [featured, { data: winners }] = await Promise.all([
   early ?? winnersCall(),
 ]);
 
-const FILTERS: [string, string, (c: CompetitionSummary) => boolean][] = [
-  ["all", "All", () => true],
-  ["arcade", "Arcade", (c) => ["claw_machine", "slots", "coin_drop", "balloon_pop", "hook_a_duck", "spin_wheel", "whack_a_mole", "pinata"].includes(c.game ?? "")],
-  ["reveal", "Scratch & Reveal", (c) => ["scratch_card", "classic", "gems", "bingo_card"].includes(c.game ?? "")],
-  ["christmas", "Christmas", (c) => c.skin === "christmas"],
-  ["under10", "Under 10p", (c) => c.pricePence < 10],
-];
-const active = FILTERS.find((f) => f[0] === filter) ?? FILTERS[0];
-const shown = instant.filter(active[2]).slice(0, 8);
 const ladder = featured?.prizes ?? [];
 const prizesLeft = ladder.reduce((n, p) => n + (p.quantity - p.won), 0);
 const prizesTotal = ladder.reduce((n, p) => n + p.quantity, 0);
@@ -42,7 +32,6 @@ const opensLater = featured?.status === "scheduled" && featured.opensAt ? featur
 const loopOf = <T,>(items: T[], min = 16): T[] => (items.length ? Array.from({ length: Math.max(1, Math.ceil(min / items.length)) }, () => items).flat() : []);
 const ladderLoop = loopOf(ladder);
 const winnersLoop = loopOf(winners, 8);
-const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
 ---
 <Layout title="Home" active="home">
   {featured && (
@@ -80,19 +69,16 @@ const nextDraw = draws.map((d) => d.drawAt).filter(Boolean).sort()[0] ?? null;
   )}
 
   <section id="instant"><div class="wrap stack g16">
-    <div class="row between g12 gg-reveal sh"><div><div class="eyebrow">Buy · Play · Win Instantly</div><h2 class="h2"><span class="np">Instant</span> Wins</h2></div><a href="/competitions?type=instant" class="btn btn-o btn-sm">See All {instant.length}</a></div>
-    <div class="scrollx" role="group" aria-label="Filter games">{FILTERS.map(([key, label]) => <a class={`chip ${key === active[0] ? "on" : ""}`} href={key === "all" ? "/#instant" : `/?filter=${key}#instant`} aria-current={key === active[0] ? "true" : undefined}>{label}</a>)}</div>
-    {shown.length ? <div class="grid-c gg-stagger">{shown.map((c) => <CompCard c={c} />)}</div> : <div class="card empty">Nothing here right now — new games drop every week.</div>}
-    <a href="/competitions" class="btn btn-o btn-block">View All Competitions <Icon name="arrow" size={18} /></a>
+    <h2 class="h2 gg-reveal sh"><span class="np">Instant</span> Wins</h2>
+    {instant.length ? <div class="grid-c gg-stagger">{instant.map((c) => <CompCard c={c} />)}</div> : <div class="card empty">New instant win games are on their way.</div>}
   </div></section>
 
   {draws.length > 0 && (
-    <section class="sec"><div class="wrap stack g16">
-      <div class="row between wrapx g12 gg-reveal sh"><div><div class="row g8"><span class="gg-ping" style="width:8px;height:8px;border-radius:999px;background:#22E6FF"></span><span class="eyebrow" style="color:#22E6FF">Live Draws</span></div><h2 class="h2">Next Draw {nextDraw && <span class="nc gg-flicker">{ukShortDay(nextDraw)}</span>}</h2></div></div>
-      <div class="rail gg-stagger">{draws.map((c) => <CompCard c={c} />)}</div>
+    <section id="draws" class="sec"><div class="wrap stack g16">
+      <h2 class="h2 gg-reveal sh"><span class="nc">Live</span> Draws</h2>
+      <div class="grid-c gg-stagger">{draws.map((c) => <CompCard c={c} />)}</div>
     </div></section>
   )}
-
 
   <section class="sec"><div class="wrap stack g20">
     <h2 class="h2 gg-reveal">How It <span class="nc">Works</span></h2>

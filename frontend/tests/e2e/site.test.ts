@@ -75,22 +75,27 @@ describe("site-wide rules", () => {
       expect(res.headers.get("location")).toBe(`/login?next=${encodeURIComponent(p)}`);
     }
   });
-  it("the home page shows the featured comp, live countdown and live draws", async () => {
+  it("the home page shows the featured comp, live countdown, every instant win and the live draws", async () => {
     const { html } = await new Browser(site.origin).page("/");
     expect(html).toContain("data-countdown=");
     expect(html).toContain("Bush Bucks – Jungle Trial");
-    expect(html).toContain("Next Draw");
+    // Two plain titles, no filters and no See All: every instant win game, then every live draw.
+    expect(html).toMatch(/<span class="np">Instant<\/span> Wins/);
+    expect(html).toMatch(/<span class="nc">Live<\/span> Draws/);
+    expect(html).not.toContain('aria-label="Filter games"');
+    expect(html).not.toMatch(/See All \d/);
     // The featured section's strip is the live winners feed (names, prize, game, when), not the prize list.
     expect(html).toMatch(/Live <b>Winners<\/b>/);
     expect(html).toMatch(/Emmie A\.<\/b> won <b class="ny">£0\.50 site credit<\/b><small>Pop For Pennies · /);
     expect(html).not.toContain('aria-label="Prize ladder"');
   });
-  it("competition cards show price per entry, wins, time left and tickets left", async () => {
+  it("competition cards show price, wins, highlight, time left and tickets left", async () => {
     const { html } = await new Browser(site.origin).page("/competitions");
     const t = text(html);
-    expect(t).toMatch(/25p ?per entry/);
-    expect(t).toMatch(/2,516 instant wins/);
-    expect(t).toMatch(/Ends in \d+d \d+h/);
+    expect(t).toMatch(/25p/);
+    expect(t).toMatch(/2,516 instant wins/); // the count on the pill, with the words for screen readers
+    expect(t).toMatch(/Top Prize £/);
+    expect(t).toMatch(/\d+d \d+h/);
     expect(t).toMatch(/98,000 ?left/); // Bush Bucks: 100,000 tickets, 2% sold (from the server, not worked out)
     expect(html).toContain("data-ends=");
     // No game tag on a card (only live draws keep their Live Draw tag), and no limit per person anywhere.
@@ -122,11 +127,6 @@ describe("site-wide rules", () => {
     expect(demo.html).not.toContain("GIMMEGIMMEPRIZES LTD"); // no footer
     expect((await b.page("/demo/slots")).html).toContain("GIMMEGIMMEPRIZES LTD");
     expect((await b.page("/")).res.headers.get("x-frame-options")).toBe("DENY");
-  });
-  it("home filter chips filter the instant wins without JavaScript", async () => {
-    const { html } = await new Browser(site.origin).page("/?filter=under10");
-    expect(html).toContain("Pop For Pennies");
-    expect(html).not.toContain(">Scrooge’s Secret Stash<");
   });
   it("the competition page renders the ticket picker on the server", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");
