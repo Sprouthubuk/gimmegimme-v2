@@ -16,6 +16,8 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .muted{color:#B9AFC6}.dim{color:#8E84A0}
 .eyebrow{font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#8E84A0}
 .h1{margin:0;font-family:'Lilita One',sans-serif;font-weight:400;font-size:40px;line-height:.95}
+/* Short auth-page titles: one line at every width (the narrow column can't hold the desktop size). */
+.h1.h1-one{white-space:nowrap;font-size:clamp(28px,8.6vw,50px)}
 .h2{margin:0;font-family:'Lilita One',sans-serif;font-weight:400;font-size:30px;line-height:1}
 .h3{margin:0;font-family:'Lilita One',sans-serif;font-weight:400;font-size:20px;line-height:1.1}
 .p{margin:0;font-weight:600;line-height:1.55;color:#B9AFC6}
