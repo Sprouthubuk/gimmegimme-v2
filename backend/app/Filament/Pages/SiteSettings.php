@@ -34,7 +34,7 @@ class SiteSettings extends Page
     public ?array $data = [];
 
     private const MONEY = ['min_deposit_pence' => 'Minimum top up', 'min_card_pence' => 'Minimum card payment', 'min_withdrawal_pence' => 'Minimum withdrawal',
-        'max_top_up_pence' => 'Largest top up', 'credit_card_monthly_cap_pence' => 'Credit cards: monthly limit per player'];
+        'max_top_up_pence' => 'Largest top up'];
 
     private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'meta_pixel_id'];
 

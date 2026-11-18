@@ -23,7 +23,6 @@ class Setting extends Model
         'min_card_pence' => '100',
         'min_withdrawal_pence' => '2000',
         'max_top_up_pence' => '50000',
-        'credit_card_monthly_cap_pence' => '25000',
         'bonus_expiry_days' => '30',
         'featured_slug' => null,
         'instagram_url' => null,

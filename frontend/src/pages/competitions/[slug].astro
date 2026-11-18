@@ -132,7 +132,7 @@ const [first, ...rest] = c.title.split(" – ");
       <div class="info-d" set:html={c.description.replace(/</g, "&lt;").replace(/\n/g, "<br>")}></div>
       {c.howToPlay && <p class="info-d" style="margin:0"><b>How to play:</b>{" "}{c.howToPlay}</p>}
       <div class="info-f">
-        <span>18+ UK residents only · Max {formatCount(c.maxPerPerson)} tickets per person{(c.minTickets ?? 1) > 1 ? ` · Minimum ${formatCount(c.minTickets)} per order` : ""}</span>
+        <span>18+ UK residents only{(c.minTickets ?? 1) > 1 ? ` · Minimum ${formatCount(c.minTickets)} tickets per order` : ""}</span>
         <span class="row wrapx" style="gap:4px 16px">
           <a class="tap" href="/free-entry">Free postal entry</a>
           <a class="tap" href={`/entry-lists/${c.slug}`}>Entry list</a>

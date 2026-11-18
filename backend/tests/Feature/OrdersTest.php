@@ -244,15 +244,20 @@ class OrdersTest extends TestCase
         $this->buy($u->refresh(), $c, 20, 'card', false); // £5 more would be £11
     }
 
-    public function test_credit_card_spend_is_capped_at_250_a_month(): void
+    public function test_there_is_no_monthly_credit_card_limit(): void
     {
+        // Owner's decision (18 Nov 2026): no £250 cap. £400 on a credit card in one month goes through and
+        // nothing is flagged for a refund. An old setting left in the database changes nothing.
+        Setting::put('credit_card_monthly_cap_pence', '25000');
         $u = $this->player();
         $c = $this->competition('draw', ['price_pence' => 1000, 'max_per_person' => 100]);
-        $o = $this->buy($u, $c, 20, 'card', false)['order']; // £200
-        $this->gateway()->settle($o->gateway_ref, 'paid', 'credit');
-        $this->orders()->syncWithGateway($o);
-        $this->expectExceptionMessage('Credit card payments are limited');
-        $this->buy($u->refresh(), $c, 6, 'card', false); // £60 more
+        foreach ([20, 20] as $qty) {
+            $o = $this->buy($u->refresh(), $c, $qty, 'card', false)['order']; // £200 each
+            $this->gateway()->settle($o->gateway_ref, 'paid', 'credit');
+            $this->orders()->syncWithGateway($o);
+            $this->assertSame('paid', $o->refresh()->status);
+            $this->assertFalse((bool) $o->needs_attention);
+        }
     }
 
     public function test_a_deposit_credits_the_deposit_balance_only_after_the_gateway_says_paid(): void

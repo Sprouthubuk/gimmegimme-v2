@@ -61,6 +61,20 @@ class AdminTest extends TestCase
         }
     }
 
+    public function test_a_competition_made_in_the_admin_has_no_limit_per_person(): void
+    {
+        $this->signInAdmin();
+        Storage::fake('public');
+        Livewire::test(CreateCompetition::class)->fillForm([
+            'title' => 'No Limit', 'slug' => 'no-limit', 'type' => 'draw', 'image' => null, 'price_pence' => '1.00', 'max_tickets' => 5000,
+            'closes_at' => now('Europe/London')->addDays(10)->format('Y-m-d H:i'), 'end_prize_name' => 'Cash', 'end_prize_value_pence' => '100.00',
+        ])->assertFormFieldDoesNotExist('max_per_person');
+        Storage::disk('public')->put('competitions/nl.webp', 'img');
+        $c = Competition::query()->create(['slug' => 'nl', 'title' => 'NL', 'type' => 'draw', 'image' => 'competitions/nl.webp', 'price_pence' => 100, 'max_tickets' => 10, 'max_per_person' => 3, 'closes_at' => now()->addDays(10), 'end_prize_name' => 'Cash', 'end_prize_value_pence' => 1000]);
+        Livewire::test(EditCompetition::class, ['record' => $c->getKey()])->fillForm(['max_tickets' => 8000])->call('save')->assertHasNoFormErrors();
+        $this->assertSame(8000, $c->refresh()->max_per_person, 'follows the number of tickets');
+    }
+
     public function test_the_games_page_lists_every_game_in_every_look(): void
     {
         $this->signInAdmin();
@@ -147,7 +161,7 @@ class AdminTest extends TestCase
         Storage::disk('public')->put('competitions/x.webp', 'img');
         Livewire::test(CreateCompetition::class)->fillForm([
             'title' => 'Cash Bang', 'slug' => 'cash-bang', 'type' => 'instant', 'game' => 'balloon_pop', 'skin' => 'christmas',
-            'image' => null, 'price_pence' => '0.25', 'max_tickets' => 1000, 'max_per_person' => 200,
+            'image' => null, 'price_pence' => '0.25', 'max_tickets' => 1000,
             'closes_at' => now('Europe/London')->addDays(10)->format('Y-m-d H:i'),
             'prizes' => [['name' => '£100 Cash', 'value_pence' => '100.00', 'type' => 'cash', 'quantity' => 1], ['name' => '50p Credit', 'value_pence' => '0.50', 'type' => 'site_credit', 'quantity' => 300]],
         ])->call('create')->assertHasFormErrors(['image']);

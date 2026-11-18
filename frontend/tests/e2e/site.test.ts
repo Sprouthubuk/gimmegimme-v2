@@ -93,6 +93,11 @@ describe("site-wide rules", () => {
     expect(t).toMatch(/Ends in \d+d \d+h/);
     expect(t).toMatch(/98,000 ?left/); // Bush Bucks: 100,000 tickets, 2% sold (from the server, not worked out)
     expect(html).toContain("data-ends=");
+    // No game tag on a card (only live draws keep their Live Draw tag), and no limit per person anywhere.
+    expect(html).not.toMatch(/<span class="gt">/);
+    expect(html).toContain('<span class="gt cy">');
+    expect(t).not.toMatch(/per person/i);
+    expect(text((await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial")).html)).not.toMatch(/per person/i);
   });
   it("the competition page: prize cards, one information box, no demo link", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");

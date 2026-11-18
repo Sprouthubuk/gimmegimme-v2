@@ -32,10 +32,6 @@ final class Settings
         return max(self::minDeposit(), Setting::int('max_top_up_pence'));
     }
 
-    public static function creditCardMonthlyCap(): int
-    {
-        return Setting::int('credit_card_monthly_cap_pence');
-    }
 
     public static function bonusExpiryDays(): int
     {

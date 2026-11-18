@@ -62,7 +62,7 @@ play block). Promo codes take at most 50% off and never make an order free.
 `{ lines, payWith: "wallet"|"card", useWallet: boolean, promoCode, requestId }` → `CheckoutResult`.
 
 1. Run the play check (sales switch, staff, 18+, email verified, self-exclusion, break, hold,
-   spend limits including card payments in progress, £250/month credit-card cap). Refuse with
+   spend limits including card payments in progress). Refuse with
    `403` + `code`.
 2. Re-price on the server. A card part under `minCardPence` is `422`.
 3. Take the wallet part at once (append-only ledger; spend deposit → bonus → winnings; bonus ≤ 50%
