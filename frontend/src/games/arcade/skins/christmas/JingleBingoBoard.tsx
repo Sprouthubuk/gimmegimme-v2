@@ -9,6 +9,9 @@ import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "../../games/bingo/bingo.css";
 import "./jingleBingo.css";
+import { Scene3D } from "../../three/Scene3D";
+import { buildBingoScene, type BingoState } from "../../three/bingoScene";
+import { JINGLE_BINGO_3D } from "./jingleBingo3d";
 
 /** Candy-cane red, mint and gold. */
 const LETTER_TONE: Record<string, string> = { B: "red", I: "mint", N: "gold", G: "red", O: "mint" };
@@ -59,15 +62,8 @@ export function JingleBingoBoard({ ticket, seed, reducedMotion, onReveal }: Boar
     if (done && layout.winLine) playSound("bells");
   }, [done, layout.winLine]);
 
-  const call = lastBall === null ? null : festiveCall(lastBall);
-
-  let prompt: React.ReactNode;
-  if (!started) prompt = null;
-  else if (done) prompt = <GamePrompt title={layout.winLine ? "JINGLE BINGO!" : "No line this time"} tone={layout.winLine ? "pink" : "ink"} />;
-  else if (waitingOn) prompt = <GamePrompt title="1 to go!" tone="pink" sub={`${left} bauble${left === 1 ? "" : "s"} left to draw`} />;
-  else prompt = <GamePrompt title="Drawing…" sub={`${left} bauble${left === 1 ? "" : "s"} left to draw`} />;
-
-  return (
+  const state3d: BingoState = { started, drawn, draws: layout.draws, done, win: !!layout.winLine, left, start };
+  const tray = (
     <>
       <div className="rg-xmas-title rg-jingle-title">JINGLE BELL BINGO BONANZA</div>
       <div className="rg-bingo-tray rg-jingle-tray" aria-live="polite">
@@ -90,6 +86,30 @@ export function JingleBingoBoard({ ticket, seed, reducedMotion, onReveal }: Boar
         )}
         {waitingOn && <span className="rg-bingo-sticker">{waitingOn} to win!</span>}
       </div>
+    </>
+  );
+
+  const call = lastBall === null ? null : festiveCall(lastBall);
+
+  let prompt: React.ReactNode;
+  if (!started) prompt = null;
+  else if (done) prompt = <GamePrompt title={layout.winLine ? "JINGLE BINGO!" : "No line this time"} tone={layout.winLine ? "pink" : "ink"} />;
+  else if (waitingOn) prompt = <GamePrompt title="1 to go!" tone="pink" sub={`${left} bauble${left === 1 ? "" : "s"} left to draw`} />;
+  else prompt = <GamePrompt title="Drawing…" sub={`${left} bauble${left === 1 ? "" : "s"} left to draw`} />;
+
+  return (
+    <>
+      <Scene3D
+        state={state3d}
+        setup={(ctx) => buildBingoScene(ctx, JINGLE_BINGO_3D)}
+        seed={`jingle:${ticket.ticketNumber}`}
+        reducedMotion={reducedMotion}
+        aspect={0.74}
+        fallback={tray}
+        label="Jingle Bell Bingo Bonanza bauble machine"
+      >
+        {waitingOn && <span className="rg3-sticker">{waitingOn} to win!</span>}
+      </Scene3D>
       <p className="rg-jingle-call" aria-live="polite">
         {lastBall === null ? " " : call ? `${lastBall}: ${call}` : `${bingoLetter(lastBall)} ${lastBall}`}
       </p>

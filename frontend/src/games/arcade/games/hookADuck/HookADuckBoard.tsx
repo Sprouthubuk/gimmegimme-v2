@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { BoardProps } from "../types";
 import { winLabel } from "../symbols";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
+import { Scene3D } from "../../three/Scene3D";
+import { buildDuckScene, type DuckState } from "../../three/duckScene";
 import "./hookADuck.css";
 
 type DuckColour = "pink" | "yellow" | "cyan";
@@ -70,7 +72,7 @@ export function HookADuckBoard({ ticket, reducedMotion, onReveal }: BoardProps) 
   // The hook hangs from the awning (19%) down to the ring on the duck's head (~7.5% above its centre).
   const hookLen = !duck ? HOOK_REST.len : (lifted ? LIFT_Y : duck.y) - 26.5;
 
-  return (
+  const flat = (
     <>
       <div className={`rg-duck-stall is-${phase}`}>
         <div className="rg-awning">
@@ -116,6 +118,21 @@ export function HookADuckBoard({ ticket, reducedMotion, onReveal }: BoardProps) 
           <span className="rg-ripple is-2" />
         </div>
       </div>
+    </>
+  );
+  const state: DuckState = { phase, chosen, label, hook };
+
+  return (
+    <>
+      <Scene3D
+        state={state}
+        setup={(ctx) => buildDuckScene(ctx)}
+        seed={`duck:${ticket.ticketNumber}`}
+        reducedMotion={reducedMotion}
+        aspect={1.0}
+        fallback={flat}
+        label="Hook a duck stall"
+      />
       {phase === "ready" ? (
         <GamePrompt title="Tap a duck to hook it" sub={RESULT_SET_NOTE} />
       ) : phase === "tagged" ? (

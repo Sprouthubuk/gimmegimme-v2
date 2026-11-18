@@ -11,4 +11,7 @@ const buy = Astro.url.searchParams.get("buy");
     <CheckoutView client:load buy={buy} walletPence={me?.wallet.totalPence ?? 0} minCardPence={site.minCardPence} />
     <div class="row g8 wrapx hint" style="justify-content:center">Card payments secured by Cashflows · 18+ UK only · <a class="tap" href="/free-entry">Free postal entry</a></div>
   </div></section>
+<script>
+  window.addEventListener("load", () => window.ggTrack?.("InitiateCheckout", { currency: "GBP" }));
+</script>
 </Layout>

@@ -68,7 +68,7 @@ async function play(page: Page, game: string) {
       await scratchAll(page);
       break;
     case "spin_wheel":
-      await page.locator(".rg-wheel-controls .rg-btn, .rg-ce-controls .rg-btn, .rg-sleigh-controls .rg-btn").first().click();
+      await page.locator(".rg-wheel-controls button, .rg-ce-controls button, .rg-sleigh-controls .rg-btn").first().click();
       break;
     case "bingo_card":
       await page.locator(".rg-bingo-controls .rg-btn").click();

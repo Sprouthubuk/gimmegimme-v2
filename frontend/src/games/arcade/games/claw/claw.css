@@ -223,3 +223,110 @@
 @media (max-height: 740px) {
   .rg-claw-glass { aspect-ratio: 1 / 0.74; }
 }
+
+/* ---------- Premium motion shared by every claw skin ---------- */
+/* The arm (cable and head) hangs from the carriage and swings like a pendulum when the claw moves. */
+.rg-claw-arm {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 7%;
+  rotate: calc(var(--swing, 0) * 1deg);
+  transition: rotate 0.16s ease-out;
+}
+/* Where the claw will come down: a dashed drop line with a glowing ring on the pile. */
+.rg-claw-aim {
+  position: absolute;
+  z-index: 95;
+  top: 27%;
+  height: 19%;
+  width: 0;
+  translate: -50% 0;
+  pointer-events: none;
+  border-left: 3px dashed rgba(255, 255, 255, 0.7);
+  transition: left 0.12s linear;
+  animation: rg-claw-aim 1.2s ease-in-out infinite;
+}
+.rg-claw-aim::after {
+  content: "";
+  position: absolute;
+  left: -1.5px;
+  top: 100%;
+  width: 46px;
+  height: 16px;
+  translate: -50% -50%;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  box-shadow: 0 0 12px 2px rgba(255, 225, 26, 0.7), inset 0 0 8px rgba(255, 225, 26, 0.6);
+}
+@keyframes rg-claw-aim { 50% { opacity: 0.55; } }
+/* Neighbours of the grabbed item wobble when the claw closes on it. */
+.rg-capsule-slot.is-jostled > * { animation: rg-claw-jostle 0.45s ease-in-out; }
+@keyframes rg-claw-jostle {
+  25% { transform: translate(-3px, -4px) rotate(-6deg); }
+  60% { transform: translate(2px, -1px) rotate(4deg); }
+}
+/* The held item sways a little on the way up and across. */
+.rg-claw-machine.is-ascend .rg-claw-held > *, .rg-claw-machine.is-carry .rg-claw-held > * { animation: rg-claw-sway 0.5s ease-in-out infinite alternate; }
+@keyframes rg-claw-sway { from { rotate: -5deg; } to { rotate: 5deg; } }
+.rg-claw-machine.is-carry .rg-claw-rig { transition: left 0.7s cubic-bezier(0.45, 0, 0.3, 1); }
+/* Let go: the item drops through the bottom of the glass into the chute. */
+.rg-claw-falling {
+  position: absolute;
+  z-index: 260;
+  top: 30%;
+  width: 16%;
+  translate: -50% 0;
+  pointer-events: none;
+  animation: rg-claw-fall 0.6s cubic-bezier(0.55, 0, 0.9, 0.5) forwards;
+}
+@keyframes rg-claw-fall { to { transform: translateY(520%) rotate(30deg); } }
+.rg-claw-chute { transition: transform 0.2s; }
+.rg-claw-chute.is-catching { animation: rg-claw-catch 0.6s 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes rg-claw-catch { 40% { transform: scale(1.12, 0.9); } 70% { transform: scale(0.96, 1.05); } }
+
+/* Centre stage: the glass dims, a spotlight turns, and the item bounces up out of the chute and opens. */
+.rg-claw-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 280;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(60% 55% at 50% 48%, rgba(20, 20, 20, 0.15), rgba(20, 20, 20, 0.72));
+  animation: rg-fade-in 0.3s ease both;
+}
+.rg-claw-stage-rays {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 170%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.16) 0 10deg, transparent 10deg 30deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 62%);
+  mask: radial-gradient(circle, #000 18%, transparent 62%);
+  animation: rg-splash-spin 14s linear infinite;
+}
+.rg-claw-stage.is-win .rg-claw-stage-rays { background: repeating-conic-gradient(from 0deg, rgba(255, 225, 26, 0.32) 0 10deg, transparent 10deg 30deg); }
+.rg-claw-stage-item {
+  position: relative;
+  width: 38%;
+  translate: 0 -4%;
+  animation: rg-claw-rise 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+@keyframes rg-claw-rise {
+  0% { transform: translateY(160%) scale(0.5); }
+  100% { transform: none; }
+}
+.rg-claw-stage-bauble { position: relative; z-index: 2; display: block; animation: rg-claw-wobble 0.6s 0.1s ease-in-out; }
+@keyframes rg-claw-wobble {
+  20% { rotate: -9deg; scale: 1.06 0.94; }
+  45% { rotate: 7deg; }
+  70% { rotate: -4deg; scale: 0.97 1.04; }
+}
+.rg-claw-stage .rg-claw-prize { --rg-coin-size: min(104px, 27cqw); top: 46%; z-index: 4; }
+.rg-claw-stage .rg-claw-empty { top: 38%; z-index: 4; font-size: 18px; }
+.rg-claw-stage-splash { z-index: 1; top: 46%; }
+
+.is-reduced-motion .rg-claw-arm { rotate: 0deg; transition: none; }
+.is-reduced-motion .rg-claw-stage-item, .is-reduced-motion .rg-claw-stage-bauble, .is-reduced-motion .rg-claw-stage-rays { animation: none; }
+.is-reduced-motion .rg-claw-aim { animation: none; }

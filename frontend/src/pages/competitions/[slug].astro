@@ -118,4 +118,7 @@ const [first, ...rest] = c.title.split(" – ");
 
   {more.length > 0 && <section class="sec"><div class="wrap stack g16"><h2 class="h2 gg-reveal">{isDraw ? <>More <span class="nc">Draws</span></> : <>You Might <span class="np">Also Like</span></>}</h2><div class="rail gg-stagger">{more.map((o) => <CompCard c={o} />)}</div></div></section>}
 </div>
+<script define:vars={{ slug: c.slug, title: c.title }}>
+  window.addEventListener("load", () => window.ggTrack?.("ViewContent", { content_ids: [slug], content_name: title, content_type: "product" }));
+</script>
 </Layout>

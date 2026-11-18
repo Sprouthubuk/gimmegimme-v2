@@ -3,6 +3,9 @@ import type { BoardProps } from "../types";
 import { generateWheel, WHEEL_SEGMENTS } from "../generators";
 import { useWheelSpin } from "./useWheelSpin";
 import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
+import { Scene3D } from "../../three/Scene3D";
+import { buildWheelScene, type WheelState } from "../../three/wheelScene";
+import { CLASSIC_WHEEL_3D } from "../../three/classicSkins";
 import "./wheel.css";
 
 const SEG = 360 / WHEEL_SEGMENTS;
@@ -29,7 +32,7 @@ export function WheelBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
 
   const bulbs = Array.from({ length: 24 }, (_, i) => polar(i * 15, 94));
 
-  return (
+  const flat = (
     <>
       <div className={`rg-wheel is-${phase}`}>
         <div className="rg-wheel-pointer" aria-hidden="true">
@@ -82,9 +85,25 @@ export function WheelBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
           </g>
         </svg>
       </div>
+    </>
+  );
+  const landedSeg = layout.segments[layout.target];
+  const state: WheelState = { phase, rotation, spinMs: SPIN_MS, winLabel: landedSeg.kind === "prize" ? landedSeg.label : null, spin };
+
+  return (
+    <>
+      <Scene3D
+        state={state}
+        setup={(ctx) => buildWheelScene(ctx, CLASSIC_WHEEL_3D, layout)}
+        seed={seed}
+        reducedMotion={reducedMotion}
+        aspect={1.25}
+        fallback={flat}
+        label="Prize wheel"
+      />
       {phase === "ready" ? (
         <div className="rg-wheel-controls">
-          <button type="button" className="rg-btn rg-btn-yellow" onClick={spin}>
+          <button type="button" className="rg3-btn is-yellow rg3-spin" onClick={spin}>
             SPIN
           </button>
           <p className="rg-note">{RESULT_SET_NOTE}</p>
@@ -93,7 +112,7 @@ export function WheelBoard({ ticket, seed, decoys, reducedMotion, onReveal }: Bo
         <div className="rg-wheel-controls">
           <GamePrompt title={phase === "spinning" ? "Spinning…" : layout.segments[layout.target].kind === "none" ? "No win" : `${layout.segments[layout.target].label}!`} tone="pink" />
           {phase === "spinning" && (
-            <button type="button" className="rg-btn rg-btn-yellow" disabled>
+            <button type="button" className="rg3-btn is-yellow rg3-spin" disabled>
               SPIN
             </button>
           )}

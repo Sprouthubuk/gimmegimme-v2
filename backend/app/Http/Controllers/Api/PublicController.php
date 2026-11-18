@@ -51,6 +51,7 @@ class PublicController extends Controller
             'featuredSlug' => Setting::get('featured_slug') ?: Competition::query()->published()->where('featured', true)->where('closes_at', '>', now())->orderBy('closes_at')->value('slug'),
             'socials' => ['instagram' => Setting::get('instagram_url'), 'facebook' => Setting::get('facebook_url')],
             'supportEmail' => Setting::get('support_email'),
+            'metaPixelId' => preg_match('/^\d{10,20}$/', (string) Setting::get('meta_pixel_id')) ? Setting::get('meta_pixel_id') : null,
         ]);
     }
 

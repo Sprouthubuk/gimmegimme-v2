@@ -4,6 +4,7 @@ import { formatMoney, formatCount } from "../lib/money";
 import { ukDateTime } from "../lib/time";
 import type { OrderView as Order, PlayResult } from "../lib/types";
 import { Svg } from "./Svg";
+import { trackPurchaseOnce } from "../lib/consent";
 
 const ArcadeReveal = lazy(() => import("../games/arcade/ArcadeReveal"));
 
@@ -23,6 +24,11 @@ export default function OrderView({ number, initial }: { number: string; initial
     setOrder(o);
     return o;
   }, [number]);
+
+  // Meta Pixel (only with marketing cookies accepted): one Purchase per paid order.
+  useEffect(() => {
+    if (order.status === "paid") trackPurchaseOnce(order.number, order.totalPence);
+  }, [order.status, order.number, order.totalPence]);
 
   // A card payment may still be on its way back from Cashflows: ask the server to check with them.
   useEffect(() => {

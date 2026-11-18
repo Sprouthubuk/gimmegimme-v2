@@ -191,6 +191,7 @@ class AdminTest extends TestCase
 
     public function test_legal_pages_get_heading_ids_for_their_contents_list(): void
     {
+        Page::query()->whereKey('terms')->delete(); // the migration loads the real wording
         Page::query()->create(['slug' => 'terms', 'title' => 'Terms & Conditions', 'version' => '1.0', 'html' => '<h2>1. About Us</h2><p>Hi</p><h2>1. About Us</h2>']);
         $r = $this->getJson('/api/pages/terms')->assertOk()->json();
         $this->assertSame([['id' => '1-about-us', 'text' => '1. About Us'], ['id' => '1-about-us-2', 'text' => '1. About Us']], $r['headings']);

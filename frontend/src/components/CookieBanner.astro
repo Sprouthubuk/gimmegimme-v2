@@ -1,0 +1,54 @@
+---
+/** Asks once about marketing cookies (the Meta Pixel). Shown only when a Pixel ID is set in the admin. */
+const pixelId = Astro.locals.site.metaPixelId ?? "";
+---
+{pixelId && (
+  <div class="ck" id="cookie-banner" data-pixel={pixelId} role="dialog" aria-live="polite" aria-label="Cookie choice" hidden>
+    <p class="ck-t"><b>Cookies</b> We use marketing cookies (Meta Pixel) to see which of our adverts work. They stay off unless you accept. <a href="/legal/cookies">Cookie policy</a></p>
+    <div class="ck-b">
+      <button type="button" class="ck-btn" data-choice="rejected">Reject</button>
+      <button type="button" class="ck-btn is-on" data-choice="accepted">Accept</button>
+    </div>
+  </div>
+)}
+<script>
+  import { readConsent, saveConsent, startPixel } from "../lib/consent";
+  const banner = document.getElementById("cookie-banner");
+  const id = banner?.dataset.pixel ?? "";
+  if (banner && id) {
+    if (readConsent() === null) banner.hidden = false;
+    else startPixel(id);
+    banner.querySelectorAll<HTMLButtonElement>("[data-choice]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const choice = b.dataset.choice as "accepted" | "rejected";
+        const had = readConsent();
+        saveConsent(choice);
+        banner.hidden = true;
+        // Withdrawing stops the Pixel straight away: reload without it.
+        if (had === "accepted" && choice === "rejected") location.reload();
+        else startPixel(id);
+      }),
+    );
+    document.querySelectorAll("[data-cookie-settings]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        banner.hidden = false;
+        banner.querySelector<HTMLButtonElement>("[data-choice='rejected']")?.focus();
+      }),
+    );
+  } else {
+    // No Pixel set: there is nothing to choose, so the footer link just goes to the policy.
+    document.querySelectorAll<HTMLElement>("[data-cookie-settings]").forEach((el) => (el.hidden = true));
+  }
+</script>
+<style>
+  .ck { font-family: Nunito, system-ui, sans-serif; position: fixed; left: 12px; right: 12px; bottom: 96px; z-index: 60; max-width: 520px; margin: 0 auto; padding: 14px; border-radius: 18px; background: #0e0914; border: 1px solid rgba(255, 45, 170, 0.55); box-shadow: 0 0 40px rgba(255, 45, 170, 0.18), 0 18px 40px rgba(0, 0, 0, 0.55); color: #fff; }
+  .ck[hidden] { display: none; }
+  .ck-t { margin: 0 0 12px; font-size: 14px; line-height: 1.5; font-weight: 600; color: #d8d0e2; }
+  .ck-t b { color: #fff; margin-right: 4px; font-family: "Lilita One", sans-serif; font-weight: 400; font-size: 16px; }
+  .ck-t a { color: #ff5cc0; }
+  .ck-b { display: flex; gap: 10px; }
+  .ck-btn { flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.3); background: #120c18; color: #fff; font: 800 15px Nunito, system-ui, sans-serif; cursor: pointer; }
+  .ck-btn.is-on { background: #fff23a; border-color: #fff23a; color: #07050b; }
+  @media (min-width: 900px) { .ck { bottom: 20px; } }
+</style>

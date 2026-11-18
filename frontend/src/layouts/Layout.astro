@@ -3,6 +3,7 @@ import "../styles.css";
 import Header from "../components/Header.astro";
 import BottomNav from "../components/BottomNav.astro";
 import Footer from "../components/Footer.astro";
+import CookieBanner from "../components/CookieBanner.astro";
 interface Props {
   title: string;
   description?: string;
@@ -46,6 +47,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString(
     {footer && <Footer />}
     {bottomNav && <BottomNav active={active} />}
   </div>
+  <CookieBanner />
   <script>
     import { readBasket, onBasketChange } from "../lib/basket";
     import { remaining, endsIn } from "../lib/time";

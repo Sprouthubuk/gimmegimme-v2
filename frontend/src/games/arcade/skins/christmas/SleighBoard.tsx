@@ -7,6 +7,8 @@ import { GamePrompt, RESULT_SET_NOTE } from "../../shell/GamePrompt";
 import { playSound } from "../shared/sounds";
 import { SoundToggle } from "../shared/SoundToggle";
 import "./sleigh.css";
+import { Scene3D } from "../../three/Scene3D";
+import { buildSleighScene, type SleighState3D } from "./sleigh3d";
 
 const SEG = 360 / WHEEL_SEGMENTS;
 /** The ring of rooftops: inner and outer edge of the twelve panels. */
@@ -146,6 +148,7 @@ export function SleighBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
   const [phase, setPhase] = useState<Phase>("flying");
   const sleigh = useRef<SVGGElement>(null);
   const angle = useRef(0);
+  const height = useRef(FLIGHT_R);
 
   // Where over the target rooftop it comes to rest: close to the chimney, not dead centre every time.
   const restAt = useMemo(() => {
@@ -156,11 +159,12 @@ export function SleighBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
   // The sleigh goes round the ring but always stays upright, facing the way it is going. At the
   // two sides (where it travels straight up or down) it turns round smoothly, and it leans a
   // little into the curve. `bob` is a gentle float; `height` lets it settle onto the chimney.
-  const draw = (deg: number, bob = 0, height = FLIGHT_R) => {
+  const draw = (deg: number, bob = 0, height3d = FLIGHT_R) => {
     angle.current = deg;
+    height.current = height3d;
     const a = (deg * Math.PI) / 180;
-    const x = height * Math.sin(a);
-    const y = -height * Math.cos(a) + bob;
+    const x = height3d * Math.sin(a);
+    const y = -height3d * Math.cos(a) + bob;
     const turn = Math.max(-1, Math.min(1, Math.cos(a) / 0.28));
     const sx = 0.92 * (turn >= 0 ? Math.max(0.34, turn) : Math.min(-0.34, turn));
     let lean = deg % 360;
@@ -253,7 +257,8 @@ export function SleighBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
   }, [seed]);
   const [cx, cy] = polar(layout.target * SEG, CHIMNEY_R + 4);
 
-  return (
+  const state3d: SleighState3D = { phase, angle, height, segments: layout.segments, target: layout.target, stop };
+  const flat = (
     <>
       <div className="rg-xmas-title rg-sleigh-title">DASHER'S DOSH DROP</div>
       <div className={`rg-sleigh-ring is-${phase}`}>
@@ -368,6 +373,20 @@ export function SleighBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
           </g>
         </svg>
       </div>
+    </>
+  );
+
+  return (
+    <>
+      <Scene3D
+        state={state3d}
+        setup={(ctx) => buildSleighScene(ctx)}
+        seed={`sleigh:${seed}`}
+        reducedMotion={reducedMotion}
+        aspect={1.0}
+        fallback={flat}
+        label={phase === "landed" ? `Landed on ${landed.kind === "none" ? "no win" : landed.label}` : "Dasher pulling the sleigh round the rooftops"}
+      />
       {phase === "flying" ? (
         <div className="rg-sleigh-controls">
           <button type="button" className="rg-btn rg-btn-xmas" onClick={stop}>

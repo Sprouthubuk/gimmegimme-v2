@@ -35,7 +35,7 @@ class SiteSettings extends Page
     private const MONEY = ['min_deposit_pence' => 'Minimum top up', 'min_card_pence' => 'Minimum card payment', 'min_withdrawal_pence' => 'Minimum withdrawal',
         'max_top_up_pence' => 'Largest top up', 'credit_card_monthly_cap_pence' => 'Credit cards: monthly limit per player', 'signup_bonus_cap_pence' => 'Welcome bonus: most it pays'];
 
-    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'signup_bonus_max_grants'];
+    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'signup_bonus_max_grants', 'meta_pixel_id'];
 
     public function mount(): void
     {
@@ -61,6 +61,8 @@ class SiteSettings extends Page
                 TextInput::make('support_email')->email(),
                 TextInput::make('instagram_url')->url()->prefix('https://')->rule('starts_with:https://'),
                 TextInput::make('facebook_url')->url()->rule('starts_with:https://'),
+                TextInput::make('meta_pixel_id')->label('Meta Pixel ID')->regex('/^\d{10,20}$/')
+                    ->helperText('Numbers only, from Meta Events Manager. Leave empty for no Pixel. It only loads for visitors who accept marketing cookies.'),
             ]),
         ]);
     }
