@@ -98,7 +98,7 @@ describe("site-wide rules", () => {
     expect(t).toMatch(/\d+d \d+h/);
     expect(t).toMatch(/2% sold/);
     expect(t).not.toMatch(/\d ?left|tickets in total|max entries/i); // players only ever see % sold
-    expect(t).toMatch(/Buy 10 Get 15 Free/); // a live draw card names its Best Value bundle
+    expect(t).toMatch(/Buy 10 Get 15 Free/); // a live draw card names its Our Pick bundle
     expect(html).toContain("data-ends=");
     // No game tag on a card (only live draws keep their Live Draw tag), and no limit per person anywhere.
     expect(html).not.toMatch(/<span class="gt">/);
@@ -130,11 +130,11 @@ describe("site-wide rules", () => {
     expect((await b.page("/demo/slots")).html).toContain("GIMMEGIMMEPRIZES LTD");
     expect((await b.page("/")).res.headers.get("x-frame-options")).toBe("DENY");
   });
-  it("a live draw's page shows its bundles, Best Value first choice, and no ticket counts", async () => {
+  it("a live draw's page shows its bundles, Our Pick first choice, and no ticket counts", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/lush-snow-fairy-wonderland");
     const t = text(html);
     expect(t).toMatch(/Buy 10 Get 15 FREE!/);
-    expect(t).toMatch(/Best Value/);
+    expect(t).toMatch(/Our Pick/);
     expect(t).toMatch(/25 tickets for £5\.90/);
     expect(t).toMatch(/Save £8\.85/);
     expect(t).toMatch(/Bundle and free tickets are entered into the draw exactly like paid tickets/);

@@ -25,7 +25,7 @@ const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Sc
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {
-  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, prizeCount: type === "instant" ? 2516 : null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], bestBundle: null, ...extra };
+  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, prizeCount: type === "instant" ? 2516 : null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, ...extra };
 }
 const COMPS = [
   comp("c-bush", "bush-bucks-jungle-trial", "Bush Bucks – Jungle Trial", "instant", "claw_machine", "classic", "bush-lg", 25, 75000, 2, "2,516 wins", { featured: true }),
@@ -46,12 +46,12 @@ const COMPS = [
 // "Buy X Get Y Free" bundles (live draws): what the server would offer for these two.
 const TIERS = [[1, 5, 5], [2, 10, 15], [3, 20, 40], [4, 40, 100]];
 function bundlesFor(c, ids, best) {
-  return TIERS.filter(([id]) => ids.includes(id)).map(([id, paid, free]) => ({ id, label: `Buy ${paid} Get ${free} Free`, paid, free, tickets: paid + free, pricePence: paid * c.pricePence, savePence: free * c.pricePence, bestValue: id === best }));
+  return TIERS.filter(([id]) => ids.includes(id)).map(([id, paid, free]) => ({ id, label: `Buy ${paid} Get ${free} Free`, paid, free, tickets: paid + free, pricePence: paid * c.pricePence, savePence: free * c.pricePence, ourPick: id === best }));
 }
 for (const [slug, ids, best] of [["lush-snow-fairy-wonderland", [1, 2, 3, 4], 2], ["ninja-possiblecooker", [1, 2, 3], 2]]) {
   const c = COMPS.find((x) => x.slug === slug);
   c.bundles = bundlesFor(c, ids, best);
-  c.bestBundle = c.bundles.find((b) => b.bestValue);
+  c.featuredBundle = c.bundles.find((b) => b.ourPick);
 }
 const byId = new Map(COMPS.map((c) => [c.id, c]));
 const bySlug = new Map(COMPS.map((c) => [c.slug, c]));

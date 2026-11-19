@@ -43,7 +43,7 @@ const whenLine: [string, string] = (live || c.endPrize) && (c.drawAt ?? c.closes
     <div class="wh"><span>{whenLine[0]}</span>{" "}<b>{whenLine[1]}</b></div>
     {open && <div class="en"><span class="dt"></span><b data-ends={c.closesAt}>{endsIn(c.closesAt)}</b></div>}
     <div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${sold > 0 ? Math.max(sold, 2) : 0}%`}></div></div>
-    <div class="sl"><span><b>{sold}%</b> sold</span>{open && sold >= 90 ? <span class="ag">Almost gone!</span> : c.bestBundle ? <span class="bb">{c.bestBundle.label}</span> : null}</div>
+    <div class="sl"><span><b>{sold}%</b> sold</span>{open && sold >= 90 ? <span class="ag">Almost gone!</span> : c.featuredBundle ? <span class="bb">{c.featuredBundle.label}</span> : null}</div>
     <span class="btn btn-y btn-block go">{!open && !soon ? "View" : soon ? "See The Prizes" : live ? "Enter Now" : "Play Now"}{(open || soon) && <span aria-hidden="true" class="star">★</span>}</span>
   </div>
 </a>

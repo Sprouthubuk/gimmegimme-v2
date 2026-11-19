@@ -56,7 +56,7 @@ export default function TicketPicker(p: PickerProps) {
   const [sold, setSold] = useState({ percent: p.soldPercent, out: p.soldOut });
   const min = Math.max(1, p.minTickets ?? 1);
   const popular = p.popularPreset && p.presets.includes(p.popularPreset) ? p.popularPreset : null;
-  const best = bundles.find((b) => b.bestValue) ?? null;
+  const best = bundles.find((b) => b.ourPick) ?? null;
   const [choice, setChoice] = useState<Choice>(() =>
     best ? { kind: "bundle", id: best.id } : { kind: "single", qty: Math.max(min, popular ?? p.presets[1] ?? p.presets[0] ?? 1) });
   const [typed, setTyped] = useState<string | null>(null);
@@ -118,7 +118,7 @@ export default function TicketPicker(p: PickerProps) {
           <div className="bgrid" role="radiogroup" aria-label="Ticket bundles">
             {bundles.map((b) => (
               <button key={b.id} type="button" role="radio" aria-checked={chosenBundle?.id === b.id} className={`bcard ${chosenBundle?.id === b.id ? "on" : ""}`} onClick={() => pickBundle(b)} data-testid="bundle">
-                {b.bestValue && <span className="ribbon">Best Value</span>}
+                {b.ourPick && <span className="ribbon">Our Pick</span>}
                 <BundleTitle b={b} />
                 <span className="bp">{ticketWord(b.tickets)} for <b>{formatMoney(b.pricePence)}</b></span>
                 <span className="bs">Save {formatMoney(b.savePence)}</span>

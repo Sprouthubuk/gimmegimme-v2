@@ -30,7 +30,7 @@ against it; the Laravel feature tests must cover the same behaviour.
 | --- | --- | --- |
 | GET | `/api/site` | `SiteInfo` (cached 30s by Astro). `metaPixelId` is the Pixel ID set in the admin, or null; the site loads the Pixel only after the visitor accepts marketing cookies |
 | GET | `/api/health` | `{ status: "ok"\|"failing", checks: { database, scheduler } }`, `200` or `503` (for an uptime monitor; scheduler = ran in the last 5 minutes) |
-| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest). `opensAt` is when a scheduled competition opens; `soldPercent` is rounded down (100 only when sold out); `bestBundle` is a live draw's Best Value bundle or null. **No ticket counts** (total, sold or left) are ever returned |
+| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest). `opensAt` is when a scheduled competition opens; `soldPercent` is rounded down (100 only when sold out); `featuredBundle` is a live draw's Our Pick bundle or null. **No ticket counts** (total, sold or left) are ever returned |
 | GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player; `bundles` = the bundles on sale now (only ones that still fit) |
 | GET | `/api/winners/instant?limit=&page=&game=` | `{ data: InstantWinnerRow[], total }` |
 | GET | `/api/winners/draws` | `{ data: DrawWinnerRow[] }` |
@@ -55,7 +55,7 @@ The seed that made the list stays sealed until the competition ends.
 A `BundleTier` is a preset (paid + free tickets); each draw chooses which it offers and which is Best
 Value (`competition_bundle_tier`). A bundle is offered only while bundles are on, the tier is active,
 it fits in the tickets left (less those being paid for) and it is no bigger than the competition's
-`max_bundle_share_pct` of its tickets. `Bundle` = `{ id, label, paid, free, tickets, pricePence, savePence, bestValue }`
+`max_bundle_share_pct` of its tickets. `Bundle` = `{ id, label, paid, free, tickets, pricePence, savePence, ourPick }`
 with `pricePence = paid × price` and `savePence = free × price`. Free tickets are ordinary entries: the
 order line's `quantity` is paid + free and every one goes to Verity in the same entry.
 

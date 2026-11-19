@@ -31,15 +31,19 @@ class BundleReport extends Page
         $lines = OrderLine::query()->join('orders', 'orders.id', '=', 'order_lines.order_id')->where('orders.status', 'paid')
             ->select('order_lines.competition_id', 'order_lines.order_id', 'order_lines.bundle_label', 'order_lines.quantity', 'order_lines.line_pence')
             ->get()->groupBy('competition_id');
-        $titles = Competition::query()->whereIn('id', $lines->keys())->pluck('title', 'id');
+        $comps = Competition::query()->with('bundleTiers')->whereIn('id', $lines->keys())->get()->keyBy('id');
+        $titles = $comps->map->title;
 
-        return $lines->map(function ($ls, $id) use ($titles) {
+        return $lines->map(function ($ls, $id) use ($titles, $comps) {
+            $pick = $comps->get($id)?->bundleTiers->firstWhere('pivot.is_featured', true);
+            $pickLabel = $pick?->displayLabel($pick->pivot->override_label);
             $orders = $ls->groupBy('order_id');
             $n = max(1, $orders->count());
             $split = $ls->groupBy(fn ($l) => $l->bundle_label ?: 'Single tickets')
                 ->map(fn ($g, $label) => ['label' => $label, 'orders' => $g->pluck('order_id')->unique()->count()])
                 ->sortByDesc('orders')->values()
-                ->map(fn ($r) => $r + ['share' => round($r['orders'] * 100 / $n).'%'])->all();
+                ->map(fn ($r) => $r + ['share' => round($r['orders'] * 100 / $n).'%'])
+                ->map(fn ($r) => $pickLabel !== null && $r['label'] === $pickLabel ? ['label' => $r['label'].' (Our Pick)'] + $r : $r)->all();
 
             return [
                 'title' => $titles[$id] ?? $id,

@@ -45,7 +45,7 @@ class DemoSeeder extends Seeder
             foreach ($prizes as $i => [$name, $value, $qty, $type]) {
                 $c->prizes()->create(['name' => $name, 'value_pence' => $value, 'quantity' => $qty, 'type' => $type, 'sort' => $i]);
             }
-            if ($c->bundles_enabled) { // the first three bundle tiers, Buy 10 Get 15 Free as Best Value
+            if ($c->bundles_enabled) { // the first three bundle tiers, Buy 10 Get 15 Free as Our Pick
                 $c->bundleTiers()->sync(BundleTier::query()->orderBy('sort_order')->take(3)->get()->mapWithKeys(fn ($t) => [$t->id => ['is_featured' => $t->paid_qty === 10]])->all());
             }
             app(Publishing::class)->publish($c, $admin);

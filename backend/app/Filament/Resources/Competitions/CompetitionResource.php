@@ -97,9 +97,9 @@ class CompetitionResource extends Resource
                     CheckboxList::make('bundle_tier_ids')->label('Bundles offered')->live()
                         ->options(fn () => BundleTier::query()->where('is_active', true)->orderBy('sort_order')->get()->mapWithKeys(fn (BundleTier $t) => [$t->id => $t->displayLabel().' ('.$t->total().' tickets)'])->all())
                         ->columnSpan(2)->helperText('Manage the list under Competitions → Bundles.'),
-                    Select::make('featured_bundle_tier_id')->label('Best Value (preselected)')->live()
+                    Select::make('featured_bundle_tier_id')->label('Our Pick (preselected)')->live()
                         ->options(fn (Get $get) => BundleTier::query()->whereIn('id', (array) $get('bundle_tier_ids'))->orderBy('sort_order')->get()->mapWithKeys(fn (BundleTier $t) => [$t->id => $t->displayLabel()])->all())
-                        ->helperText('Badged “Best Value” and picked first on the page.'),
+                        ->helperText('Badged “Our Pick” and picked first on the page.'),
                     TextInput::make('max_bundle_share_pct')->label('Biggest bundle, % of tickets')->integer()->minValue(1)->maxValue(100)->default(10)->required()->suffix('%')->live(onBlur: true)
                         ->helperText('A bundle bigger than this share of the tickets is never sold, even if ticked.'),
                     Money::input('prize_cost_pence', 'Prize cost (admin only)')->live(onBlur: true),

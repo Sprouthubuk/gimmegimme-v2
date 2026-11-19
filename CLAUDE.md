@@ -38,7 +38,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Bundles ("Buy X Get Y Free", live draws only): priced and sized only by `App\Services\Bundles` /
   `Pricing` from the bundle id; free tickets go to Verity in the same entry as the paid ones (no flag).
   A bundle bigger than what's left or than `max_bundle_share_pct` is never offered or sold. The featured
-  tier is badged "Best Value" (never "Most Popular"). Promo codes apply to singles only. Unpaid orders
+  tier is badged "Our Pick" (owner, 19 Nov 2026): never "Best Value" (it isn't the cheapest per ticket) or
+  "Most Popular" (not backed by sales data). Promo codes apply to singles only. Unpaid orders
   hold tickets for `Order::HOLD_MINUTES` (15).
 - Players never see ticket counts (total, sold, left, max entries, odds): only `soldPercent` (rounded
   down; 100 only when sold out), "Almost gone!" from 90% and "Sold Out". No public response may carry
