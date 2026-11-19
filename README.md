@@ -43,6 +43,30 @@ Live draws can sell bundles of paid + free tickets. Free tickets are entered exa
   preview underneath recalculates as you type (sell-out on singles, worst case all in the biggest
   allowed bundle with Cashflows fees, profit and break-even) and warns when the worst case is a loss.
 - **Report:** Admin → Competitions → **Bundle Report** (average order, tickets per order, orders by bundle).
+
+## Gimme Box (lucky dip)
+
+A player sets a budget (£5–£100) and a style (Surprise Me, Biggest Prizes, Most Tickets); the server packs
+2–4 live draws with the best bundles and singles the budget buys, at the competition page prices, never
+over budget, plus a % of bonus tickets (default 10%). The tickets are held 10 minutes. **Off by default.**
+
+- **Switch on / settings:** Admin → Settings → **Gimme Box** (budget buttons, limits, bonus %, hold, leave out
+  draws over x% sold, slow-seller boost, report warning level). It only shows when at least two live draws qualify.
+- **Per draw:** Admin → the competition → **Gimme Box**: in or out, and how often it's picked (weight).
+  The margin preview shows bonus tickets issued so far and the worst case with the bonus.
+- **Report:** Admin → Competitions → **Gimme Box Report**.
+
+## Refer a Friend
+
+Each player gets a share link (`/r/CODE`). A friend who joins through it and spends £5+ of real money on
+their first order gets 10 free tickets for a live draw of their choice (a voucher, 30 days), and so does
+the referrer (up to 10 a month), or bonus credit if set. Fraud checks block same card / device / IP /
+address / email pattern; many friends from one IP or device go to a review queue. **Off by default.**
+
+- **Before switching on:** load the draft terms with `php artisan gimme:legal-pages --drafts`, have them
+  reviewed, and edit them in Admin → Pages (`referral-terms`).
+- **Switch on / settings:** Admin → Settings → **Refer A Friend**.
+- **Review queue and report:** Admin → Marketing → **Referrals** (approve / reject with a reason).
 - **Launch draws:** `php artisan gimme:launch-drafts` creates the five launch draws as drafts with
   their bundles; add pictures, prize values, dates and descriptions, then publish.
 

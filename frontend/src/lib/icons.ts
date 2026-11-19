@@ -35,5 +35,8 @@ export const ICONS: Record<string, string> = {
  "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"M12 11v6M12 7h.01\"></path>",
  "card": "<rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"3\"></rect><path d=\"M2 10h20M6 15h4\"></path>",
  "bank": "<path d=\"M3 10 12 4l9 6\"></path><path d=\"M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18\"></path>",
+ "shuffle": "<path d=\"M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5\"></path>",
+ "share": "<circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><path d=\"M8.6 13.5l6.8 4M15.4 6.5l-6.8 4\"></path>",
+ "copy": "<rect x=\"9\" y=\"9\" width=\"12\" height=\"12\" rx=\"2\"></rect><path d=\"M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1\"></path>",
  "pause": "<rect x=\"6\" y=\"5\" width=\"4\" height=\"14\" rx=\"1\"></rect><rect x=\"14\" y=\"5\" width=\"4\" height=\"14\" rx=\"1\"></rect>"
 };

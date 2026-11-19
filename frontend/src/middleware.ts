@@ -4,6 +4,8 @@ import type { Me, SiteInfo } from "./lib/types";
 
 const FALLBACK_SITE: SiteInfo = {
   salesOpen: false,
+  gimmeBox: null,
+  referrals: null,
   minDepositPence: 500,
   minCardPence: 100,
   minWithdrawalPence: 2000,

@@ -103,7 +103,13 @@ class CompetitionResource extends Resource
                     TextInput::make('max_bundle_share_pct')->label('Biggest bundle, % of tickets')->integer()->minValue(1)->maxValue(100)->default(10)->required()->suffix('%')->live(onBlur: true)
                         ->helperText('A bundle bigger than this share of the tickets is never sold, even if ticked.'),
                     Money::input('prize_cost_pence', 'Prize cost (admin only)')->live(onBlur: true),
-                    Text::make(fn (Get $get) => self::marginText($get))->columnSpanFull(),
+                    Text::make(fn (Get $get, ?Competition $record) => self::marginText($get, $record))->columnSpanFull(),
+                ]),
+            Section::make('Gimme Box')->description('Whether the lucky-dip Gimme Box may put this draw in a box. Prices stay the same as this page.')
+                ->visible(fn (Get $get) => $get('type') === 'draw')->columns(2)->components([
+                    Toggle::make('gimme_box_enabled')->label('Can go in a Gimme Box')->default(true),
+                    TextInput::make('gimme_box_weight')->label('How often it’s picked')->numeric()->minValue(0)->maxValue(5)->step(0.1)->default(1)->required()
+                        ->helperText('1 is normal, 2 twice as often, 0 never. Slow sellers get a boost on top (Settings → Gimme Box).'),
                 ]),
             Section::make('Prizes')->columns(2)->components([
                 TextInput::make('end_prize_name')->label(fn (Get $get) => $get('type') === 'instant' ? 'End prize (optional draw at the close)' : 'Prize')
@@ -129,7 +135,7 @@ class CompetitionResource extends Resource
      * The worst-case money picture, worked out again as the admin types: every ticket sold in the biggest
      * bundle that may be sold, one order each, with Cashflows' 1.6% + 15p.
      */
-    public static function marginText(Get $get): string
+    public static function marginText(Get $get, ?Competition $record = null): string
     {
         $price = Money::toPence((string) ($get('price_pence') ?? '0'));
         $tickets = (int) $get('max_tickets');
@@ -149,7 +155,25 @@ class CompetitionResource extends Resource
         $profit = ' · Prize '.Money::show($m['prizeCostPence']).' · Worst-case profit '.Money::show($m['worstProfitPence'])
             .' · Break-even '.($m['breakEvenTickets'] === null ? 'never' : number_format($m['breakEvenTickets']).' tickets');
 
-        return $line.$profit.($m['worstProfitPence'] < 0 ? '  ⚠ LOSS in the worst case: use smaller bundles, a lower share limit or a higher price.' : '');
+        return $line.$profit.($m['worstProfitPence'] < 0 ? '  ⚠ LOSS in the worst case: use smaller bundles, a lower share limit or a higher price.' : '')
+            .self::boxBonusText($get, $record, $price, $tickets, $cost, $tiers);
+    }
+
+    /** Gimme Box bonus tickets: how many so far, and the worst case if every box adds its bonus on top of the biggest bundle. */
+    private static function boxBonusText(Get $get, ?Competition $record, int $price, int $tickets, ?int $cost, array $tiers): string
+    {
+        $issued = $record ? (int) \App\Models\OrderLine::query()->where('competition_id', $record->id)
+            ->whereHas('order', fn ($q) => $q->where('status', 'paid'))->sum('bonus_quantity') : 0;
+        $text = ' · Gimme Box bonus tickets issued so far: '.number_format($issued);
+        $pct = \App\Services\Settings::bounded('gimme_box_bonus_pct', 0, 100);
+        if (! \App\Services\Settings::gimmeBoxOn() || ! $get('gimme_box_enabled') || $pct === 0) {
+            return $text;
+        }
+        $withBonus = array_map(fn ($t) => ['paid' => $t['paid'], 'free' => $t['free'] + intdiv(($t['paid'] + $t['free']) * $pct, 100)], $tiers ?: [['paid' => 1, 'free' => 0]]);
+        $b = Bundles::margin($price, $tickets, $cost, $withBonus);
+
+        return $text.' · Worst case with the '.$pct.'% box bonus: '.Money::show($b['worstRevenuePence'])
+            .($b['worstProfitPence'] === null ? '' : ', profit '.Money::show($b['worstProfitPence']).($b['worstProfitPence'] < 0 ? ' ⚠ LOSS' : ''));
     }
 
     public static function table(Table $table): Table

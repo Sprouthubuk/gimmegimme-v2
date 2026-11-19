@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
  */
 class LegalPages extends Command
 {
-    protected $signature = 'gimme:legal-pages {--force : Replace wording already edited in the admin}';
+    protected $signature = 'gimme:legal-pages {--force : Replace wording already edited in the admin} {--drafts : Also load draft wording (Refer a Friend terms)}';
 
     protected $description = 'Load the legal pages carried over from the old site';
 
@@ -25,9 +25,14 @@ class LegalPages extends Command
         'complaints' => ['Complaints', '2.0'],
     ];
 
+    /** Wording written but not yet approved: loaded only with --drafts, never by a normal deploy. */
+    public const DRAFTS = [
+        'referral-terms' => ['Refer A Friend Terms', 'draft'],
+    ];
+
     public function handle(): int
     {
-        foreach (self::PAGES as $slug => [$title, $version]) {
+        foreach ($this->option('drafts') ? self::PAGES + self::DRAFTS : self::PAGES as $slug => [$title, $version]) {
             $html = file_get_contents(resource_path("legal/{$slug}.html"));
             $page = Page::query()->find($slug);
             if ($page && $page->version !== 'sample' && ! $this->option('force')) {
