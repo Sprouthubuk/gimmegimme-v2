@@ -42,8 +42,8 @@ export interface CompetitionSummary {
   drawAt: string | null;
   featured: boolean;
   tags: string[];
-  /** Live draws with bundles: the featured ("Best Value") bundle on sale now, or null. */
-  bestBundle: Bundle | null;
+  /** Live draws with bundles: the featured ("Our Pick") bundle on sale now, or null. */
+  featuredBundle: Bundle | null;
 }
 
 export interface PrizeTier {
@@ -176,8 +176,8 @@ export interface Bundle {
   pricePence: Pence;
   /** free × ticket price. */
   savePence: Pence;
-  /** The admin's featured bundle: badged "Best Value" and preselected. */
-  bestValue: boolean;
+  /** The admin's featured bundle: badged "Our Pick" and preselected. */
+  ourPick: boolean;
 }
 
 export interface PricedLine {

@@ -76,16 +76,16 @@ describe("ticket picker", () => {
 
 describe("bundles", () => {
   const bundles = [
-    { id: 1, label: "Buy 5 Get 5 Free", paid: 5, free: 5, tickets: 10, pricePence: 295, savePence: 295, bestValue: false },
-    { id: 2, label: "Buy 10 Get 15 Free", paid: 10, free: 15, tickets: 25, pricePence: 590, savePence: 885, bestValue: true },
-    { id: 3, label: "Buy 20 Get 40 Free", paid: 20, free: 40, tickets: 60, pricePence: 1180, savePence: 2360, bestValue: false },
+    { id: 1, label: "Buy 5 Get 5 Free", paid: 5, free: 5, tickets: 10, pricePence: 295, savePence: 295, ourPick: false },
+    { id: 2, label: "Buy 10 Get 15 Free", paid: 10, free: 15, tickets: 25, pricePence: 590, savePence: 885, ourPick: true },
+    { id: 3, label: "Buy 20 Get 40 Free", paid: 20, free: 40, tickets: 60, pricePence: 1180, savePence: 2360, ourPick: false },
   ];
   const draw: PickerProps = { ...base, type: "draw", pricePence: 59, bundles };
 
-  it("shows the bundles, preselects Best Value, and prices from the server's figures", () => {
+  it("shows the bundles, preselects Our Pick, and prices from the server's figures", () => {
     render(<TicketPicker {...draw} />);
     expect(screen.getAllByTestId("bundle")).toHaveLength(3);
-    expect(screen.getByText("Best Value")).toBeTruthy();
+    expect(screen.getByText("Our Pick")).toBeTruthy();
     expect(screen.getByRole("radio", { name: /Buy 10 Get 15 FREE/ }).getAttribute("aria-checked")).toBe("true");
     expect(total()).toBe("£5.90");
     expect(screen.getByText("10 paid + 15 free = 25 tickets")).toBeTruthy();

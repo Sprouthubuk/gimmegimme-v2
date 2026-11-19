@@ -52,7 +52,7 @@ class BundlesTest extends TestCase
         $b = $this->getJson('/api/competitions/'.$c->slug)->assertOk()->json('bundles');
         $this->assertSame([10, 25, 60], array_column($b, 'tickets'));
         $this->assertSame(['pricePence' => 20 * 59, 'savePence' => 40 * 59], array_intersect_key($b[2], ['pricePence' => 1, 'savePence' => 1]));
-        $this->assertSame([false, true, false], array_column($b, 'bestValue'));
+        $this->assertSame([false, true, false], array_column($b, 'ourPick'));
         // Bundles are for live draws: an instant win never lists them.
         $i = $this->competition('instant', ['bundles_enabled' => true]);
         $this->assertSame([], $this->getJson('/api/competitions/'.$i->slug)->json('bundles'));

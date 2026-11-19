@@ -162,11 +162,11 @@ function NextDraw({ exclude }: { exclude: string[] }) {
 
   useEffect(() => {
     api<{ data: CompetitionSummary[] }>("/api/competitions?type=draw")
-      .then((r) => setC(r.data.find((x) => x.status === "live" && x.bestBundle && !exclude.includes(x.id)) ?? null))
+      .then((r) => setC(r.data.find((x) => x.status === "live" && x.featuredBundle && !exclude.includes(x.id)) ?? null))
       .catch(() => undefined);
   }, [exclude.join(",")]);
-  if (!c?.bestBundle) return null;
-  const b = c.bestBundle;
+  if (!c?.featuredBundle) return null;
+  const b = c.featuredBundle;
   const lines = [{ competitionId: c.id, quantity: 0, bundleId: b.id }];
 
   async function choose() {

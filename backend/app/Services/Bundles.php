@@ -55,7 +55,7 @@ final class Bundles
             'tickets' => $b['total'],
             'pricePence' => $b['paid'] * $c->price_pence,
             'savePence' => $b['free'] * $c->price_pence,
-            'bestValue' => $b['featured'],
+            'ourPick' => $b['featured'],
         ], $this->available($c));
     }
 

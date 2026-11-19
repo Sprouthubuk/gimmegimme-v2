@@ -65,7 +65,8 @@ class BundleAdminTest extends TestCase
         $this->assertCount(5, $all);
         $this->assertTrue($all->every(fn ($c) => $c->verity_ref === null && $c->bundles_enabled && $c->type === 'draw'));
         $quest = $all->firstWhere('slug', 'meta-quest-3s-128gb');
-        $this->assertSame([3999, 59, 24000], [$quest->max_tickets, $quest->price_pence, $quest->prize_cost_pence]);
+        $this->assertSame([3999, 59, 24000, 28999], [$quest->max_tickets, $quest->price_pence, $quest->prize_cost_pence, $quest->end_prize_value_pence]);
+        $this->assertStringNotContainsString('OWNER', (string) $quest->description);
         $this->assertCount(5, $quest->bundleTiers);
         $this->assertSame('Buy 10 Get 15 Free', $quest->bundleTiers->firstWhere('pivot.is_featured', true)->displayLabel());
         $airpods = $all->firstWhere('slug', 'apple-airpods-5');
@@ -76,5 +77,17 @@ class BundleAdminTest extends TestCase
             $tiers = $c->bundleTiers->filter(fn ($t) => $t->total() <= $limit)->map(fn ($t) => ['paid' => $t->paid_qty, 'free' => $t->free_qty])->all();
             $this->assertGreaterThan(0, Bundles::margin($c->price_pence, $c->max_tickets, $c->prize_cost_pence, $tiers)['worstProfitPence'], $c->title);
         }
+    }
+
+    public function test_the_report_marks_each_draws_our_pick_bundle(): void
+    {
+        $c = $this->competition('draw', ['max_tickets' => 1000, 'max_per_person' => 1000, 'price_pence' => 59, 'bundles_enabled' => true]);
+        $c->bundleTiers()->sync([$this->tierId(5, 5) => ['is_featured' => false], $this->tierId(10, 15) => ['is_featured' => true]]);
+        $u = $this->player();
+        $this->topUp($u, 5000);
+        $this->actingAs($u)->postJson('/api/checkout', ['lines' => [['competitionId' => $c->id, 'bundleId' => $this->tierId(10, 15)]],
+            'payWith' => 'wallet', 'useWallet' => true, 'requestId' => 'r-1'])->assertCreated();
+        $this->signInAdmin();
+        Livewire::test(BundleReport::class)->assertSee('Buy 10 Get 15 Free (Our Pick)')->assertDontSee('Best Value')->assertDontSee('Most Popular');
     }
 }

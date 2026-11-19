@@ -16,7 +16,7 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
 
   // Other live draws with a featured bundle, for "You might also like" under the basket.
   useEffect(() => {
-    api<{ data: CompetitionSummary[] }>("/api/competitions?type=draw").then((r) => setOthers(r.data.filter((c) => c.status === "live" && c.bestBundle))).catch(() => undefined);
+    api<{ data: CompetitionSummary[] }>("/api/competitions?type=draw").then((r) => setOthers(r.data.filter((c) => c.status === "live" && c.featuredBundle))).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -94,9 +94,9 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
                   <img src={c.imageSmall} alt="" style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 900, lineHeight: 1.15 }}>{c.title}</div>
-                    <div className="hint">{c.bestBundle!.label} · {c.bestBundle!.tickets} tickets for {formatMoney(c.bestBundle!.pricePence)}</div>
+                    <div className="hint">{c.featuredBundle!.label} · {c.featuredBundle!.tickets} tickets for {formatMoney(c.featuredBundle!.pricePence)}</div>
                   </div>
-                  <button type="button" className="btn btn-y" style={{ minHeight: 44 }} onClick={() => addBundle(c.id, c.bestBundle!.id)}>Add</button>
+                  <button type="button" className="btn btn-y" style={{ minHeight: 44 }} onClick={() => addBundle(c.id, c.featuredBundle!.id)}>Add</button>
                 </div>
               ))}
             </div>
