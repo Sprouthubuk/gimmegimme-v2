@@ -30,12 +30,12 @@ against it; the Laravel feature tests must cover the same behaviour.
 | --- | --- | --- |
 | GET | `/api/site` | `SiteInfo` (cached 30s by Astro). `metaPixelId` is the Pixel ID set in the admin, or null; the site loads the Pixel only after the visitor accepts marketing cookies |
 | GET | `/api/health` | `{ status: "ok"\|"failing", checks: { database, scheduler } }`, `200` or `503` (for an uptime monitor; scheduler = ran in the last 5 minutes) |
-| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest). `opensAt` is when a scheduled competition opens; `ticketsLeft` is exact, from Verity |
-| GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player |
+| GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest). `opensAt` is when a scheduled competition opens; `soldPercent` is rounded down (100 only when sold out); `bestBundle` is a live draw's Best Value bundle or null. **No ticket counts** (total, sold or left) are ever returned |
+| GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player; `bundles` = the bundles on sale now (only ones that still fit) |
 | GET | `/api/winners/instant?limit=&page=&game=` | `{ data: InstantWinnerRow[], total }` |
 | GET | `/api/winners/draws` | `{ data: DrawWinnerRow[] }` |
-| GET | `/api/entry-lists` | `{ data: (CompetitionSummary & { entries })[] }`: every published competition once it opens, on sale first (closing soonest), then finished ones |
-| GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], total, hasMore }`; open from the first sale; names masked ("L*** P."); `prizeName` on an instant-win ticket that won |
+| GET | `/api/entry-lists` | `{ data: CompetitionSummary[] }` (no entry counts): every published competition once it opens, on sale first (closing soonest), then finished ones |
+| GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], hasMore }` (no total); open from the first sale; names masked ("L*** P."); `prizeName` on an instant-win ticket that won |
 | GET | `/api/competitions/{slug}/winning-numbers?show=all\|won\|left&q=&prize=&page=` | `WinningNumbersPage` (`prize` = one prize's name). A paid win isn't named (here, in `/api/winners/instant` or as an entry list's `prizeName`) until its player has played the reveal, or for an hour: every instant prize's winning ticket number, public from publish, biggest prize first, 100 a page; `404` for draws |
 | GET | `/api/pages/{slug}` | `{ title, updatedAt, version, html, headings }` (terms, privacy, rules, cookies, free-entry) |
 | POST | `/api/contact` | `{ name, email, topic, message }` → `204`; rate limited |
@@ -50,14 +50,29 @@ The seed that made the list stays sealed until the competition ends.
 `presets` are the ticket quick-pick buttons (smallest first), `popularPreset` the one marked
 "Most popular" (or null), and `minTickets` the fewest tickets one order can hold.
 
+## Bundles ("Buy X Get Y Free", live draws)
+
+A `BundleTier` is a preset (paid + free tickets); each draw chooses which it offers and which is Best
+Value (`competition_bundle_tier`). A bundle is offered only while bundles are on, the tier is active,
+it fits in the tickets left (less those being paid for) and it is no bigger than the competition's
+`max_bundle_share_pct` of its tickets. `Bundle` = `{ id, label, paid, free, tickets, pricePence, savePence, bestValue }`
+with `pricePence = paid × price` and `savePence = free × price`. Free tickets are ordinary entries: the
+order line's `quantity` is paid + free and every one goes to Verity in the same entry.
+
 ## Basket and checkout
 
 `POST /api/basket/price` — `{ lines: BasketLine[], promoCode?: string|null }` → `PricedBasket`.
-Works signed out (no wallet figures then). Prices come only from the database. Each line gets a
-`problem` when it cannot be bought as asked (closed, sold out, over the per-person limit with
-`maxQuantity` set to what is still allowed, or under the competition's `minQuantity`, its
-`minTickets`, unless fewer than that are still allowed). `problems` holds basket-wide reasons (sales closed,
-play block). Promo codes take at most 50% off and never make an order free.
+A `BasketLine` is `{ competitionId, quantity }` (single tickets) or `{ competitionId, bundleId }`
+(one bundle; a competition holds one bundle plus any singles). Works signed out (no wallet figures
+then). Prices and ticket counts come only from the database; anything else the browser sends is
+ignored. Each `PricedLine` has `quantity` (tickets: paid + free), `paidQuantity`, `freeQuantity`,
+`bundleId`/`bundleLabel`, and `upgrade` (the next bundle up: `{ bundleId, label, tickets, freeQuantity, extraPence }`
+or null). A line gets a `problem` when it cannot be bought as asked (closed, sold out, "Not that many
+tickets are left. Please choose fewer.", "This bundle is no longer available. Please choose a smaller
+one.", or under `minTickets`). It never says how many are left. `problems` holds basket-wide reasons
+(sales closed, play block). Promo codes apply to single tickets only, take at most 50% off and never
+make an order free. Unpaid orders hold their tickets for 15 minutes (`Order::HOLD_MINUTES`); checkout
+locks each competition row so two orders can't both take the last tickets.
 
 `POST /api/checkout` (signed in) —
 `{ lines, payWith: "wallet"|"card", useWallet: boolean, promoCode, requestId }` → `CheckoutResult`.

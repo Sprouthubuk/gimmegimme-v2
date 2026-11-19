@@ -101,6 +101,8 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .cc .bar{margin-top:3px}
 .cc .sl{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:700;color:#8F849E}
 .cc .sl b{color:#fff;font-weight:900}
+.cc .sl .ag{color:#FF2DAA;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+.cc .sl .bb{color:#FFF23A;font-weight:900;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc .go{margin-top:auto;height:44px;font-size:16px;letter-spacing:.02em;text-transform:uppercase;gap:6px}
 .cc .go .star{font-size:13px}
 @container (max-width:160px){.cc .st{font-size:9px;gap:4px;padding:6px 4px;letter-spacing:.02em}.cc .st svg{width:10px;height:10px}.cc .pp{font-size:22px}}
@@ -395,3 +397,26 @@ label:has(> .sw),label:has(.sw){min-height:44px;align-items:center}
 .pay-marks{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .pay-marks li{background:#fff;border-radius:6px;height:32px;min-width:56px;padding:0 10px;display:flex;align-items:center;justify-content:center}
 .pay-marks img{display:block;height:auto;max-height:20px;width:auto}
+/* Basket: one-tap upgrade to the next bundle */
+.upsell{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:10px 14px;border-radius:14px;border:1px dashed rgba(255,242,58,.5);background:rgba(255,242,58,.06);color:#fff;font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer}
+.upsell:hover{background:rgba(255,242,58,.12)}
+/* Ticket picker: "Buy X Get Y Free" bundle cards, two to a row */
+.bgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:8px}
+.bcard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;min-height:104px;padding:14px 12px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:#120C18;color:#fff;font:inherit;cursor:pointer;transition:border-color .2s,box-shadow .2s,background-color .2s,transform .15s}
+.bcard:active{transform:scale(.97)}
+.bcard.on{border-color:#FFF23A;background:rgba(255,242,58,.08);box-shadow:0 0 18px rgba(255,242,58,.35),inset 0 0 10px rgba(255,242,58,.12)}
+.bcard .bt{font-family:'Lilita One',sans-serif;font-size:17px;line-height:1.1;text-transform:uppercase}
+.bcard .free{display:block;font-size:24px;color:#FFF23A;text-shadow:0 0 12px rgba(255,242,58,.6);font-weight:400}
+.bcard .bp{font-size:13px;font-weight:700;color:#D9D1E6}
+.bcard .bp b{color:#fff;font-weight:900}
+.bcard .bs{font-size:12px;font-weight:900;color:#22E6FF;letter-spacing:.02em}
+.bcard .ribbon{position:absolute;top:-9px;right:10px;padding:2px 8px;border-radius:999px;background:#FF2DAA;color:#fff;font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 0 12px rgba(255,45,170,.6)}
+.singles .d.big{font-size:44px}
+.singles .d{font-size:30px}
+.singles .each{font-family:Nunito,sans-serif;font-size:13px;font-weight:800;color:#8E84A0}
+.singles.quiet{padding:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.singles.quiet .stepper button{width:40px;height:44px}
+/* Fixed buy bar on phones, just above the bottom tab bar */
+.buybar{bottom:68px;padding:8px 12px}
+.buybar .btn{min-height:48px;font-size:16px;gap:8px}
+@media (min-width:1024px){.buybar{display:none}}

@@ -81,7 +81,7 @@ final class CompetitionState
     public function reserved(Competition $c, ?int $userId = null): int
     {
         return (int) OrderLine::query()->where('competition_id', $c->id)->whereNull('tickets')
-            ->whereHas('order', fn ($q) => $q->whereIn('status', Order::UNPAID)->where('created_at', '>=', now()->subHour())
+            ->whereHas('order', fn ($q) => $q->whereIn('status', Order::UNPAID)->where('created_at', '>=', now()->subMinutes(Order::HOLD_MINUTES))
                 ->when($userId, fn ($q) => $q->where('user_id', $userId)))
             ->sum('quantity');
     }

@@ -18,7 +18,7 @@ class LegalPages extends Command
     protected $description = 'Load the legal pages carried over from the old site';
 
     public const PAGES = [
-        'terms' => ['Terms & Conditions', '2.0'],
+        'terms' => ['Terms & Conditions', '2.1'],
         'free-entry' => ['Free Entry Terms', '2.0'],
         'privacy' => ['Privacy Policy', '2.1'],
         'cookies' => ['Cookie Policy', '2.0'],

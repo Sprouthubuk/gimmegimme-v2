@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
-import { onBasketChange, readBasket, removeFromBasket, setQuantity } from "../lib/basket";
-import { formatMoney, formatPence } from "../lib/money";
-import type { BasketLine, PricedBasket } from "../lib/types";
+import { addBundle, onBasketChange, readBasket, removeFromBasket, setQuantity, upgradeLine } from "../lib/basket";
+import { lineMakeup } from "../lib/bundles";
+import { formatMoney } from "../lib/money";
+import type { BasketLine, CompetitionSummary, PricedBasket } from "../lib/types";
 import { Svg } from "./Svg";
 
 export default function BasketView({ signedIn }: { signedIn: boolean }) {
@@ -11,6 +12,12 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [promo, setPromo] = useState("");
   const [promoApplied, setPromoApplied] = useState<string | null>(null);
+  const [others, setOthers] = useState<CompetitionSummary[]>([]);
+
+  // Other live draws with a featured bundle, for "You might also like" under the basket.
+  useEffect(() => {
+    api<{ data: CompetitionSummary[] }>("/api/competitions?type=draw").then((r) => setOthers(r.data.filter((c) => c.status === "live" && c.bestBundle))).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     setLines(readBasket());
@@ -41,30 +48,60 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="split">
       <div className="stack g12">
-        {(priced?.lines ?? lines.map((l) => null)).map((pl, i) => {
-          const line = lines[i];
-          if (!pl) return <div key={line?.competitionId ?? i} className="card card-p empty"><span className="spin" /></div>;
-          return (
-            <div key={pl.competitionId} className="card card-p row g12 gg-card" style={{ alignItems: "flex-start" }} data-testid="basket-line">
+        {!priced && lines.map((l, i) => <div key={i} className="card card-p empty"><span className="spin" /></div>)}
+        {priced?.lines.map((pl) => (
+          <div key={`${pl.competitionId}:${pl.bundleId ?? "s"}`} className="card card-p stack g12 gg-card" data-testid="basket-line">
+            <div className="row g12" style={{ alignItems: "flex-start" }}>
               <img src={pl.imageSmall} alt="" style={{ width: 76, height: 76, borderRadius: 14, objectFit: "cover", flexShrink: 0 }} />
               <div className="stack g8" style={{ flex: 1, minWidth: 0 }}>
                 <div className="row between g8" style={{ alignItems: "flex-start" }}>
-                  <div><a href={`/competitions/${pl.slug}`} className="d" style={{ fontSize: 18, lineHeight: 1.1, color: "#fff", textDecoration: "none" }}>{pl.title}</a><div className="hint">{pl.type === "draw" ? "Live draw" : "Instant win"} · {formatPence(pl.unitPence)} each</div></div>
-                  <button type="button" className="ib" aria-label={`Remove ${pl.title}`} style={{ width: 36, height: 36, color: "#8E84A0" }} onClick={() => removeFromBasket(pl.competitionId)}><Svg name="trash" size={16} /></button>
+                  <div style={{ minWidth: 0 }}>
+                    <a href={`/competitions/${pl.slug}`} className="d" style={{ fontSize: 18, lineHeight: 1.1, color: "#fff", textDecoration: "none" }}>{pl.title}</a>
+                    {pl.bundleLabel && <div><span className="tag tag-y" style={{ marginTop: 4 }}>{pl.bundleLabel}</span></div>}
+                    <div className="hint">{lineMakeup(pl)}</div>
+                  </div>
+                  <button type="button" className="ib" aria-label={`Remove ${pl.title}${pl.bundleLabel ? ` (${pl.bundleLabel})` : ""}`} style={{ width: 44, height: 44, color: "#8E84A0" }} onClick={() => removeFromBasket(pl.competitionId, pl.bundleId)}><Svg name="trash" size={16} /></button>
                 </div>
                 <div className="row between">
-                  <div className="stepper">
-                    <button type="button" aria-label="One fewer ticket" style={{ width: 38, height: 38 }} onClick={() => setQuantity(pl.competitionId, pl.quantity - 1)}><Svg name="minus" size={16} stroke={2.6} /></button>
-                    <span className="qty" style={{ fontSize: 22, minWidth: 40 }}>{pl.quantity}</span>
-                    <button type="button" className="plus" aria-label="One more ticket" style={{ width: 38, height: 38 }} disabled={pl.quantity >= pl.maxQuantity} onClick={() => setQuantity(pl.competitionId, pl.quantity + 1)}><Svg name="plus" size={16} stroke={2.6} /></button>
-                  </div>
+                  {pl.bundleId ? <span /> : (
+                    <div className="stepper">
+                      <button type="button" aria-label="One fewer ticket" style={{ width: 44, height: 44 }} onClick={() => setQuantity(pl.competitionId, pl.quantity - 1)}><Svg name="minus" size={16} stroke={2.6} /></button>
+                      <span className="qty" style={{ fontSize: 22, minWidth: 40 }}>{pl.quantity}</span>
+                      <button type="button" className="plus" aria-label="One more ticket" style={{ width: 44, height: 44 }} onClick={() => setQuantity(pl.competitionId, pl.quantity + 1)}><Svg name="plus" size={16} stroke={2.6} /></button>
+                    </div>
+                  )}
                   <span className="d ny" style={{ fontSize: 22 }}>{formatMoney(pl.linePence)}</span>
                 </div>
                 {pl.problem && <div className="err" role="alert">{pl.problem}</div>}
               </div>
             </div>
+            {pl.upgrade && (
+              <button type="button" className="upsell" data-testid="basket-upgrade" onClick={() => upgradeLine(pl.competitionId, pl.bundleId, pl.upgrade!.bundleId)}>
+                <span>Upgrade to <b>{pl.upgrade.label}</b> · {pl.upgrade.tickets} tickets</span>
+                <b className="ny">+{formatMoney(pl.upgrade.extraPence)}</b>
+              </button>
+            )}
+          </div>
+        ))}
+        {(() => {
+          const inBasket = new Set(lines.map((l) => l.competitionId));
+          const picks = others.filter((c) => !inBasket.has(c.id)).slice(0, 2);
+          return picks.length > 0 && (
+            <div className="stack g8" data-testid="cross-sell">
+              <div className="eyebrow">More Live Draws</div>
+              {picks.map((c) => (
+                <div key={c.id} className="card card-p row g12" style={{ alignItems: "center" }}>
+                  <img src={c.imageSmall} alt="" style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 900, lineHeight: 1.15 }}>{c.title}</div>
+                    <div className="hint">{c.bestBundle!.label} · {c.bestBundle!.tickets} tickets for {formatMoney(c.bestBundle!.pricePence)}</div>
+                  </div>
+                  <button type="button" className="btn btn-y" style={{ minHeight: 44 }} onClick={() => addBundle(c.id, c.bestBundle!.id)}>Add</button>
+                </div>
+              ))}
+            </div>
           );
-        })}
+        })()}
       </div>
       <div className="sticky">
         <div className="card card-hot card-p stack g12">
@@ -76,7 +113,7 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
             </form>
             {priced?.promo && <div className="hint" style={{ marginTop: 6 }}>{priced.promo.code}: −{formatMoney(priced.promo.discountPence)}</div>}
           </details>
-          <div className="row between" style={{ fontWeight: 800 }}><span className="muted">{priced?.ticketCount ?? "…"} tickets · {lines.length} {lines.length === 1 ? "comp" : "comps"}</span></div>
+          <div className="row between" style={{ fontWeight: 800 }}><span className="muted">{priced?.ticketCount ?? "…"} tickets · {new Set(lines.map((l) => l.competitionId)).size} {new Set(lines.map((l) => l.competitionId)).size === 1 ? "comp" : "comps"}</span></div>
           <div className="row between" style={{ borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 12 }}><span className="d" style={{ fontSize: 22 }}>Total</span><span className="d ny" style={{ fontSize: 34 }} data-testid="basket-total">{priced ? formatMoney(priced.totalPence) : "…"}</span></div>
           {signedIn && priced?.walletCovers && <div className="notice notice-c"><Svg name="wallet" size={18} /><span>Your wallet covers this — checkout takes one tap.</span></div>}
           {(priced?.problems ?? []).map((p) => <div key={p} className="notice notice-p" role="alert"><Svg name="info" size={18} /><span>{p}</span></div>)}

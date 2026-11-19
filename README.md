@@ -31,6 +31,21 @@ npm run dev               # http://localhost:4321, proxying /api to :8000
 
 First real admin on the server: `php artisan gimme:make-admin you@example.com`.
 
+## Bundles ("Buy X Get Y Free")
+
+Live draws can sell bundles of paid + free tickets. Free tickets are entered exactly like paid ones.
+
+- **Add or change a tier:** Admin → Competitions → **Bundles**. A tier is paid + free tickets with an
+  optional label (empty = "Buy 5 Get 5 Free"). Switching a tier off stops every competition selling it.
+  The five defaults (5+5, 10+15, 20+40, 40+100, 80+280) come with the migration.
+- **On a competition:** Admin → the competition → **Bundles**: turn on "Sell bundles", tick the tiers,
+  pick the Best Value one, and set the biggest bundle as a % of tickets (default 10%). The margin
+  preview underneath recalculates as you type (sell-out on singles, worst case all in the biggest
+  allowed bundle with Cashflows fees, profit and break-even) and warns when the worst case is a loss.
+- **Report:** Admin → Competitions → **Bundle Report** (average order, tickets per order, orders by bundle).
+- **Launch draws:** `php artisan gimme:launch-drafts` creates the five launch draws as drafts with
+  their bundles; add pictures, prize values, dates and descriptions, then publish.
+
 ## Tests
 
 ```bash

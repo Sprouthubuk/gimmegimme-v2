@@ -41,7 +41,9 @@ class OrderReceipt extends Notification
                 continue;
             }
             $n = count($l->tickets);
-            $m->line('**'.e($l->competition->title).'** · '.$n.' '.($n === 1 ? 'ticket' : 'tickets').': '.implode(', ', array_map(fn ($t) => '#'.$t, array_slice($l->tickets, 0, 50))).($n > 50 ? ' …' : ''));
+            // A bundle shows its paid and free tickets separately: "20 paid + 40 free = 60 tickets".
+            $made = $l->free_quantity > 0 ? ((int) $l->paid_quantity).' paid + '.((int) $l->free_quantity).' free = ' : '';
+            $m->line('**'.e($l->competition->title).'** · '.$made.$n.' '.($n === 1 ? 'ticket' : 'tickets').': '.implode(', ', array_map(fn ($t) => '#'.$t, array_slice($l->tickets, 0, 50))).($n > 50 ? ' …' : ''));
         }
         $paid = [];
         if ($o->wallet_pence) {

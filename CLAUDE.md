@@ -35,6 +35,14 @@ Read before every task. If a request conflicts with this, stop and ask.
   Verity (`EndPrizeRules`, also every minute via `gimme:end-prize-rules`). `end_prize_type` site_credit
   pays winnings once (reference `verity-winner:{id}`); physical opens a claim for a person.
 - A paid order that couldn't get all its tickets is flagged for a person, never auto-refunded.
+- Bundles ("Buy X Get Y Free", live draws only): priced and sized only by `App\Services\Bundles` /
+  `Pricing` from the bundle id; free tickets go to Verity in the same entry as the paid ones (no flag).
+  A bundle bigger than what's left or than `max_bundle_share_pct` is never offered or sold. The featured
+  tier is badged "Best Value" (never "Most Popular"). Promo codes apply to singles only. Unpaid orders
+  hold tickets for `Order::HOLD_MINUTES` (15).
+- Players never see ticket counts (total, sold, left, max entries, odds): only `soldPercent` (rounded
+  down; 100 only when sold out), "Almost gone!" from 90% and "Sold Out". No public response may carry
+  a count (`BundlesTest::test_no_public_response_gives_away_how_many_tickets_there_are`). Admin sees all.
 - Never invent winners, reviews or trust figures. Free postal route always visible.
 - All dates shown in UK time (`frontend/src/lib/time.ts`).
 

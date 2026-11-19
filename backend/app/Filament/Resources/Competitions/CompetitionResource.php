@@ -6,13 +6,16 @@ use App\Filament\Resources\Competitions\Pages\CreateCompetition;
 use App\Filament\Resources\Competitions\Pages\EditCompetition;
 use App\Filament\Resources\Competitions\Pages\ListCompetitions;
 use App\Filament\Support\Money;
+use App\Models\BundleTier;
 use App\Models\Competition;
+use App\Services\Bundles;
 use App\Services\CompetitionState;
 use App\Services\Publishing;
 use App\Support\GameIds;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -24,6 +27,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -76,8 +80,8 @@ class CompetitionResource extends Resource
                 Textarea::make('how_to_play')->rows(3)->columnSpanFull(),
             ]),
             Section::make('Terms')->description('Fixed by Verity when the competition is published: they can’t change after that.')->columns(3)->components([
-                Money::input('price_pence', 'Ticket price')->required()->disabled($locked),
-                TextInput::make('max_tickets')->label('Tickets')->integer()->minValue(1)->maxValue(10_000_000)->required()->disabled($locked),
+                Money::input('price_pence', 'Ticket price')->required()->disabled($locked)->live(onBlur: true),
+                TextInput::make('max_tickets')->label('Tickets')->integer()->minValue(1)->maxValue(10_000_000)->required()->disabled($locked)->live(onBlur: true),
                 TextInput::make('min_tickets')->label('Minimum tickets per order')->integer()->minValue(1)->default(1)->required()->disabled($locked)
                     ->lte('max_tickets')->helperText('E.g. 100 on a 1p competition for a £1 minimum. There is no limit per person.'),
                 DateTimePicker::make('opens_at')->label('Opens (UK time)')->timezone('Europe/London')->seconds(false)->disabled($locked),
@@ -87,6 +91,20 @@ class CompetitionResource extends Resource
                     ->helperText('Quick-pick amounts on the competition page. Empty: 5, 10, 25, 50 (1, 5, 10, 25 for draws).')->columnSpan(2),
                 TextInput::make('popular_preset')->label('“Most popular” button')->integer()->minValue(1)->helperText('One of the ticket buttons, or empty.'),
             ]),
+            Section::make('Bundles')->description('“Buy X Get Y Free” for live draws. Free tickets are entered exactly like paid ones. Players never see ticket counts.')
+                ->visible(fn (Get $get) => $get('type') === 'draw')->columns(3)->components([
+                    Toggle::make('bundles_enabled')->label('Sell bundles')->live()->columnSpanFull(),
+                    CheckboxList::make('bundle_tier_ids')->label('Bundles offered')->live()
+                        ->options(fn () => BundleTier::query()->where('is_active', true)->orderBy('sort_order')->get()->mapWithKeys(fn (BundleTier $t) => [$t->id => $t->displayLabel().' ('.$t->total().' tickets)'])->all())
+                        ->columnSpan(2)->helperText('Manage the list under Competitions → Bundles.'),
+                    Select::make('featured_bundle_tier_id')->label('Best Value (preselected)')->live()
+                        ->options(fn (Get $get) => BundleTier::query()->whereIn('id', (array) $get('bundle_tier_ids'))->orderBy('sort_order')->get()->mapWithKeys(fn (BundleTier $t) => [$t->id => $t->displayLabel()])->all())
+                        ->helperText('Badged “Best Value” and picked first on the page.'),
+                    TextInput::make('max_bundle_share_pct')->label('Biggest bundle, % of tickets')->integer()->minValue(1)->maxValue(100)->default(10)->required()->suffix('%')->live(onBlur: true)
+                        ->helperText('A bundle bigger than this share of the tickets is never sold, even if ticked.'),
+                    Money::input('prize_cost_pence', 'Prize cost (admin only)')->live(onBlur: true),
+                    Text::make(fn (Get $get) => self::marginText($get))->columnSpanFull(),
+                ]),
             Section::make('Prizes')->columns(2)->components([
                 TextInput::make('end_prize_name')->label(fn (Get $get) => $get('type') === 'instant' ? 'End prize (optional draw at the close)' : 'Prize')
                     ->required(fn (Get $get) => $get('type') === 'draw')->maxLength(120)->disabled($locked),
@@ -105,6 +123,33 @@ class CompetitionResource extends Resource
                     ->helperText('Cash and site credit go to the winner’s winnings balance instantly. Which ticket wins each prize is decided by Verity at publish, from its committed seed.'),
             ]),
         ]);
+    }
+
+    /**
+     * The worst-case money picture, worked out again as the admin types: every ticket sold in the biggest
+     * bundle that may be sold, one order each, with Cashflows' 1.6% + 15p.
+     */
+    public static function marginText(Get $get): string
+    {
+        $price = Money::toPence((string) ($get('price_pence') ?? '0'));
+        $tickets = (int) $get('max_tickets');
+        $cost = ($c = $get('prize_cost_pence')) !== null && $c !== '' ? Money::toPence((string) $c) : null;
+        if ($price < 1 || $tickets < 1) {
+            return 'Margin preview: enter the ticket price and number of tickets.';
+        }
+        $limit = intdiv($tickets * max(1, min(100, (int) ($get('max_bundle_share_pct') ?: 10))), 100);
+        $tiers = $get('bundles_enabled') ? BundleTier::query()->whereIn('id', (array) $get('bundle_tier_ids'))->where('is_active', true)->get()
+            ->filter(fn (BundleTier $t) => $t->total() <= $limit)->map(fn (BundleTier $t) => ['paid' => $t->paid_qty, 'free' => $t->free_qty])->values()->all() : [];
+        $m = Bundles::margin($price, $tickets, $cost, $tiers);
+        $line = 'Sell-out on single tickets: '.Money::show($m['singlesRevenuePence'])
+            .' · Worst case (all in the biggest bundle): '.Money::show($m['worstRevenuePence']).' less fees '.Money::show($m['worstFeesPence']);
+        if ($m['worstProfitPence'] === null) {
+            return $line.'. Add the prize cost to see the profit.';
+        }
+        $profit = ' · Prize '.Money::show($m['prizeCostPence']).' · Worst-case profit '.Money::show($m['worstProfitPence'])
+            .' · Break-even '.($m['breakEvenTickets'] === null ? 'never' : number_format($m['breakEvenTickets']).' tickets');
+
+        return $line.$profit.($m['worstProfitPence'] < 0 ? '  ⚠ LOSS in the worst case: use smaller bundles, a lower share limit or a higher price.' : '');
     }
 
     public static function table(Table $table): Table

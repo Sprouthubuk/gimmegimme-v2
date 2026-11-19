@@ -6,6 +6,7 @@ use App\Support\GameIds;
 use App\Support\PictureSizes;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Sprouthub\Verity\Models\Competition as VerityCompetition;
 
@@ -27,6 +28,7 @@ class Competition extends Model
             'presets' => 'array',
             'tags' => 'array',
             'featured' => 'boolean',
+            'bundles_enabled' => 'boolean',
             'opens_at' => 'datetime',
             'closes_at' => 'datetime',
             'published_at' => 'datetime',
@@ -127,5 +129,17 @@ class Competition extends Model
     public function endPrizeCount(): int
     {
         return $this->end_prize_name ? max(1, (int) ($this->end_prize_count ?: 1)) : 0;
+    }
+
+    /** Bundle tiers this competition offers (live draws only), with which one is featured. */
+    public function bundleTiers(): BelongsToMany
+    {
+        return $this->belongsToMany(BundleTier::class, 'competition_bundle_tier')->withPivot(['is_featured', 'override_label'])->orderBy('sort_order')->orderBy('paid_qty');
+    }
+
+    /** Bundles apply to live draws that have them switched on. */
+    public function offersBundles(): bool
+    {
+        return $this->type === 'draw' && (bool) $this->bundles_enabled;
     }
 }

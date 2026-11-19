@@ -13,6 +13,9 @@ class Order extends Model
 
     public const UNPAID = ['created', 'pending_payment'];
 
+    /** How long an unpaid order holds its tickets while the player is at the payment page. */
+    public const HOLD_MINUTES = 15;
+
     public const CLOSED = ['failed', 'cancelled', 'expired'];
 
     protected $guarded = ['id'];

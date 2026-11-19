@@ -30,20 +30,20 @@ export interface CompetitionSummary {
   topPrizePence: Pence | null;
   /** Shown under the price, e.g. "£50 cash alternative" or "2,516 wins". */
   subtitle: string | null;
+  /** Rounded down; 100 only when it has actually sold out. Players never see ticket counts, only this. */
   soldPercent: number;
-  /** Tickets still for sale (max tickets less those sold), from Verity. */
-  ticketsLeft: number;
   /** Instant wins: how many instant prizes there are in total. Null for draws. */
   prizeCount: number | null;
   /** Instant wins with an end prize: what is drawn at the close, and for how many winners. Null otherwise. */
   endPrize: { name: string; valuePence: Pence; count: number } | null;
-  maxTickets: number;
   /** When entries open (status is "scheduled" until then), or null when it opened on publish. */
   opensAt: string | null;
   closesAt: string;
   drawAt: string | null;
   featured: boolean;
   tags: string[];
+  /** Live draws with bundles: the featured ("Best Value") bundle on sale now, or null. */
+  bestBundle: Bundle | null;
 }
 
 export interface PrizeTier {
@@ -57,7 +57,6 @@ export interface PrizeTier {
 export interface CompetitionDetail extends CompetitionSummary {
   description: string;
   howToPlay: string | null;
-  maxPerPerson: number;
   /** Tickets the signed-in player already holds (0 when signed out). */
   heldByMe: number;
   cashAlternativePence: Pence | null;
@@ -71,6 +70,8 @@ export interface CompetitionDetail extends CompetitionSummary {
   popularPreset: number | null;
   /** Fewest tickets in one order for this competition (1 unless set). */
   minTickets: number;
+  /** Live draws: the "Buy X Get Y Free" bundles on sale now, smallest first. Empty when there are none. */
+  bundles: Bundle[];
   /** Verity reference and public seed commitment. */
   verityRef: string | null;
   commitment: string | null;
@@ -159,7 +160,24 @@ export interface TicketPage {
 
 export interface BasketLine {
   competitionId: string;
+  /** Single tickets. Leave out (or 0) for a bundle line. */
   quantity: number;
+  /** A "Buy X Get Y Free" bundle (live draws). The server works out its price and tickets. */
+  bundleId?: number | null;
+}
+
+/** A bundle a live draw is selling now. Only what fits is sent; nothing about the ticket pool. */
+export interface Bundle {
+  id: number;
+  label: string;
+  paid: number;
+  free: number;
+  tickets: number;
+  pricePence: Pence;
+  /** free × ticket price. */
+  savePence: Pence;
+  /** The admin's featured bundle: badged "Best Value" and preselected. */
+  bestValue: boolean;
 }
 
 export interface PricedLine {
@@ -170,12 +188,18 @@ export interface PricedLine {
   imageSmall: string;
   imageSrcset: string | null;
   type: CompetitionType;
+  /** Tickets on the line: paid + free. */
   quantity: number;
+  bundleId: number | null;
+  bundleLabel: string | null;
+  paidQuantity: number;
+  freeQuantity: number;
   unitPence: Pence;
   linePence: Pence;
-  maxQuantity: number;
   minQuantity: number;
   problem: string | null;
+  /** The next bundle up, for "Upgrade to … for +£X". */
+  upgrade: { bundleId: number; label: string; tickets: number; freeQuantity: number; extraPence: Pence } | null;
 }
 
 export interface PricedBasket {
@@ -199,7 +223,7 @@ export interface OrderView {
   cardPence: Pence;
   walletPence: Pence;
   paidAt: string | null;
-  lines: { competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null; type: CompetitionType; quantity: number; tickets: number[]; drawAt: string | null }[];
+  lines: { competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null; type: CompetitionType; quantity: number; paidQuantity: number; freeQuantity: number; bundleLabel: string | null; tickets: number[]; drawAt: string | null }[];
   /** Instant-win tickets in this order not yet revealed. */
   toPlay: number;
 }

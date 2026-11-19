@@ -296,7 +296,7 @@ class OrdersTest extends TestCase
         $this->topUp($b, 1000);
         $c = $this->competition('draw', ['max_tickets' => 10, 'max_per_person' => 10]);
         $this->buy($a, $c, 8, 'card', false); // £2 by card, not paid yet
-        $this->expectExceptionMessage('You can buy 2 more tickets');
+        $this->expectExceptionMessage('Not that many tickets are left');
         $this->buy($b, $c, 3);
     }
 
@@ -305,7 +305,7 @@ class OrdersTest extends TestCase
         $u = $this->player();
         $c = $this->competition('draw', ['max_per_person' => 10]);
         $this->buy($u, $c, 8, 'card', false);
-        $this->expectExceptionMessage('You can buy 2 more tickets');
+        $this->expectExceptionMessage('Not that many tickets are left');
         $this->buy($u->refresh(), $c, 4, 'card', false);
     }
 

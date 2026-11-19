@@ -4,14 +4,19 @@ import type { BasketLine } from "./types";
 const KEY = "gg-basket-v1";
 const EVENT = "gg-basket";
 
+const valid = (l: any) => l && typeof l.competitionId === "string"
+  && ((Number.isInteger(l.bundleId) && l.bundleId > 0) || (Number.isInteger(l.quantity) && l.quantity > 0));
+
+/**
+ * Up to two lines per competition: single tickets, and one bundle. The browser only remembers what
+ * was chosen; the server prices bundles and singles every time.
+ */
 export function readBasket(): BasketLine[] {
   if (typeof localStorage === "undefined") return [];
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
     if (!Array.isArray(raw)) return [];
-    return raw
-      .filter((l) => l && typeof l.competitionId === "string" && Number.isInteger(l.quantity) && l.quantity > 0)
-      .map((l) => ({ competitionId: l.competitionId, quantity: l.quantity }));
+    return raw.filter(valid).map((l) => (l.bundleId ? { competitionId: l.competitionId, quantity: 0, bundleId: l.bundleId } : { competitionId: l.competitionId, quantity: l.quantity }));
   } catch {
     return [];
   }
@@ -26,13 +31,31 @@ function write(lines: BasketLine[]) {
   window.dispatchEvent(new CustomEvent(EVENT, { detail: lines }));
 }
 
-/** Add tickets, or set the quantity when `replace` is true. One line per competition. */
+const isBundle = (l: BasketLine) => !!l.bundleId;
+
+/** Add single tickets, or set the quantity when `replace` is true. */
 export function addToBasket(competitionId: string, quantity: number, replace = false): BasketLine[] {
   const lines = readBasket();
-  const i = lines.findIndex((l) => l.competitionId === competitionId);
+  const i = lines.findIndex((l) => l.competitionId === competitionId && !isBundle(l));
   if (i >= 0) lines[i] = { competitionId, quantity: replace ? quantity : lines[i].quantity + quantity };
   else lines.push({ competitionId, quantity });
-  const next = lines.filter((l) => l.quantity > 0);
+  const next = lines.filter((l) => isBundle(l) || l.quantity > 0);
+  write(next);
+  return next;
+}
+
+/** Put a bundle in the basket. A competition holds one bundle: choosing another replaces it. */
+export function addBundle(competitionId: string, bundleId: number): BasketLine[] {
+  const next = readBasket().filter((l) => !(l.competitionId === competitionId && isBundle(l)));
+  next.push({ competitionId, quantity: 0, bundleId });
+  write(next);
+  return next;
+}
+
+/** Swap a line (single tickets or a bundle) for a bigger bundle. */
+export function upgradeLine(competitionId: string, fromBundleId: number | null, toBundleId: number): BasketLine[] {
+  const next = readBasket().filter((l) => !(l.competitionId === competitionId && (isBundle(l) || fromBundleId === null)));
+  next.push({ competitionId, quantity: 0, bundleId: toBundleId });
   write(next);
   return next;
 }
@@ -41,8 +64,9 @@ export function setQuantity(competitionId: string, quantity: number): BasketLine
   return addToBasket(competitionId, Math.max(0, quantity), true);
 }
 
-export function removeFromBasket(competitionId: string): BasketLine[] {
-  const next = readBasket().filter((l) => l.competitionId !== competitionId);
+/** Remove one line: the bundle when bundleId is given, otherwise the single tickets. */
+export function removeFromBasket(competitionId: string, bundleId: number | null = null): BasketLine[] {
+  const next = readBasket().filter((l) => !(l.competitionId === competitionId && (bundleId ? l.bundleId === bundleId : !isBundle(l))));
   write(next);
   return next;
 }
@@ -82,4 +106,4 @@ export function onBasketChange(cb: (lines: BasketLine[]) => void): () => void {
   };
 }
 
-export const basketCount = (lines: BasketLine[]) => lines.reduce((n, l) => n + 1, 0);
+export const basketCount = (lines: BasketLine[]) => lines.length;

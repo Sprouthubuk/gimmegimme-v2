@@ -31,7 +31,7 @@ class LaunchContentTest extends TestCase
             $this->assertStringNotContainsString($gone, $all);
         }
         $this->assertStringContainsString('ico.org.uk', Page::query()->findOrFail('privacy')->html);
-        $this->assertSame('2.0', Page::query()->findOrFail('terms')->version);
+        $this->assertSame('2.1', Page::query()->findOrFail('terms')->version);
         $this->assertStringContainsString('57 Oakhanger Drive', Page::query()->findOrFail('free-entry')->html);
     }
 

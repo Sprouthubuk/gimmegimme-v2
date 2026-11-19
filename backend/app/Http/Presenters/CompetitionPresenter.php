@@ -4,6 +4,7 @@ namespace App\Http\Presenters;
 
 use App\Models\Competition;
 use App\Models\User;
+use App\Services\Bundles;
 use App\Services\CompetitionState;
 use Sprouthub\Verity\Models\InstantPrize;
 use Sprouthub\Verity\Models\Winner;
@@ -17,7 +18,7 @@ final class CompetitionPresenter
         'bingo_card' => 'Bingo Card', 'whack_a_mole' => 'Whack-a-Mole', 'pinata' => 'Piñata', 'classic' => 'Scratch Card',
     ];
 
-    public function __construct(private CompetitionState $state) {}
+    public function __construct(private CompetitionState $state, private Bundles $bundles) {}
 
     public function summary(Competition $c): array
     {
@@ -41,15 +42,15 @@ final class CompetitionPresenter
             'topPrizePence' => $top ?: null,
             'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format((int) $c->prizes->sum('quantity')).' instant wins' : null),
             'soldPercent' => $this->state->soldPercent($c),
-            'ticketsLeft' => $this->state->left($c),
             'prizeCount' => $c->isInstant() ? (int) $c->prizes->sum('quantity') : null,
             'endPrize' => $c->isInstant() && $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence, 'count' => $c->endPrizeCount()] : null,
-            'maxTickets' => $c->max_tickets,
             'opensAt' => $c->opens_at?->toIso8601ZuluString(),
             'closesAt' => $c->closes_at?->toIso8601ZuluString(),
             'drawAt' => $c->hasDraw() ? ($v?->drawn_at ?? $c->closes_at)?->toIso8601ZuluString() : null,
             'featured' => (bool) $c->featured,
             'tags' => array_values($c->tags ?? []),
+            // The featured ("Best Value") bundle on sale now, for cards and the basket's suggestions.
+            'bestBundle' => $c->offersBundles() ? (collect($this->bundles->forPlayers($c))->firstWhere('bestValue', true)) : null,
         ];
     }
 
@@ -70,7 +71,6 @@ final class CompetitionPresenter
         return $this->summary($c) + [
             'description' => (string) $c->description,
             'howToPlay' => $c->how_to_play,
-            'maxPerPerson' => $c->max_per_person,
             'heldByMe' => $user ? $this->state->held($c, $user->ownerRef()) : 0,
             'cashAlternativePence' => $c->cash_alternative_pence,
             'prizes' => $prizes,
@@ -81,6 +81,8 @@ final class CompetitionPresenter
             'presets' => $c->presetList(),
             'popularPreset' => $c->popularPreset(),
             'minTickets' => (int) ($c->min_tickets ?: 1),
+            // Bundles on sale now (live draws). Prices and tickets per bundle only, nothing about the pool.
+            'bundles' => $this->bundles->forPlayers($c),
         ];
     }
 }
