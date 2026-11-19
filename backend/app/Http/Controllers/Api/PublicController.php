@@ -60,7 +60,7 @@ class PublicController extends Controller
 
     public function competitions(Request $r): JsonResponse
     {
-        $list = Competition::query()->published()->with('prizes')->where('closes_at', '>', now()->subDays(1))
+        $list = Competition::query()->published()->with(['prizes', 'bundleTiers'])->where('closes_at', '>', now()->subDays(1))
             ->when(in_array($r->query('type'), ['instant', 'draw'], true), fn ($q) => $q->where('type', $r->query('type')))
             ->orderByDesc('featured')->orderBy('closes_at')->limit(200)->get()
             ->filter(fn (Competition $c) => in_array($this->state()->status($c), ['live', 'sold_out'], true))
@@ -71,7 +71,7 @@ class PublicController extends Controller
 
     public function competition(Request $r, string $slug): JsonResponse
     {
-        $c = Competition::query()->published()->with('prizes')->where('slug', $slug)->firstOrFail();
+        $c = Competition::query()->published()->with(['prizes', 'bundleTiers'])->where('slug', $slug)->firstOrFail();
 
         return response()->json($this->present()->detail($c, $r->user()));
     }

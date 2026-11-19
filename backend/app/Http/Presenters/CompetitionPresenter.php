@@ -49,6 +49,8 @@ final class CompetitionPresenter
             'drawAt' => $c->hasDraw() ? ($v?->drawn_at ?? $c->closes_at)?->toIso8601ZuluString() : null,
             'featured' => (bool) $c->featured,
             'tags' => array_values($c->tags ?? []),
+            // The featured ("Best Value") bundle on sale now, for cards and the basket's suggestions.
+            'bestBundle' => $c->offersBundles() ? (collect($this->bundles->forPlayers($c))->firstWhere('bestValue', true)) : null,
         ];
     }
 

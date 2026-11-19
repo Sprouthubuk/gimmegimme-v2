@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BundleTier;
 use App\Models\Competition;
 use App\Models\Page;
 use App\Models\Setting;
@@ -44,6 +45,9 @@ class DemoSeeder extends Seeder
             foreach ($prizes as $i => [$name, $value, $qty, $type]) {
                 $c->prizes()->create(['name' => $name, 'value_pence' => $value, 'quantity' => $qty, 'type' => $type, 'sort' => $i]);
             }
+            if ($c->bundles_enabled) { // the first three bundle tiers, Buy 10 Get 15 Free as Best Value
+                $c->bundleTiers()->sync(BundleTier::query()->orderBy('sort_order')->take(3)->get()->mapWithKeys(fn ($t) => [$t->id => ['is_featured' => $t->paid_qty === 10]])->all());
+            }
             app(Publishing::class)->publish($c, $admin);
         };
         $make(['slug' => 'bush-bucks-jungle-trial', 'title' => 'Bush Bucks – Jungle Trial', 'type' => 'instant', 'game' => 'balloon_pop', 'image' => 'competitions/bush.webp', 'featured' => true,
@@ -54,7 +58,7 @@ class DemoSeeder extends Seeder
         $make(['slug' => 'cash-bang', 'title' => 'Cash Bang', 'type' => 'instant', 'game' => 'scratch_card', 'skin' => 'christmas', 'image' => 'competitions/cash.webp', 'price_pence' => 10],
             [['£50 Cash', 5000, 2, 'cash'], ['20p Site Credit', 20, 1000, 'site_credit']]);
         $make(['slug' => 'lush-snow-fairy-wonderland', 'title' => 'Lush Snow Fairy Wonderland', 'type' => 'draw', 'image' => 'competitions/lush.webp', 'price_pence' => 49,
-            'end_prize_name' => 'Lush Snow Fairy Gift Set', 'end_prize_value_pence' => 6000, 'cash_alternative_pence' => 5000, 'max_tickets' => 999, 'max_per_person' => 100]);
+            'end_prize_name' => 'Lush Snow Fairy Gift Set', 'end_prize_value_pence' => 6000, 'cash_alternative_pence' => 5000, 'max_tickets' => 999, 'max_per_person' => 999, 'bundles_enabled' => true, 'max_bundle_share_pct' => 10, 'prize_cost_pence' => 4000]);
 
         foreach (['terms' => 'Terms & Conditions', 'privacy' => 'Privacy Policy', 'cookies' => 'Cookie Policy', 'free-entry' => 'Free Entry Terms', 'complaints' => 'Complaints'] as $slug => $title) {
             Page::query()->firstOrCreate(['slug' => $slug], ['title' => $title, 'version' => 'sample',
