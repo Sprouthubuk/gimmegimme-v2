@@ -69,6 +69,7 @@ class BundleAdminTest extends TestCase
         $this->assertStringNotContainsString('OWNER', (string) $quest->description);
         $this->assertCount(5, $quest->bundleTiers);
         $this->assertSame('Buy 10 Get 15 Free', $quest->bundleTiers->firstWhere('pivot.is_featured', true)->displayLabel());
+        $this->assertSame('Shark FlexStyle 4-in-1 Air Styler', $all->firstWhere('slug', 'shark-flexstyle-air-styler')->title); // renamed; address kept
         $airpods = $all->firstWhere('slug', 'apple-airpods-5');
         $this->assertSame('Buy 5 Get 5 Free', $airpods->bundleTiers->firstWhere('pivot.is_featured', true)->displayLabel());
         // Every launch draw still makes money in the worst case its share limit allows.
