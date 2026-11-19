@@ -4,7 +4,9 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FakePayController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\GimmeBoxController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\PublicController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +25,9 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('pages/{slug}', [PublicController::class, 'page']);
     Route::post('contact', [PublicController::class, 'contact'])->middleware('throttle:contact');
     Route::post('basket/price', [OrderController::class, 'price']);
+    Route::post('gimme-box', [GimmeBoxController::class, 'build'])->middleware('throttle:gimme-box');
+    Route::post('gimme-box/{id}/added', [GimmeBoxController::class, 'added'])->middleware('throttle:gimme-box');
+    Route::get('referrals/{code}', [ReferralController::class, 'invite'])->middleware('throttle:gimme-box');
 
     Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register'])->middleware('throttle:signup');
@@ -55,6 +60,9 @@ Route::middleware('throttle:api')->group(function () {
         Route::get('orders/{number}', [OrderController::class, 'show']);
         Route::post('orders/{number}/return', [OrderController::class, 'return']);
         Route::post('orders/{number}/play', [OrderController::class, 'play']);
+        Route::get('me/referrals', [ReferralController::class, 'mine']);
+        Route::get('me/vouchers/{voucher}/draws', [ReferralController::class, 'draws']);
+        Route::post('me/vouchers/{voucher}/redeem', [ReferralController::class, 'redeem'])->middleware('throttle:money');
     });
 });
 

@@ -70,6 +70,8 @@ class BundlesTest extends TestCase
         $line = $order->lines()->firstOrFail();
         $this->assertSame([20 * 59, 60, 20, 40, $tier->id], [$order->total_pence, $line->quantity, $line->paid_quantity, $line->free_quantity, $line->bundle_tier_id]);
         $this->assertSame(5000 - 20 * 59, $this->wallet()->balances($u)['deposit']);
+        // The site's basket sends quantity 0 on a bundle line: that's fine (it was refused before, 19 Nov).
+        $this->buy($u, $c, ['bundleId' => $this->tier(5, 5)->id, 'quantity' => 0])->assertCreated();
         // An unknown bundle id is refused, not priced.
         $this->buy($u, $c, ['bundleId' => 999999])->assertStatus(422)->assertJsonPath('code', 'basket_problem');
     }
@@ -183,6 +185,12 @@ class BundlesTest extends TestCase
             foreach (['ticketsLeft', 'maxTickets', 'maxPerPerson', 'total_tickets', 'tickets_sold', 'tickets_remaining', 'max_tickets', '"entries"'] as $key) {
                 $this->assertStringNotContainsString($key, $body, "{$url} mentions {$key}");
             }
+            // Entry lists and winning numbers print ticket numbers, which are random from 1 to the total, so a
+            // number like 3940 can appear there by chance: those pages are outside this check's raw-number part
+            // (owner, 19 Nov 2026: entry lists and the fair-play record stay public). Their keys are still checked.
+            if (str_contains($url, '/entry-lists/') || str_contains($url, '/winning-numbers')) {
+                continue;
+            }
             foreach (['3947', '3940', '3989'] as $count) { // the totals, and what's left of the draw
                 $this->assertStringNotContainsString($count, $body, "{$url} gives away a ticket count");
             }
@@ -201,5 +209,17 @@ class BundlesTest extends TestCase
         $this->assertSame(99, $this->getJson('/api/competitions/'.$c->slug)->json('soldPercent'));
         $this->buy($u, $c, ['quantity' => 2])->assertCreated();
         $this->assertSame(100, $this->getJson('/api/competitions/'.$c->slug)->json('soldPercent'));
+    }
+
+    public function test_a_bundle_and_single_tickets_for_the_same_draw_in_one_order_are_all_issued(): void
+    {
+        $u = $this->player();
+        $this->topUp($u, 5000);
+        $c = $this->draw();
+        $this->actingAs($u)->postJson('/api/checkout', ['lines' => [['competitionId' => $c->id, 'quantity' => 0, 'bundleId' => $this->tier(5, 5)->id], ['competitionId' => $c->id, 'quantity' => 3]],
+            'payWith' => 'wallet', 'useWallet' => true, 'requestId' => (string) Str::uuid()])->assertCreated();
+        $lines = Order::query()->latest()->firstOrFail()->lines()->get();
+        $this->assertSame([10, 3], $lines->map(fn ($l) => count($l->tickets))->all());
+        $this->assertCount(13, array_unique([...$lines[0]->tickets, ...$lines[1]->tickets]), 'thirteen different tickets');
     }
 }
