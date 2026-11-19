@@ -20,7 +20,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Facades\Mail;
 
 class SiteSettings extends Page
 {
@@ -147,7 +146,8 @@ class SiteSettings extends Page
                     return;
                 }
                 try {
-                    Mail::raw('This is a test email from the Gimme Gimme Prizes admin. If you can read this, email is working.', fn ($m) => $m->to($data['to'])->subject('Gimme Gimme test email'));
+                    // The real design (Gimme Gimme mail theme), sent now rather than queued, so a failure shows here.
+                    \Illuminate\Support\Facades\Notification::route('mail', $data['to'])->notifyNow(new \App\Notifications\TestEmail);
                 } catch (\Throwable $e) {
                     AdminAction::record(auth()->user(), 'email.test_failed', null, null, ['mailer' => $mailer]);
                     Notification::make()->danger()->title('The email was not sent')->body(mb_substr($e->getMessage(), 0, 500))->persistent()->send();

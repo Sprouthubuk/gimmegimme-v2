@@ -164,6 +164,15 @@ class EmailsTest extends TestCase
         $this->assertStringNotContainsString('Reference', $html, 'no empty reference line');
     }
 
+    public function test_the_admin_test_email_shows_the_real_design(): void
+    {
+        [$m, $html] = $this->render(new \App\Notifications\TestEmail, new \Illuminate\Notifications\AnonymousNotifiable);
+        $this->assertSame('Gimme Gimme Test Email', $m->subject);
+        $this->assertStringContainsString('>#104</span>', $html);
+        $this->assertStringContainsString('It isn’t a real order', $html);
+        $this->assertBranded($html);
+    }
+
     public function test_the_admin_alert_uses_the_same_design(): void
     {
         [$m, $html] = $this->render(new AdminAlert('Order GG-9 needs attention', ['A paid order could not get all its tickets.'], '/admin/orders'), new \Illuminate\Notifications\AnonymousNotifiable);
