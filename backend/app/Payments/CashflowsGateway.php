@@ -81,6 +81,8 @@ final class CashflowsGateway implements PaymentGateway
         $amount = self::find($inner, '/^(amounttocollect|amountcollected|paidamount|amount)$/i');
         $currency = self::find($inner, '/^currency$/i');
         $funding = self::find($inner, '/(fund|cardtype|cardcategory|card_type)/i');
+        // A stable card identifier, if Cashflows sends one (to be confirmed in the sandbox): never a card number.
+        $token = self::find($inner, '/^(cardtoken|cardfingerprint|fingerprint|paymentmethodtoken|tokenid)$/i');
 
         return new GatewayAnswer(
             is_string($job) && $job !== '' ? $job : null,
@@ -89,6 +91,7 @@ final class CashflowsGateway implements PaymentGateway
             is_string($currency) ? $currency : null,
             GatewayAnswer::mapStatus(is_string($status) ? $status : null),
             is_string($funding) ? (stripos($funding, 'credit') !== false ? 'credit' : (stripos($funding, 'debit') !== false ? 'debit' : null)) : null,
+            is_string($token) && $token !== '' && ! preg_match('/^\d{12,19}$/', $token) ? $token : null,
         );
     }
 

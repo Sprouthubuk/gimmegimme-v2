@@ -6,7 +6,7 @@ import { formatMoney } from "../lib/money";
 import type { BasketLine, CompetitionSummary, PricedBasket } from "../lib/types";
 import { Svg } from "./Svg";
 
-export default function BasketView({ signedIn }: { signedIn: boolean }) {
+export default function BasketView({ signedIn, gimmeBox = false }: { signedIn: boolean; gimmeBox?: boolean }) {
   const [lines, setLines] = useState<BasketLine[] | null>(null);
   const [priced, setPriced] = useState<PricedBasket | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +57,10 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
                 <div className="row between g8" style={{ alignItems: "flex-start" }}>
                   <div style={{ minWidth: 0 }}>
                     <a href={`/competitions/${pl.slug}`} className="d" style={{ fontSize: 18, lineHeight: 1.1, color: "#fff", textDecoration: "none" }}>{pl.title}</a>
-                    {pl.bundleLabel && <div><span className="tag tag-y" style={{ marginTop: 4 }}>{pl.bundleLabel}</span></div>}
+                    {(pl.bundleLabel || pl.bonusQuantity > 0) && <div className="row g8" style={{ marginTop: 4, flexWrap: "wrap" }}>
+                      {pl.bundleLabel && <span className="tag tag-y">{pl.bundleLabel}</span>}
+                      {pl.bonusQuantity > 0 && <span className="tag tag-c" data-testid="box-bonus">+{pl.bonusQuantity} Bonus</span>}
+                    </div>}
                     <div className="hint">{lineMakeup(pl)}</div>
                   </div>
                   <button type="button" className="ib" aria-label={`Remove ${pl.title}${pl.bundleLabel ? ` (${pl.bundleLabel})` : ""}`} style={{ width: 44, height: 44, color: "#8E84A0" }} onClick={() => removeFromBasket(pl.competitionId, pl.bundleId)}><Svg name="trash" size={16} /></button>
@@ -120,6 +123,7 @@ export default function BasketView({ signedIn }: { signedIn: boolean }) {
           {error && <div className="notice notice-p" role="alert"><Svg name="info" size={18} /><span>{error}</span></div>}
           <a className="btn btn-y btn-lg btn-block gg-cta" href={checkoutHref} aria-disabled={!priced || priced.problems.length > 0 || priced.lines.some((l) => l.problem) ? "true" : undefined}>Checkout · {priced ? formatMoney(priced.totalPence) : "…"}</a>
           <a className="btn btn-o btn-block" href="/competitions">Keep Browsing</a>
+          {gimmeBox && lines.every((l) => !l.boxId) && <a className="tap" style={{ textAlign: "center", fontWeight: 800 }} href="/gimme-box">Or let a Gimme Box pick for you</a>}
         </div>
       </div>
     </div>

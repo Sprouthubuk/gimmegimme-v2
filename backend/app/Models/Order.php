@@ -30,6 +30,16 @@ class Order extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // A refunded ticket order may have qualified a referral: take back what it unlocked (Referrals::orderReversed).
+        static::updated(function (Order $o) {
+            if ($o->wasChanged('status') && $o->status === 'refunded' && $o->order_type === 'tickets') {
+                app(\App\Services\Referrals::class)->orderReversed($o);
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

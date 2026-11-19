@@ -81,5 +81,7 @@ class AppServiceProvider extends ServiceProvider
         // Astro's server-side calls forward the visitor's IP (X-Forwarded-For from nginx; 127.0.0.1 is a trusted proxy).
         RateLimiter::for('api', fn (Request $r) => Limit::perMinute((int) config('app.api_rate_per_minute', 300))->by($r->user()?->id ?: $r->ip()));
         RateLimiter::for('money', fn (Request $r) => Limit::perMinute(20)->by($r->user()?->id ?: $r->ip()));
+        // Shaking a box holds tickets for a few minutes: a person can shake often, a script can't hoard.
+        RateLimiter::for('gimme-box', fn (Request $r) => Limit::perMinute((int) env('GIMME_BOX_RATE_PER_MINUTE', 20))->by($r->user('sanctum')?->id ?: $r->ip()));
     }
 }

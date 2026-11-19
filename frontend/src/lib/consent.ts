@@ -70,6 +70,13 @@ export function track(event: string, params?: Record<string, unknown>, eventId?:
   window.fbq("track", event, params ?? {}, eventId ? { eventID: eventId } : undefined);
 }
 
+/** A custom event (GimmeBoxShake, GimmeBoxAdded, ReferralShare, VoucherRedeemed). Nothing without consent; never personal data. */
+export function trackCustom(event: string, params?: Record<string, unknown>) {
+  if (!pixelId) startPixel(document.getElementById("cookie-banner")?.dataset.pixel);
+  if (!pixelId || !window.fbq) return;
+  window.fbq("trackCustom", event, params ?? {});
+}
+
 /** Purchase, once per order in this browser (a reload of the order page doesn't count it twice). */
 export function trackPurchaseOnce(orderNumber: string, valuePence: number) {
   const k = `gg-px-purchase:${orderNumber}`;

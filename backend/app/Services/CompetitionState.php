@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Competition;
+use App\Models\GimmeBox;
 use App\Models\Order;
 use App\Models\OrderLine;
 use Sprouthub\Verity\Models\Competition as VerityCompetition;
@@ -80,10 +81,35 @@ final class CompetitionState
      */
     public function reserved(Competition $c, ?int $userId = null): int
     {
-        return (int) OrderLine::query()->where('competition_id', $c->id)->whereNull('tickets')
+        $orders = (int) OrderLine::query()->where('competition_id', $c->id)->whereNull('tickets')
             ->whereHas('order', fn ($q) => $q->whereIn('status', Order::UNPAID)->where('created_at', '>=', now()->subMinutes(Order::HOLD_MINUTES))
                 ->when($userId, fn ($q) => $q->where('user_id', $userId)))
             ->sum('quantity');
+
+        return $orders + ($userId ? 0 : $this->boxHolds($c));
+    }
+
+    /** Box ids whose own holds don't count against them (the box being bought, or re-rolled). */
+    private array $ignoredBoxes = [];
+
+    public function ignoreBoxes(array $ids): void
+    {
+        $this->ignoredBoxes = array_values(array_filter($ids));
+    }
+
+    /** Tickets held by Gimme Boxes still on show or in a basket (until they expire). */
+    public function boxHolds(Competition $c): int
+    {
+        $held = 0;
+        GimmeBox::query()->whereIn('status', GimmeBox::HOLDING)->where('expires_at', '>', now())
+            ->when($this->ignoredBoxes, fn ($q) => $q->whereNotIn('id', $this->ignoredBoxes))
+            ->where('lines', 'like', '%'.$c->id.'%')->get(['id', 'lines'])
+            ->each(function (GimmeBox $b) use ($c, &$held) {
+                $l = $b->lineFor($c->id);
+                $held += $l ? $l['paid'] + $l['free'] + $l['bonus'] : 0;
+            });
+
+        return $held;
     }
 
     /** How many more this owner may buy now: 0 when it isn't on sale. */

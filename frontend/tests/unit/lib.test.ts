@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { formatMoney, formatPence, parsePounds } from "../../src/lib/money";
 import { safeNext } from "../../src/lib/safe";
 import { ago, endsIn, remaining, ukDateTime, ukTime, ukWhen } from "../../src/lib/time";
-import { addToBasket, clearBasket, readBasket, removeFromBasket, restoreAside, setAside, setQuantity } from "../../src/lib/basket";
+import { addBoxLines, addToBasket, boxIdsIn, clearBasket, readBasket, removeFromBasket, restoreAside, setAside, setQuantity } from "../../src/lib/basket";
+import { lineMakeup } from "../../src/lib/bundles";
 
 describe("money", () => {
   it("formats pence for prices", () => {
@@ -82,6 +83,30 @@ describe("basket", () => {
     localStorage.setItem("gg-basket-v1", "{not json");
     expect(readBasket()).toEqual([]);
   });
+  it("a Gimme Box takes the place of the same kind of line for each draw and keeps its box id", () => {
+    const box = "a".repeat(32);
+    addToBasket("x", 3);
+    addToBasket("y", 2);
+    addBoxLines([{ competitionId: "x", quantity: 0, bundleId: 2, boxId: box }, { competitionId: "x", quantity: 4, boxId: box }, { competitionId: "z", quantity: 6, boxId: box }]);
+    expect(readBasket()).toEqual([
+      { competitionId: "y", quantity: 2 },
+      { competitionId: "x", quantity: 0, bundleId: 2, boxId: box },
+      { competitionId: "x", quantity: 4, boxId: box },
+      { competitionId: "z", quantity: 6, boxId: box },
+    ]);
+    expect(boxIdsIn(readBasket())).toEqual([box]);
+    // More single tickets keep the box (the server still adds its bonus); a made-up box id is dropped.
+    setQuantity("z", 8);
+    expect(readBasket().find((l) => l.competitionId === "z")).toEqual({ competitionId: "z", quantity: 8, boxId: box });
+    localStorage.setItem("gg-basket-v1", JSON.stringify([{ competitionId: "q", quantity: 1, boxId: "<script>" }]));
+    expect(readBasket()).toEqual([{ competitionId: "q", quantity: 1 }]);
+  });
+
+  it("explains Gimme Box bonus tickets on a line", () => {
+    expect(lineMakeup({ quantity: 27, paidQuantity: 10, freeQuantity: 15, bonusQuantity: 2 })).toBe("10 paid + 15 free + 2 Gimme Box bonus = 27 tickets");
+    expect(lineMakeup({ quantity: 11, paidQuantity: 10, bonusQuantity: 1 })).toBe("10 paid + 1 Gimme Box bonus = 11 tickets");
+  });
+
   it("puts the basket aside for a card payment and restores it once", () => {
     addToBasket("a", 4);
     setAside("GG-1");

@@ -68,6 +68,7 @@ const [first, ...rest] = c.title.split(" – ");
           <div class="row between hint"><span data-sold-text={c.slug}><b>{c.status === "sold_out" ? "SOLD OUT" : `${c.soldPercent}% SOLD`}</b>{c.status !== "sold_out" && c.soldPercent >= 90 && <span class="ny"> · Almost gone!</span>}</span><span>{isDraw ? "" : "Results fixed when you buy"}</span></div>
         </div>
         <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} bundles={c.bundles ?? []} soldPercent={c.soldPercent} soldOut={c.status === "sold_out"} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
+        {c.type === "draw" && site.gimmeBox?.available && <a class="tap" href="/gimme-box" style="font-weight:800" data-testid="gb-link">Can't decide? Try a Gimme Box →</a>}
         <p class="hint" style="margin:0">No purchase necessary — <a href="/free-entry">enter free by post</a> with the same chance of winning. 18+ UK only · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
     </div>

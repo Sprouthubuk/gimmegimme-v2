@@ -1,0 +1,14 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import AccountShell from "../../components/AccountShell.astro";
+import ReferPanel from "../../islands/ReferPanel";
+import type { MyReferrals } from "../../lib/types";
+const { api, site } = Astro.locals;
+if (!site.referrals) return Astro.rewrite("/404");
+const data = await api.get<MyReferrals>("/api/me/referrals");
+---
+<Layout title="Refer A Friend" active="account" noindex>
+  <AccountShell active="refer" title="Refer A Friend" eyebrow="Share The Fun" glow="nc">
+    <ReferPanel client:load initial={data} />
+  </AccountShell>
+</Layout>

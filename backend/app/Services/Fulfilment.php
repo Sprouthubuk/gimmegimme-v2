@@ -41,7 +41,9 @@ final class Fulfilment
             $c = $line->competition;
             try {
                 $group = Verity::addEntries($c->verity_ref, $owner, $line->quantity, [
-                    'host_ref' => 'order:'.$order->id,
+                    // One reference per line: Verity returns the first group again for a repeated host_ref, so
+                    // two lines in one competition (a bundle and single tickets) need their own (fixed 19 Nov).
+                    'host_ref' => 'order:'.$order->id.':'.$line->id,
                     'total_pence' => $line->line_pence,
                     'ordered_at' => $order->created_at,
                 ]);

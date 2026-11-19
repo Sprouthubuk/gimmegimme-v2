@@ -6,12 +6,18 @@ import { safeNext } from "../lib/safe";
 const next = Astro.url.searchParams.get("next");
 if (Astro.locals.me) return Astro.redirect(safeNext(next, "/account"));
 const fromBuy = (next ?? "").startsWith("/checkout");
+// Refer a Friend: the code from the share link (?ref= or the gg_ref cookie /r/ set). Who invited
+// you is shown by first name only; a code that isn't valid is simply ignored.
+const refCode = Astro.locals.site.referrals ? (Astro.url.searchParams.get("ref") ?? Astro.cookies.get("gg_ref")?.value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) : "";
+const inviter = refCode ? await Astro.locals.api.maybe<{ code: string; firstName: string }>(`/api/referrals/${refCode}`).catch(() => null) : null;
+const reward = Astro.locals.site.referrals;
 ---
 <Layout title="Join Gimme Gimme" header="auth" bottomNav={false} footer={false} noindex>
   <section class="sec" style="padding-top:20px"><div class="narrow stack g16" style="max-width:480px">
+    {inviter && reward && <div class="notice notice-c gg-rise" data-testid="invite-banner"><Icon name="gift" size={18} /><span><b>{inviter.firstName}</b> invited you. Spend {reward.minPurchasePence >= 100 ? `£${(reward.minPurchasePence / 100).toFixed(reward.minPurchasePence % 100 ? 2 : 0)}` : `${reward.minPurchasePence}p`} or more on your first order and you both get {reward.rewardType === "credit" ? `£${(reward.rewardCreditPence / 100).toFixed(2)} bonus credit` : `${reward.rewardTickets} free tickets`}. <a href="/legal/referral-terms" style="color:#22E6FF">Terms</a></span></div>}
     {fromBuy && <div class="notice notice-c gg-rise"><Icon name="cart" size={18} /><span>Your tickets are saved. Create your account to pay.</span></div>}
     <div class="gg-rise gg-d1"><h1 class="h1 h1-one">Join <span class="np gg-flicker">Gimme Gimme</span></h1><p class="p" style="margin-top:6px">Takes about 30 seconds.</p></div>
-    <div class="gg-rise gg-d2"><JoinForm client:load next={next} /></div>
+    <div class="gg-rise gg-d2"><JoinForm client:load next={next} referralCode={inviter?.code ?? null} /></div>
     <p class="p" style="text-align:center">Already have an account? <a href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}><b>Log in</b></a></p>
   </div></section>
 </Layout>

@@ -1,0 +1,23 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import GimmeBoxBuilder from "../islands/GimmeBoxBuilder";
+const gb = Astro.locals.site.gimmeBox;
+// Off: the page doesn't exist. On but fewer than two draws to pack: a short note instead.
+if (!gb) return Astro.rewrite("/404");
+---
+<Layout title="Gimme Box" active="comps">
+  <section class="sec" style="padding-top:20px"><div class="mid stack g16" style="max-width:640px">
+    <div class="gg-rise"><div class="eyebrow">Lucky Dip</div><h1 class="h1">Gimme <span class="np gg-flicker">Box</span></h1>
+      <p class="p" style="margin-top:6px">Set a budget and we'll fill a box with tickets for our live draws{gb.bonusPct > 0 ? <>, plus <b class="ny">{gb.bonusPct}% bonus tickets</b> free</> : null}. Same ticket prices as each competition page.</p></div>
+    {gb.available
+      ? <div class="gg-rise gg-d2"><GimmeBoxBuilder client:load chipsPence={gb.chipsPence} minPence={gb.minPence} maxPence={gb.maxPence} bonusPct={gb.bonusPct} /></div>
+      : <div class="card empty" data-testid="gb-unavailable">The Gimme Box needs at least two live draws to choose from. Check back soon, or <a href="/competitions">pick a competition</a>.</div>}
+    <div class="tl gg-stagger">
+      <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">01</span><div><div style="font-weight:900">Pick A Budget And Style</div><div class="hint" style="font-size:13px">From £{gb.minPence / 100} to £{gb.maxPence / 100}. Biggest prizes, most tickets, or a surprise.</div></div></div>
+      <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Shake It</div><div class="hint" style="font-size:13px">We pick two to four live draws and the best bundles your budget buys. Don't like it? Shake again.</div></div></div>
+      <div class="gg-card"><span class="d ny" style="font-size:26px;width:38px">03</span><div><div style="font-weight:900">Check Out</div><div class="hint" style="font-size:13px">Your box goes in your basket. Ticket numbers are given at random, as always.</div></div></div>
+    </div>
+    <div class="notice notice-c"><Icon name="info" size={18} /><span>You never pay more than your budget. Any change too small for another ticket isn't charged.</span></div>
+  </div></section>
+</Layout>

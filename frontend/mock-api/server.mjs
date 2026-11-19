@@ -141,7 +141,7 @@ function price(lines, u, promoCode) {
   for (const l of lines || []) {
     const c = byId.get(l.competitionId);
     if (!c) { problems.push("A competition in your basket isn't available any more."); continue; }
-    const base = { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, unitPence: c.pricePence, minQuantity: 1 };
+    const base = { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, unitPence: c.pricePence, minQuantity: 1, bonusQuantity: 0, source: null, gimmeBoxId: null };
     const offers = c.bundles ?? [];
     const nextUp = (paid, tickets) => { const n = offers.filter((o) => o.paid >= paid && o.tickets > tickets).sort((a, b) => a.tickets - b.tickets)[0]; return n ? { bundleId: n.id, label: n.label, tickets: n.tickets, freeQuantity: n.free, extraPence: (n.paid - paid) * c.pricePence } : null; };
     if (l.bundleId) {
@@ -153,12 +153,51 @@ function price(lines, u, promoCode) {
     const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
     out.push({ ...base, quantity: q, bundleId: null, bundleLabel: null, paidQuantity: q, freeQuantity: 0, linePence: q * c.pricePence, problem: q > max ? "Not that many tickets are left. Please choose fewer." : null, upgrade: nextUp(q, q) });
   }
+  // Gimme Box bonus: the box's extra tickets, while the line still holds what the box packed.
+  for (const l of out) {
+    const src = (lines || []).find((x) => x.competitionId === l.competitionId && !!x.bundleId === !!l.bundleId);
+    const box = src?.boxId ? boxes.get(src.boxId) : null;
+    const packed = box?.lines.find((b) => b.competitionId === l.competitionId);
+    if (!packed || box.status === "paid") continue;
+    const matches = l.bundleId ? packed.bundleId === l.bundleId : (!packed.bundleId && l.quantity >= packed.singles);
+    if (matches) { l.bonusQuantity = packed.bonusQuantity; l.quantity += packed.bonusQuantity; l.source = "gimme_box"; l.gimmeBoxId = box.id; }
+  }
   const sum = out.reduce((s, l) => s + l.linePence, 0);
   const promo = promoCode && String(promoCode).toUpperCase() === "GIMME10" ? { code: "GIMME10", discountPence: Math.floor(sum * 0.1) } : null;
   if (promoCode && !promo) problems.push("That promo code isn't valid.");
   const totalPence = sum - (promo?.discountPence ?? 0);
   return { lines: out, totalPence, ticketCount: out.reduce((n, l) => n + l.quantity, 0), promo, walletCanPayPence: u ? Math.min(total(u), totalPence) : 0, walletCovers: !!u && total(u) >= totalPence && totalPence > 0, problems };
 }
+
+// Gimme Box: packs live draws with bundles first, then singles, never over the budget.
+const boxes = new Map();
+function packBox(budget, mode, seed) {
+  const draws = COMPS.filter((c) => c.type === "draw" && c.status === "live");
+  const rnd = (() => { let x = seed || 1; return () => (x = (x * 16807) % 2147483647) / 2147483647; })();
+  const order = mode === "big" ? [...draws].sort((a, b) => b.topPrizePence - a.topPrizePence) : mode === "most" ? [...draws].sort((a, b) => a.pricePence - b.pricePence) : [...draws].sort(() => rnd() - 0.5);
+  const picks = order.slice(0, budget < 1000 ? 2 : Math.min(3, order.length));
+  const share = Math.floor(budget / picks.length);
+  let spent = 0;
+  const lines = picks.map((c) => {
+    const b = [...(c.bundles ?? [])].sort((x, y) => y.pricePence - x.pricePence).find((x) => x.pricePence <= share) ?? null;
+    const left = share - (b ? b.pricePence : 0);
+    const singles = Math.floor(left / c.pricePence);
+    const paid = (b ? b.paid : 0) + singles, free = b ? b.free : 0, bonus = Math.floor((paid + free) * 0.1);
+    const linePence = paid * c.pricePence;
+    spent += linePence;
+    return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, soldPercent: c.soldPercent, unitPence: c.pricePence, bundleId: b?.id ?? null, bundleLabel: b?.label ?? null, singles, paidQuantity: paid, freeQuantity: free, bonusQuantity: bonus, tickets: paid + free + bonus, linePence };
+  });
+  // Spend what's left on single tickets of the cheapest draw.
+  const cheap = [...lines].sort((a, b) => a.unitPence - b.unitPence)[0];
+  const extra = Math.floor((budget - spent) / cheap.unitPence);
+  if (extra > 0) { cheap.singles += extra; cheap.paidQuantity += extra; cheap.linePence += extra * cheap.unitPence; cheap.tickets += extra; spent += extra * cheap.unitPence; }
+  const id = crypto.randomBytes(16).toString("hex");
+  const basketLines = lines.flatMap((l) => [...(l.bundleId ? [{ competitionId: l.competitionId, quantity: 0, bundleId: l.bundleId, boxId: id }] : []), ...(l.singles > 0 ? [{ competitionId: l.competitionId, quantity: l.singles, boxId: id }] : [])]);
+  const box = { id, mode, budgetPence: budget, totalPence: spent, unusedPence: budget - spent, tickets: lines.reduce((n, l) => n + l.tickets, 0), bonusTickets: lines.reduce((n, l) => n + l.bonusQuantity, 0), expiresAt: iso(Date.now() + 10 * 6e4), lines, basketLines, status: "built" };
+  boxes.set(id, box);
+  return box;
+}
+const boxJson = ({ status, ...b }) => b;
 
 function issue(u, order) {
   const tickets = [];
@@ -196,7 +235,10 @@ const route = (method, pattern, fn) => routes.push({ method, re: new RegExp(`^${
 
 route("GET", "/sanctum/csrf-cookie", (req, res) => { res.writeHead(204, { "Set-Cookie": `XSRF-TOKEN=${crypto.randomBytes(12).toString("hex")}; Path=/; SameSite=Lax` }); res.end(); });
 route("GET", "/api/health", (req, res) => send(res, 200, { status: "ok", checks: { database: "ok", scheduler: "ok" } }));
-route("GET", "/api/site", (req, res) => send(res, 200, { salesOpen: true, minDepositPence: 500, minCardPence: 100, minWithdrawalPence: 2000, maxTopUpPence: 50000, featuredSlug: "bush-bucks-jungle-trial", socials: { instagram: "https://instagram.com/gimmegimmeprizes", facebook: "https://facebook.com/groups/gimmegimmeprizes" }, supportEmail: "hello@gimmegimmeprizes.co.uk", metaPixelId: process.env.MOCK_PIXEL_ID ?? null }));
+route("GET", "/api/site", (req, res) => send(res, 200, { salesOpen: true, minDepositPence: 500, minCardPence: 100, minWithdrawalPence: 2000, maxTopUpPence: 50000, featuredSlug: "bush-bucks-jungle-trial", socials: { instagram: "https://instagram.com/gimmegimmeprizes", facebook: "https://facebook.com/groups/gimmegimmeprizes" }, supportEmail: "hello@gimmegimmeprizes.co.uk", metaPixelId: process.env.MOCK_PIXEL_ID ?? null,
+  // Both features are on in the mock so the pages can be seen and tested; the real site starts with them off.
+  gimmeBox: process.env.MOCK_FEATURES === "off" ? null : { available: true, chipsPence: [500, 1000, 2000, 5000], minPence: 500, maxPence: 10000, bonusPct: 10 },
+  referrals: process.env.MOCK_FEATURES === "off" ? null : { rewardType: "tickets", rewardTickets: 10, rewardCreditPence: 200, minPurchasePence: 500 } }));
 route("GET", "/api/competitions", (req, res, { query }) => send(res, 200, { data: COMPS.filter((c) => !query.get("type") || c.type === query.get("type")) }));
 route("GET", "/api/competitions/:slug", (req, res, { params, user }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, detail(c, user)) : fail(res, 404, "Not found"); });
 route("GET", "/api/winners/instant", (req, res) => send(res, 200, { data: [0, 1, 2, 3, 4].map((i) => ({ id: `w${i}`, name: "Emmie A.", prizeName: i ? "£0.50 site credit" : "£0.25 site credit", valuePence: i ? 50 : 25, game: i ? "balloon_pop" : "hook_a_duck", gameLabel: i ? "Balloon Pop" : "Hook a Duck", competitionTitle: i ? "Pop For Pennies" : "Liam’s Lucky Ducks", at: iso(now - (53 + i) * 6e4) })), hasMore: false }));
@@ -226,6 +268,24 @@ route("GET", "/api/pages/:slug", (req, res, { params }) => send(res, 200, { titl
 route("POST", "/api/contact", async (req, res) => { const b = await readJson(req); if (!b.message || String(b.message).length < 10) return fail(res, 422, "Please check the form.", { message: ["Tell us a bit more (at least 10 characters)."] }); send(res, 201, { ok: true }); });
 route("POST", "/api/basket/price", async (req, res, { user }) => { const b = await readJson(req); send(res, 200, price(b.lines, user, b.promoCode)); });
 
+route("POST", "/api/gimme-box", async (req, res) => {
+  const b = await readJson(req);
+  const budget = Number(b.budgetPence);
+  if (!Number.isInteger(budget) || budget < 500 || budget > 10000 || budget % 100) return fail(res, 422, "Choose a budget between £5 and £100 in whole pounds.", { budgetPence: ["Choose a budget between £5 and £100 in whole pounds."] });
+  if (!["surprise", "big", "most"].includes(b.mode)) return fail(res, 422, "Choose a style.");
+  if (b.replaces && boxes.get(b.replaces)?.status === "built") boxes.get(b.replaces).status = "released";
+  send(res, 201, boxJson(packBox(budget, b.mode, crypto.randomInt(1, 1e6))));
+});
+route("POST", "/api/gimme-box/:id/added", (req, res, { params }) => {
+  const box = boxes.get(params.id);
+  if (!box || box.status === "released" || box.status === "paid") return send(res, 410, { message: "This box has gone. Please shake a new one.", code: "gimme_box_gone" });
+  box.status = "added"; box.expiresAt = iso(Date.now() + 10 * 6e4);
+  send(res, 200, boxJson(box));
+});
+route("GET", "/api/referrals/:code", (req, res, { params }) => {
+  const u = [...users.values()].find((x) => x.referralCode === String(params.code).toUpperCase());
+  return u ? send(res, 200, { code: u.referralCode, firstName: u.firstName }) : fail(res, 404, "Not found.");
+});
 route("POST", "/api/auth/register", async (req, res) => {
   const b = await readJson(req);
   const errors = {};
@@ -238,6 +298,14 @@ route("POST", "/api/auth/register", async (req, res) => {
   else if (age(b.dateOfBirth) < 18) errors.dateOfBirth = ["You must be 18 or over to join."];
   if (Object.keys(errors).length) return fail(res, 422, "Please check the form.", errors);
   const u = newUser(b);
+  // Refer a Friend, simplified: a valid code gives both sides a voucher at once (the real API waits for a £5 first order).
+  const referrer = b.referralCode ? [...users.values()].find((x) => x.referralCode && x.referralCode === String(b.referralCode).toUpperCase()) : null;
+  if (referrer && referrer !== u) {
+    u.referredBy = referrer.email;
+    const v = () => ({ id: crypto.randomInt(1, 1e9), tickets: 10, status: "available", expiresAt: iso(Date.now() + 30 * DAY), competition: null });
+    (referrer.vouchers ??= []).push(v());
+    (u.vouchers ??= []).push(v());
+  }
   send(res, 201, meJson(u), { "Set-Cookie": startSession(u) });
 });
 route("POST", "/api/auth/login", async (req, res) => {
@@ -296,6 +364,29 @@ route("POST", "/api/me/deposits", authed(async (req, res, { user }) => { const b
 route("POST", "/api/me/id-check", authed(async (req, res, { user }) => { for await (const _ of req); if (user.idCheck === "pending") return fail(res, 422, "We already have your documents and are checking them."); user.idCheck = "pending"; send(res, 201, { idCheck: "pending" }); }));
 route("POST", "/api/me/withdrawals", authed(async (req, res, { user }) => { const b = await readJson(req); if ((user.idCheck ?? "needed") !== "verified") return fail(res, 403, "We need to check your ID before your first withdrawal. Send your documents below."); const bad = {}; if (!/^[A-Za-z .'-]{2,70}$/.test(b.accountName ?? "")) bad.accountName = ["Use the name on the account, letters only."]; if (!/^\d{6}$/.test(String(b.sortCode ?? "").replace(/\D/g, ""))) bad.sortCode = ["A sort code is 6 numbers."]; if (!/^\d{8}$/.test(String(b.accountNumber ?? "").replace(/\D/g, ""))) bad.accountNumber = ["An account number is 8 numbers."]; if (Object.keys(bad).length) return fail(res, 422, "Please check the form.", bad); if (!(b.amountPence >= 2000) || b.amountPence > user.winnings) return fail(res, 422, "You can withdraw winnings from £20.", { amountPence: ["You can withdraw winnings from £20."] }); send(res, 201, { ok: true }); }));
 
+route("GET", "/api/me/referrals", authed((req, res, { user }) => {
+  user.referralCode ??= crypto.randomBytes(4).toString("hex").toUpperCase().replace(/[01IO]/g, "Z");
+  const friends = [...users.values()].filter((x) => x.referredBy === user.email);
+  send(res, 200, { code: user.referralCode, link: `${SITE}/r/${user.referralCode}`, stats: { invited: friends.length, qualified: 0, rewards: 0, leftThisMonth: 10, cap: 10 }, rewardType: "tickets", rewardTickets: 10, rewardCreditPence: 200, minPurchasePence: 500, vouchers: user.vouchers ?? [], friends: friends.map((f) => ({ name: `${f.firstName} ${f.lastName.slice(0, 1)}.`, status: "pending", joinedAt: iso(Date.now()) })) });
+}));
+route("GET", "/api/me/vouchers/:id/draws", authed((req, res, { user, params }) => {
+  const v = (user.vouchers ?? []).find((x) => String(x.id) === params.id);
+  return v ? send(res, 200, { data: COMPS.filter((c) => c.type === "draw") }) : fail(res, 404, "Not found.");
+}));
+route("POST", "/api/me/vouchers/:id/redeem", authed(async (req, res, { user, params }) => {
+  const b = await readJson(req);
+  const v = (user.vouchers ?? []).find((x) => String(x.id) === params.id);
+  const c = byId.get(b.competitionId);
+  if (!v) return fail(res, 404, "Not found.");
+  if (v.status !== "available") return fail(res, 422, "This voucher can no longer be used.");
+  if (!c || c.type !== "draw") return fail(res, 422, "That draw can't take these tickets right now. Please choose another.");
+  const number = `GG-V${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+  const order = { number, user: user.email, status: "created", totalPence: 0, cardPence: 0, walletPence: 0, lines: [{ competitionId: c.id, quantity: v.tickets, paidQuantity: 0, freeQuantity: v.tickets }] };
+  orders.set(number, order);
+  issue(user, order);
+  Object.assign(v, { status: "redeemed", competition: { title: c.title, slug: c.slug } });
+  send(res, 201, { order: { number, status: "paid" } });
+}));
 route("POST", "/api/checkout", authed(async (req, res, { user }) => {
   const b = await readJson(req);
   const block = playBlock(user);

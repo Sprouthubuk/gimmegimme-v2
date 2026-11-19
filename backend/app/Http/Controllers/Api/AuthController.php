@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
 use App\Models\User;
+use App\Services\Referrals;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +36,8 @@ class AuthController extends Controller
             'password' => ['required', 'string', PasswordRule::min(8), 'max:200'],
             'dateOfBirth' => ['required', 'date_format:Y-m-d', 'before_or_equal:'.now()->subYears(18)->toDateString(), 'after:1900-01-01'],
             'marketingOptIn' => ['sometimes', 'boolean'],
+            'referralCode' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'deviceId' => ['sometimes', 'nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/'],
         ], [
             'email.unique' => "There's already an account with that email. Try logging in.",
             'dateOfBirth.before_or_equal' => 'You must be 18 or over to join.',
@@ -48,6 +51,8 @@ class AuthController extends Controller
             // Marketing is only ever added by a box the player ticked, dated when they ticked it.
             ...$u->marketingChoices(($d['marketingOptIn'] ?? false) === true, false),
         ])->save();
+        // Refer a Friend: linked now or never. Device and IP are kept only as hashes, for the fraud checks.
+        app(Referrals::class)->attach($u, $d['referralCode'] ?? null, $d['deviceId'] ?? null, $r->ip());
         try {
             event(new Registered($u)); // sends the confirmation email
         } catch (\Throwable $e) {

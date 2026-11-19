@@ -192,3 +192,17 @@ describe("buying and playing", () => {
     expect(text((await b.page("/competitions/cash-bang")).html)).toMatch(/break/i);
   });
 });
+
+describe("Gimme Box and Refer a Friend start switched off", () => {
+  it("the site, the pages and the API say nothing about them until an admin turns them on", async () => {
+    const b = new Browser(site.origin);
+    const s = (await b.api("/api/site")).body;
+    expect(s.gimmeBox).toBeNull();
+    expect(s.referrals).toBeNull();
+    expect((await b.page("/gimme-box")).res.status).toBe(404);
+    expect((await b.page("/")).html).not.toContain('data-testid="gimme-box"');
+    expect((await b.api("/api/gimme-box", { budgetPence: 1000, mode: "surprise" })).status).toBe(404);
+    expect((await b.get("/r/ABCDEFGH")).headers.get("location")).toBe("/join");
+    expect((await (await signIn()).page("/account/refer")).res.status).toBe(404);
+  });
+});
