@@ -39,7 +39,7 @@ class AdminAlert extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $m = (new MailMessage)->subject('[Gimme Gimme admin] '.$this->subject);
+        $m = (new MailMessage)->subject('[Gimme Gimme Admin] '.$this->subject);
         foreach ($this->lines as $line) {
             $m->line($line);
         }

@@ -4,12 +4,20 @@
 <title>{{ config('app.name') }}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<meta name="color-scheme" content="light">
-<meta name="supported-color-schemes" content="light">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
 <style>
+/* The site's own fonts, from the site itself (Apple Mail and some apps show them; others use the fallbacks). */
+@font-face { font-family: 'Lilita One'; src: url('{{ rtrim((string) config('app.frontend_url'), '/') }}/fonts/lilita-one-latin.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Nunito'; src: url('{{ rtrim((string) config('app.frontend_url'), '/') }}/fonts/nunito-latin.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
+body { background-color: #07050b; }
 @media only screen and (max-width: 600px) {
 .inner-body {
 width: 100% !important;
+border-radius: 16px !important;
+}
+.content-cell {
+padding: 24px 20px !important;
 }
 
 .footer {
@@ -25,9 +33,9 @@ width: 100% !important;
 </style>
 {!! $head ?? '' !!}
 </head>
-<body>
+<body style="background-color:#07050b;">
 
-<table class="wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+<table class="wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation" bgcolor="#07050b">
 <tr>
 <td align="center">
 <table class="content" width="100%" cellpadding="0" cellspacing="0" role="presentation">
@@ -36,7 +44,7 @@ width: 100% !important;
 <!-- Email Body -->
 <tr>
 <td class="body" width="100%" cellpadding="0" cellspacing="0" style="border: hidden !important;">
-<table class="inner-body" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
+<table class="inner-body" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation" bgcolor="#120c19">
 <!-- Body content -->
 <tr>
 <td class="content-cell">

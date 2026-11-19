@@ -319,7 +319,7 @@ class OrdersTest extends TestCase
         Notification::assertSentToTimes($u, OrderReceipt::class, 1);
         $mail = (new OrderReceipt($o))->toMail($u);
         $this->assertStringContainsString($o->number, $mail->subject);
-        $this->assertStringContainsString('#', implode(' ', $mail->introLines));
+        $this->assertStringContainsString('>#', (string) $mail->render(), 'the ticket numbers are in the email');
         // Asking the gateway again doesn't send another.
         app(Orders::class)->syncWithGateway($o);
         Notification::assertSentToTimes($u, OrderReceipt::class, 1);

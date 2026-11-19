@@ -24,23 +24,28 @@ class WithdrawalUpdate extends Notification
         $w = $this->withdrawal;
         $amount = '£'.number_format($w->amount_pence / 100, 2);
         $site = rtrim((string) config('app.frontend_url'), '/');
-        $m = (new MailMessage)->greeting('Hi '.$notifiable->first_name.',');
+        $rows = [['Amount', $amount]];
+        if ($w->status === 'paid' && trim((string) $w->note) !== '') {
+            $rows[] = ['Reference', (string) $w->note];
+        }
+        $m = (new MailMessage)->greeting('Hi '.$notifiable->first_name.',')
+            ->markdown('notifications::email', ['blocks' => [['rows', $rows]]]);
 
         return match ($w->status) {
-            'paid' => $m->subject('Your '.$amount.' withdrawal is on its way')
+            'paid' => $m->subject('Your '.$amount.' Withdrawal Is On Its Way')
                 ->line('We’ve sent '.$amount.' to your bank account. It normally arrives within a few hours, and always within 2 working days.')
-                ->line('Reference: '.e((string) $w->note))
                 ->action('See Your Wallet', $site.'/account/wallet')
                 ->salutation('The Gimme Gimme team'),
-            'rejected' => $m->subject('We couldn’t pay your '.$amount.' withdrawal')
+            'rejected' => $m->subject('We Couldn’t Pay Your '.$amount.' Withdrawal')
                 ->line('We couldn’t pay your withdrawal, so '.$amount.' is back in your winnings balance.')
-                ->line('Why: '.e((string) $w->note))
+                ->line('Why: '.(string) $w->note)
                 ->line('Reply to this email if you have any questions.')
                 ->action('See Your Wallet', $site.'/account/wallet')
                 ->salutation('The Gimme Gimme team'),
-            default => $m->subject('We’ve got your '.$amount.' withdrawal request')
+            default => $m->subject('We’ve Got Your '.$amount.' Withdrawal Request')
                 ->line('Your request to withdraw '.$amount.' has been received and taken from your winnings balance.')
                 ->line('We aim to pay within 5 working days. We’ll email you when it’s sent.')
+                ->action('See Your Wallet', $site.'/account/wallet')
                 ->line('If you didn’t ask for this, reply to this email straight away.')
                 ->salutation('The Gimme Gimme team'),
         };
