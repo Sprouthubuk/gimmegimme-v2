@@ -73,6 +73,10 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Admin is Filament at `/admin` (`app/Filament`); admins and staff can't play.
 - Tests: `tests/Feature` (Verity runs for real on its local beacon; Cashflows is `FakeGateway`).
 - `DemoSeeder` is for laptops and tests only and refuses production.
+- Emails are Laravel notifications in the Gimme Gimme mail theme (`resources/views/vendor/mail`, `vendor/notifications/email.blade.php`):
+  dark page, neon pink card, yellow button, PNG logo, the 18+ / postal / Safer Play footer. Ticket numbers and money go in
+  blocks (`['tickets', …]`, `['rows', …]`), never raw HTML in a line. Subjects in Title Case. `tests/Feature/EmailsTest`
+  checks every email; `EMAIL_PREVIEWS=/tmp/gg-emails php artisan test --filter=EmailsTest` writes them out to look at.
 
 ## Front end
 - Astro drops a space between `{expr}` and a following tag inside `<>…</>`: write `{expr}{" "}<span>`.

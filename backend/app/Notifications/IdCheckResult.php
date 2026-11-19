@@ -24,15 +24,15 @@ class IdCheckResult extends Notification
         $site = rtrim((string) config('app.frontend_url'), '/');
         $m = (new MailMessage)->greeting('Hi '.$notifiable->first_name.',');
         if ($this->check->status === 'approved') {
-            return $m->subject('Your ID check is done')
+            return $m->subject('Your ID Check Is Done')
                 ->line('Thanks, we’ve checked your ID. You can now withdraw your winnings.')
                 ->action('Withdraw Winnings', $site.'/account/wallet#withdraw')
                 ->salutation('The Gimme Gimme team');
         }
 
-        return $m->subject('We need another look at your ID')
+        return $m->subject('We Need Another Look At Your ID')
             ->line('We couldn’t complete your ID check with the documents you sent.')
-            ->line('Why: '.e((string) $this->check->note))
+            ->line('Why: '.(string) $this->check->note)
             ->line('Please send new documents from your wallet page.')
             ->action('Send Documents', $site.'/account/wallet#withdraw')
             ->salutation('The Gimme Gimme team');

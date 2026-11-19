@@ -23,11 +23,12 @@ class PostalEntryEntered extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $site = rtrim((string) config('app.frontend_url'), '/');
-        $n = implode(', ', array_map(fn ($t) => '#'.$t, $this->tickets));
+        $n = count($this->tickets);
 
-        return (new MailMessage)->subject('Your free entry is in: '.$this->competition->title)
+        return (new MailMessage)->subject('Your Free Entry Is In: '.$this->competition->title)
             ->greeting('Hi '.$notifiable->first_name.',')
-            ->line('We’ve received your postal entry for **'.e($this->competition->title).'** and entered it. Your ticket: '.$n.'.')
+            ->line('We’ve received your postal entry and entered it.')
+            ->markdown('notifications::email', ['blocks' => [['tickets', (string) $this->competition->title, $n.' free '.($n === 1 ? 'ticket' : 'tickets').' · by post', array_map('intval', $this->tickets)]]])
             ->line($this->competition->isInstant() ? 'Your ticket has been checked for an instant prize: see your tickets for the result.' : 'Good luck in the draw.')
             ->action('See Your Tickets', $site.'/account/tickets')
             ->salutation('The Gimme Gimme team');
