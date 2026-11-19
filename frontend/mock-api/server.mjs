@@ -141,7 +141,7 @@ function price(lines, u, promoCode) {
   for (const l of lines || []) {
     const c = byId.get(l.competitionId);
     if (!c) { problems.push("A competition in your basket isn't available any more."); continue; }
-    const base = { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, unitPence: c.pricePence, minQuantity: 1, bonusQuantity: 0, source: null, gimmeBoxId: null };
+    const base = { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, unitPence: c.pricePence, minQuantity: 1, bonusQuantity: 0, source: null, gimmeBoxId: null, notice: null };
     const offers = c.bundles ?? [];
     const nextUp = (paid, tickets) => { const n = offers.filter((o) => o.paid >= paid && o.tickets > tickets).sort((a, b) => a.tickets - b.tickets)[0]; return n ? { bundleId: n.id, label: n.label, tickets: n.tickets, freeQuantity: n.free, extraPence: (n.paid - paid) * c.pricePence } : null; };
     if (l.bundleId) {
@@ -185,7 +185,7 @@ function packBox(budget, mode, seed) {
     const paid = (b ? b.paid : 0) + singles, free = b ? b.free : 0, bonus = Math.floor((paid + free) * 0.1);
     const linePence = paid * c.pricePence;
     spent += linePence;
-    return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, soldPercent: c.soldPercent, unitPence: c.pricePence, bundleId: b?.id ?? null, bundleLabel: b?.label ?? null, singles, paidQuantity: paid, freeQuantity: free, bonusQuantity: bonus, tickets: paid + free + bonus, linePence };
+    return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, soldPercent: c.soldPercent, unitPence: c.pricePence, bundleId: b?.id ?? null, bundleLabel: b?.label ?? null, singles, paidQuantity: paid, freeQuantity: free, bonusQuantity: bonus, tickets: paid + free + bonus, linePence, notice: null };
   });
   // Spend what's left on single tickets of the cheapest draw.
   const cheap = [...lines].sort((a, b) => a.unitPence - b.unitPence)[0];

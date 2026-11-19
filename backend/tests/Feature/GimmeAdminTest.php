@@ -40,18 +40,19 @@ class GimmeAdminTest extends TestCase
         Livewire::test(SiteSettings::class)->fillForm(['gimme_box_chips' => '500,abc'])->call('save')->assertHasFormErrors(['gimme_box_chips']);
     }
 
-    public function test_a_draw_can_be_left_out_of_boxes_and_its_margin_preview_mentions_the_bonus(): void
+    public function test_a_draw_can_be_left_out_of_boxes_and_its_margin_preview_shows_promo_tickets_against_the_cap(): void
     {
         Setting::put('feature_gimme_box', '1');
         \Illuminate\Support\Facades\Storage::fake('public');
         \Illuminate\Support\Facades\Storage::disk('public')->put('competitions/x.webp', 'img');
         $c = $this->competition('draw', ['prize_cost_pence' => 10000, 'image' => 'competitions/x.webp']);
         $this->signInAdmin();
-        Livewire::test(EditCompetition::class, ['record' => $c->id])->assertSee('Gimme Box bonus tickets issued so far: 0')->assertSee('box bonus')
-            ->fillForm(['gimme_box_enabled' => false, 'gimme_box_weight' => '0.5'])->call('save')->assertHasNoFormErrors();
+        Livewire::test(EditCompetition::class, ['record' => $c->id])->assertSee('Promo tickets: 0 of cap '.number_format(intdiv($c->max_tickets * 5, 100)))->assertSee('whole cap given away')
+            ->fillForm(['gimme_box_enabled' => false, 'gimme_box_weight' => '0.5', 'promo_ticket_cap_pct' => '2.5'])->call('save')->assertHasNoFormErrors();
         $c->refresh();
         $this->assertFalse($c->gimme_box_enabled);
         $this->assertEquals(0.5, (float) $c->gimme_box_weight);
+        $this->assertEquals(2.5, (float) $c->promo_ticket_cap_pct);
     }
 
     public function test_the_reports_open(): void

@@ -9,6 +9,7 @@ use App\Filament\Support\Money;
 use App\Models\BundleTier;
 use App\Models\Competition;
 use App\Services\Bundles;
+use App\Services\PromoCap;
 use App\Services\CompetitionState;
 use App\Services\Publishing;
 use App\Support\GameIds;
@@ -105,11 +106,14 @@ class CompetitionResource extends Resource
                     Money::input('prize_cost_pence', 'Prize cost (admin only)')->live(onBlur: true),
                     Text::make(fn (Get $get, ?Competition $record) => self::marginText($get, $record))->columnSpanFull(),
                 ]),
-            Section::make('Gimme Box')->description('Whether the lucky-dip Gimme Box may put this draw in a box. Prices stay the same as this page.')
+            Section::make('Gimme Box And Promo Tickets')->description('Whether the lucky-dip Gimme Box may put this draw in a box (prices stay the same as this page), and the most free promo tickets it can give.')
                 ->visible(fn (Get $get) => $get('type') === 'draw')->columns(2)->components([
                     Toggle::make('gimme_box_enabled')->label('Can go in a Gimme Box')->default(true),
                     TextInput::make('gimme_box_weight')->label('How often it’s picked')->numeric()->minValue(0)->maxValue(5)->step(0.1)->default(1)->required()
                         ->helperText('1 is normal, 2 twice as often, 0 never. Slow sellers get a boost on top (Settings → Gimme Box).'),
+                    TextInput::make('promo_ticket_cap_pct')->label('Promo ticket cap (% of tickets)')->numeric()->minValue(0)->maxValue(100)->step(0.5)->default(5)->required()
+                        ->live(onBlur: true)
+                        ->helperText('Referral voucher tickets and Gimme Box bonus tickets together never pass this. Free postal entries don’t count. Players never see the number.'),
                 ]),
             Section::make('Prizes')->columns(2)->components([
                 TextInput::make('end_prize_name')->label(fn (Get $get) => $get('type') === 'instant' ? 'End prize (optional draw at the close)' : 'Prize')
@@ -159,20 +163,22 @@ class CompetitionResource extends Resource
             .self::boxBonusText($get, $record, $price, $tickets, $cost, $tiers);
     }
 
-    /** Gimme Box bonus tickets: how many so far, and the worst case if every box adds its bonus on top of the biggest bundle. */
+    /**
+     * Promo tickets (referral vouchers + Gimme Box bonus, PromoCap): how many so far against the cap, and
+     * the worst case if the whole cap is given away on top of the worst bundle mix.
+     */
     private static function boxBonusText(Get $get, ?Competition $record, int $price, int $tickets, ?int $cost, array $tiers): string
     {
-        $issued = $record ? (int) \App\Models\OrderLine::query()->where('competition_id', $record->id)
-            ->whereHas('order', fn ($q) => $q->where('status', 'paid'))->sum('bonus_quantity') : 0;
-        $text = ' · Gimme Box bonus tickets issued so far: '.number_format($issued);
-        $pct = \App\Services\Settings::bounded('gimme_box_bonus_pct', 0, 100);
-        if (! \App\Services\Settings::gimmeBoxOn() || ! $get('gimme_box_enabled') || $pct === 0) {
+        $pct = max(0.0, min(100.0, (float) ($get('promo_ticket_cap_pct') ?? 5)));
+        $cap = (int) floor($tickets * $pct / 100);
+        $used = $record ? PromoCap::used($record) : 0;
+        $text = ' · Promo tickets: '.number_format($used).' of cap '.number_format($cap);
+        if ($cap === 0 || $tickets <= $cap) {
             return $text;
         }
-        $withBonus = array_map(fn ($t) => ['paid' => $t['paid'], 'free' => $t['free'] + intdiv(($t['paid'] + $t['free']) * $pct, 100)], $tiers ?: [['paid' => 1, 'free' => 0]]);
-        $b = Bundles::margin($price, $tickets, $cost, $withBonus);
+        $b = Bundles::margin($price, $tickets - $cap, $cost, $tiers);
 
-        return $text.' · Worst case with the '.$pct.'% box bonus: '.Money::show($b['worstRevenuePence'])
+        return $text.' · Worst case with the whole cap given away: '.Money::show($b['worstRevenuePence'])
             .($b['worstProfitPence'] === null ? '' : ', profit '.Money::show($b['worstProfitPence']).($b['worstProfitPence'] < 0 ? ' ⚠ LOSS' : ''));
     }
 

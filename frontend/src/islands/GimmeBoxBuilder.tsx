@@ -193,6 +193,7 @@ export default function GimmeBoxBuilder({ chipsPence, minPence, maxPence, bonusP
                 <div className="gbx-line-txt">
                   <a href={`/competitions/${l.slug}`}>{l.title}</a>
                   <span className="hint">{l.tickets.toLocaleString("en-GB")} tickets{l.bundleLabel ? ` · ${l.bundleLabel}` : ""}{l.bonusQuantity > 0 ? ` · +${l.bonusQuantity} bonus` : ""} · {l.soldPercent}% sold</span>
+                  {l.notice && <span className="hint" style={{ color: "#FFF23A" }}>{l.notice}</span>}
                 </div>
                 <b>{formatMoney(l.linePence)}</b>
               </div>

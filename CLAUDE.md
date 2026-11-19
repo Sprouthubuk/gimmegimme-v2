@@ -54,6 +54,9 @@ Read before every task. If a request conflicts with this, stop and ask.
   rewards come only from `App\Services\Referrals` on the friend's first real-money order; card and
   device fingerprints are stored as hashes only, never a card number. Vouchers become £0 orders through
   `Orders::issueFree`, so their tickets come from Verity like any other.
+- Promo ticket cap: voucher tickets + Gimme Box bonus tickets per draw never pass `promo_ticket_cap_pct`
+  (default 5%), counted and checked only in `App\Services\PromoCap`, with the competition row locked
+  (checkout, voucher redeem). Postal entries are never capped or counted. Players see a neutral notice, never the numbers.
 - Never invent winners, reviews or trust figures. Free postal route always visible.
 - All dates shown in UK time (`frontend/src/lib/time.ts`).
 

@@ -88,3 +88,11 @@ All green, `astro check` 0 errors / 0 warnings, build clean. Nothing was publish
 10. A and B each see a 10-ticket voucher. A: Choose A Draw → pick → Use. The order page shows the 10 tickets. Try again: refused.
 11. Same browser for both players → B's referral is "Blocked (same device)" in Admin → Marketing → Referrals. Three friends from one network → the third goes to "Needs review": approve with a reason.
 12. Switch both features off again before hand-over unless you mean to launch them.
+
+### 19 Nov (follow-up) — promo ticket cap
+- New per-draw setting `promo_ticket_cap_pct` (default 5%, Admin → competition → Gimme Box And Promo Tickets). Referral voucher tickets and Gimme Box bonus tickets are counted together (`PromoCap`: paid orders plus unpaid ones still in their 15-minute hold).
+- At the cap: the voucher picker leaves the draw out and redeem refuses it (`voucher_draw`, the existing neutral message); the box packer and the basket add no more bonus but still sell paid tickets, with the line notice "Bonus tickets for this draw have all been given out." Checkout and redeem lock the competition row, so two buyers can't both take the last of the cap.
+- Postal entries are not capped or counted (still 1 ticket per envelope).
+- Margin preview: "Promo tickets: N of cap M", and the worst case if the whole cap is given away (replaces the bonus-% worst case).
+- `PromoCapTest` (6): cap maths and what counts, voucher picker and redeem, box bonus stops at the cap while paid tickets sell, two boxes packed before either is paid, postal unaffected, no cap or count in any response. Backend 184 → 190.
+- Needs Liam: the cap is set per draw, so the five drafts got 5% from the migration default. Lowering it after promo tickets were given doesn't take any back; it only stops more.

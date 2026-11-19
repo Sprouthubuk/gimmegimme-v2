@@ -41,7 +41,7 @@ final class GimmeBoxes
             }
             $lines = array_map(fn ($l) => [
                 'competition_id' => $l['competition']->id, 'bundle_tier_id' => $l['bundle']['id'] ?? null, 'bundle_label' => $l['bundle']['label'] ?? null,
-                'singles' => $l['singles'], 'paid' => $l['paid'], 'free' => $l['free'], 'bonus' => $l['bonus'], 'line_pence' => $l['linePence'],
+                'singles' => $l['singles'], 'paid' => $l['paid'], 'free' => $l['free'], 'bonus' => $l['bonus'], 'line_pence' => $l['linePence'], 'notice' => $l['notice'] ?? null,
             ], $packed['lines']);
 
             return GimmeBox::query()->create([
