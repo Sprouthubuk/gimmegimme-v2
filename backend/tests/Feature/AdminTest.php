@@ -290,9 +290,12 @@ class AdminTest extends TestCase
         config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 2]);
         Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('The email was not sent');
 
-        \Illuminate\Support\Facades\Mail::fake();
+        \Illuminate\Support\Facades\Notification::fake();
         Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('Sent');
         $this->assertSame(1, AdminAction::query()->where('action', 'email.test_sent')->count());
+        // It's the branded email, not plain text.
+        \Illuminate\Support\Facades\Notification::assertSentOnDemand(\App\Notifications\TestEmail::class,
+            fn ($n, $channels, $notifiable) => $notifiable->routes['mail'] === 'me@example.com');
     }
 
     public function test_the_resend_api_mailer_is_installed(): void
