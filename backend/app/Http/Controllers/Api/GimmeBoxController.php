@@ -55,7 +55,7 @@ class GimmeBoxController extends Controller
                 'soldPercent' => $state->soldPercent($c), 'unitPence' => $c->price_pence,
                 'bundleId' => $l['bundle_tier_id'], 'bundleLabel' => $l['bundle_label'], 'singles' => $l['singles'],
                 'paidQuantity' => $l['paid'], 'freeQuantity' => $l['free'], 'bonusQuantity' => $l['bonus'],
-                'tickets' => $l['paid'] + $l['free'] + $l['bonus'], 'linePence' => $l['line_pence'],
+                'tickets' => $l['paid'] + $l['free'] + $l['bonus'], 'linePence' => $l['line_pence'], 'notice' => $l['notice'] ?? null,
             ];
             if ($l['bundle_tier_id']) {
                 $basket[] = ['competitionId' => $c->id, 'quantity' => 0, 'bundleId' => $l['bundle_tier_id'], 'boxId' => $box->id];

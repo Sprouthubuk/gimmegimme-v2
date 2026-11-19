@@ -101,12 +101,18 @@ final class Pricing
                 $singlesSubtotal += $line;
                 $count += $qty;
             }
-            if (! $closed && isset($boxIds[$id]) && ($bonus = $this->boxBonus($boxes->get($boxIds[$id]), $c, $bundleIds[$id] ?? null, $singles[$id] ?? 0, max(0, $room - ($singles[$id] ?? 0))))) {
-                // On the bundle line if there is one, otherwise the single tickets.
-                $k = array_key_last($out);
-                if (isset($bundleIds[$id]) && isset($singles[$id])) {
-                    $k--;
-                }
+            $wanted = ! $closed && isset($boxIds[$id]) ? $this->boxBonus($boxes->get($boxIds[$id]), $c, $bundleIds[$id] ?? null, $singles[$id] ?? 0, max(0, $room - ($singles[$id] ?? 0))) : 0;
+            // The draw's promo ticket cap (PromoCap): paid tickets are still sold, the bonus stops.
+            $bonus = $wanted > 0 ? min($wanted, PromoCap::room($c)) : 0;
+            // On the bundle line if there is one, otherwise the single tickets.
+            $k = array_key_last($out);
+            if (isset($bundleIds[$id]) && isset($singles[$id])) {
+                $k--;
+            }
+            if ($wanted > $bonus) {
+                $out[$k]['notice'] = PromoCap::FULL_MESSAGE;
+            }
+            if ($bonus > 0) {
                 $out[$k]['quantity'] += $bonus;
                 $out[$k]['bonusQuantity'] = $bonus;
                 $out[$k]['source'] = 'gimme_box';
@@ -163,7 +169,7 @@ final class Pricing
         return [
             'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, ...$c->pictureFields(), 'type' => $c->type,
             'quantity' => $tickets, ...$bundle, 'bonusQuantity' => 0, 'source' => null, 'gimmeBoxId' => null, 'unitPence' => $c->price_pence, 'linePence' => $linePence,
-            'minQuantity' => (int) ($c->min_tickets ?: 1), 'problem' => $problem,
+            'minQuantity' => (int) ($c->min_tickets ?: 1), 'problem' => $problem, 'notice' => null,
         ];
     }
 

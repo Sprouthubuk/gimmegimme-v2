@@ -190,6 +190,8 @@ export interface GimmeBox {
     competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null;
     soldPercent: number; unitPence: Pence; bundleId: number | null; bundleLabel: string | null; singles: number;
     paidQuantity: number; freeQuantity: number; bonusQuantity: number; tickets: number; linePence: Pence;
+    /** Neutral note when the draw's promo ticket cap stops its bonus (never a number). */
+    notice: string | null;
   }[];
   /** What to put in the basket. */
   basketLines: { competitionId: string; quantity: number; bundleId?: number; boxId: string }[];
@@ -253,6 +255,8 @@ export interface PricedLine {
   source: "gimme_box" | null;
   gimmeBoxId: string | null;
   problem: string | null;
+  /** Neutral note that doesn't stop checkout, e.g. a Gimme Box bonus the draw's promo cap no longer allows. */
+  notice: string | null;
   /** The next bundle up, for "Upgrade to … for +£X". */
   upgrade: { bundleId: number; label: string; tickets: number; freeQuantity: number; extraPence: Pence } | null;
 }

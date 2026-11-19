@@ -76,6 +76,7 @@ export default function BasketView({ signedIn, gimmeBox = false }: { signedIn: b
                   <span className="d ny" style={{ fontSize: 22 }}>{formatMoney(pl.linePence)}</span>
                 </div>
                 {pl.problem && <div className="err" role="alert">{pl.problem}</div>}
+                {!pl.problem && pl.notice && <div className="hint" style={{ color: "#FFF23A" }} data-testid="line-notice">{pl.notice}</div>}
               </div>
             </div>
             {pl.upgrade && (

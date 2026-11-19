@@ -106,7 +106,11 @@ final class GimmeBoxPacker
             $bonus = intdiv($tickets * $pct, 100);
             // Never past what's left, nor past the competition's biggest-bundle share.
             $bonus = max(0, min($bonus, $l['room'] - $tickets, max(0, Bundles::shareLimit($c) - $tickets)));
-            $out[] = ['competition' => $c, 'bundle' => $l['bundle'], 'singles' => $l['singles'], 'paid' => $l['paid'], 'free' => $l['free'], 'bonus' => $bonus, 'linePence' => $l['linePence']];
+            // The draw's promo ticket cap: once reached, the box still sells paid tickets but adds no bonus.
+            $capped = $bonus > PromoCap::room($c);
+            $bonus = min($bonus, PromoCap::room($c));
+            $out[] = ['competition' => $c, 'bundle' => $l['bundle'], 'singles' => $l['singles'], 'paid' => $l['paid'], 'free' => $l['free'], 'bonus' => $bonus, 'linePence' => $l['linePence'],
+                'notice' => $capped ? PromoCap::FULL_MESSAGE : null];
         }
 
         return ['lines' => $out, 'totalPence' => $budget - $left, 'unusedPence' => $left];

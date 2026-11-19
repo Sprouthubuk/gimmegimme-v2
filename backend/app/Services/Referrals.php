@@ -227,6 +227,8 @@ final class Referrals
     public function redeem(Voucher $voucher, User $user, Competition $c): Order
     {
         return DB::transaction(function () use ($voucher, $user, $c) {
+            // The competition row is locked so two redeems can't both take the last of the promo cap.
+            $c = Competition::query()->lockForUpdate()->findOrFail($c->id);
             $v = Voucher::query()->lockForUpdate()->findOrFail($voucher->id);
             if ($v->user_id !== $user->id || $v->status !== 'available' || $v->expires_at->isPast()) {
                 throw new RefusedException('This voucher can no longer be used.', 'voucher_unavailable');
@@ -242,12 +244,12 @@ final class Referrals
         });
     }
 
-    /** Live draws a voucher can go into: on sale, room for its tickets, and within the biggest-bundle share. */
+    /** Live draws a voucher can go into: on sale, room for its tickets, within the biggest-bundle share and the draw's promo ticket cap. */
     public function drawsFor(Voucher $v, User $user): array
     {
         return Competition::query()->published()->where('type', 'draw')->orderBy('closes_at')->get()
             ->filter(fn (Competition $c) => $this->state->status($c) === 'live' && $this->state->canBuy($c, $user->ownerRef()) >= $v->tickets
-                && $v->tickets <= Bundles::shareLimit($c))
+                && $v->tickets <= Bundles::shareLimit($c) && PromoCap::room($c) >= $v->tickets)
             ->values()->all();
     }
 

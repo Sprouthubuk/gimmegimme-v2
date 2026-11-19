@@ -30,6 +30,7 @@ class Competition extends Model
             'featured' => 'boolean',
             'bundles_enabled' => 'boolean',
             'gimme_box_enabled' => 'boolean',
+            'promo_ticket_cap_pct' => 'decimal:2',
             'opens_at' => 'datetime',
             'closes_at' => 'datetime',
             'published_at' => 'datetime',

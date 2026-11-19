@@ -131,6 +131,13 @@ they are. While a line still holds what the box packed (same bundle, at least it
 isn't released or paid, the server adds the box's bonus: the `PricedLine` then has `bonusQuantity` > 0
 (inside `quantity`), `source: "gimme_box"` and `gimmeBoxId`. Order lines record the same.
 
+**Promo ticket cap.** Each draw has `promo_ticket_cap_pct` (admin, default 5%): referral voucher tickets
+and Gimme Box bonus tickets together never pass that share of its tickets (paid orders and unpaid ones
+still in their hold are counted; postal entries and bundle free tickets never are). Once reached, a box
+line and a `PricedLine` carry `bonusQuantity: 0` and `notice: "Bonus tickets for this draw have all been
+given out."` (paid tickets still sell), and the voucher draw picker leaves the draw out. No response
+carries the cap or the count. Every `PricedLine` and box line has `notice` (null when there's nothing to say).
+
 ## Refer a Friend
 
 Off unless an admin switches it on (`site.referrals` is then `{ rewardType: "tickets"\|"credit", rewardTickets,
@@ -140,7 +147,7 @@ rewardCreditPence, minPurchasePence }`). While off every route below is `404`.
 | --- | --- | --- |
 | GET | `/api/referrals/{code}` | `{ code, firstName }` of the referrer, for the join page; `404` for an unknown or closed account's code |
 | GET | `/api/me/referrals` | `MyReferrals`: `{ code, link, stats: { invited, qualified, rewards, leftThisMonth, cap }, rewardType, rewardTickets, rewardCreditPence, minPurchasePence, vouchers: Voucher[], friends: { name, status, joinedAt }[] }` |
-| GET | `/api/me/vouchers/{id}/draws` | `{ data: CompetitionSummary[] }`: live draws the voucher can go into (% sold only) |
+| GET | `/api/me/vouchers/{id}/draws` | `{ data: CompetitionSummary[] }`: live draws the voucher can go into (% sold only); a draw whose promo ticket cap can't take the voucher is left out |
 | POST | `/api/me/vouchers/{id}/redeem` | `{ competitionId }` → `201 { order: { number, status } }`: a £0 order, tickets from Verity. `422` (`voucher_unavailable`, `voucher_draw`) or a play-check refusal |
 
 A referral qualifies on the friend's first paid ticket order if its real money (card + deposit +
