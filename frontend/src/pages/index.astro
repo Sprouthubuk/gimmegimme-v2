@@ -81,14 +81,9 @@ const winnersLoop = loopOf(winners, 8);
     </div></section>
   )}
 
-  {site.gimmeBox?.available && (
-    <section id="gimme-box" class="sec"><div class="wrap split" style="align-items:center">
-      <div class="stack g12">
-        <h2 class="h2 gg-reveal sh">Gimme <span class="np">Box</span></h2>
-        <p class="p">Can't choose? Set a budget and we'll pack a box of live draw tickets for you{site.gimmeBox.bonusPct > 0 ? <>, with <b class="ny">{site.gimmeBox.bonusPct}% bonus tickets</b> free</> : null}.</p>
-        <a class="tap" href="/gimme-box" style="font-weight:800">How the Gimme Box works →</a>
-      </div>
-      <GimmeBoxBuilder client:visible compact chipsPence={site.gimmeBox.chipsPence} minPence={site.gimmeBox.minPence} maxPence={site.gimmeBox.maxPence} bonusPct={site.gimmeBox.bonusPct} />
+  {site.gimmeBox && (
+    <section id="gimme-box" class="sec"><div class="wrap">
+      <GimmeBoxBuilder client:visible available={site.gimmeBox.available} chipsPence={site.gimmeBox.chipsPence} minPence={site.gimmeBox.minPence} maxPence={site.gimmeBox.maxPence} bonusPct={site.gimmeBox.bonusPct} />
     </div></section>
   )}
 
