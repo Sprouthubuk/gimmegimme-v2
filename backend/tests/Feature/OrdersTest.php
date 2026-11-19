@@ -44,7 +44,7 @@ class OrdersTest extends TestCase
         $this->assertSame(0, $order->card_pence);
         $line = $order->lines()->first();
         $this->assertCount(10, $line->tickets);
-        $this->assertSame(10, EntryGroup::query()->where('host_ref', 'order:'.$order->id)->value('quantity'));
+        $this->assertSame(10, EntryGroup::query()->where('host_ref', 'order:'.$order->id.':'.$line->id)->value('quantity'));
         $this->assertSame(750, $this->wallet()->total($u));
     }
 

@@ -27,15 +27,17 @@ final class FakeGateway implements PaymentGateway
             return null;
         }
 
-        return new GatewayAnswer($jobReference, $j['number'], $j['amount'], 'GBP', $j['status'], $j['status'] === 'paid' ? $j['cardType'] : null);
+        return new GatewayAnswer($jobReference, $j['number'], $j['amount'], 'GBP', $j['status'], $j['status'] === 'paid' ? $j['cardType'] : null,
+            $j['status'] === 'paid' ? ($j['cardToken'] ?? null) : null);
     }
 
     /** Test helper: what the player did on the payment page. */
-    public function settle(string $jobReference, string $status, string $cardType = 'debit', ?int $amount = null): void
+    public function settle(string $jobReference, string $status, string $cardType = 'debit', ?int $amount = null, ?string $cardToken = null): void
     {
         $j = Cache::get('fakepay:'.$jobReference) ?? throw new \RuntimeException('No such fake payment job');
         $j['status'] = $status;
         $j['cardType'] = $cardType;
+        $j['cardToken'] = $cardToken;
         if ($amount !== null) {
             $j['amount'] = $amount;
         }

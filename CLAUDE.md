@@ -44,6 +44,16 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Players never see ticket counts (total, sold, left, max entries, odds): only `soldPercent` (rounded
   down; 100 only when sold out), "Almost gone!" from 90% and "Sold Out". No public response may carry
   a count (`BundlesTest::test_no_public_response_gives_away_how_many_tickets_there_are`). Admin sees all.
+- No "max", "sold" or "left" ticket count anywhere a player buys: competition pages, cards, basket,
+  checkout, the Gimme Box and the voucher draw picker show % sold only (owner, 19 Nov 2026). Entry lists
+  and the fair-play record stay public as they are (don't gate them or touch Verity), and Terms 4.3 stays.
+- Gimme Box (lucky dip, live draws only) and Refer a Friend are each behind a setting (`feature_gimme_box`,
+  `feature_referrals`, Admin → Settings), off by default; never switch them on in a migration or seeder.
+  A box is packed and priced only by `GimmeBoxPacker` at the competition page prices, never over budget;
+  its bonus tickets are added by `Pricing` only while the basket line still matches the box. Referral
+  rewards come only from `App\Services\Referrals` on the friend's first real-money order; card and
+  device fingerprints are stored as hashes only, never a card number. Vouchers become £0 orders through
+  `Orders::issueFree`, so their tickets come from Verity like any other.
 - Never invent winners, reviews or trust figures. Free postal route always visible.
 - All dates shown in UK time (`frontend/src/lib/time.ts`).
 

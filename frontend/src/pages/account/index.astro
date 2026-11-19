@@ -8,7 +8,7 @@ const { me, api, site } = Astro.locals;
 const m = me!;
 const { data: groups } = await api.get<{ data: TicketGroup[] }>("/api/me/tickets?tab=active&limit=3");
 const tag: Record<string, [string, string]> = { to_play: ["tag-y", "To play"], in_draw: ["tag-c", "In draw"], won: ["tag-p", "Won"], no_win: ["tag-w", "Played"], drawn: ["tag-w", "Drawn"] };
-const menu = [["My Tickets", "/account/tickets", "ticket"], ["Wallet", "/account/wallet", "wallet"], ["Safer Play", "/account/safer-play", "shield"], ["Settings", "/account/settings", "settings"], ["Help & FAQs", "/faq", "help"], ["Contact Us", "/contact", "mail"]];
+const menu = [["My Tickets", "/account/tickets", "ticket"], ["Wallet", "/account/wallet", "wallet"], ...(site.referrals ? [["Refer A Friend", "/account/refer", "gift"]] : []), ["Safer Play", "/account/safer-play", "shield"], ["Settings", "/account/settings", "settings"], ["Help & FAQs", "/faq", "help"], ["Contact Us", "/contact", "mail"]];
 ---
 <Layout title="My Account" active="account" noindex>
   <AccountShell active="account" title={`Hi ${m.firstName}`} eyebrow="Your Account" back={false}>

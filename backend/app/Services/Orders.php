@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\RefusedException;
 use App\Models\Competition;
+use App\Models\GimmeBox;
 use App\Models\Order;
 use App\Models\PromoCode;
 use App\Models\User;
@@ -76,7 +77,11 @@ final class Orders
             ]);
             foreach ($priced['lines'] as $l) {
                 $order->lines()->create(['competition_id' => $l['competitionId'], 'quantity' => $l['quantity'], 'unit_pence' => $l['unitPence'], 'line_pence' => $l['linePence'],
-                    'bundle_tier_id' => $l['bundleId'], 'bundle_label' => $l['bundleLabel'], 'paid_quantity' => $l['paidQuantity'], 'free_quantity' => $l['freeQuantity']]);
+                    'bundle_tier_id' => $l['bundleId'], 'bundle_label' => $l['bundleLabel'], 'paid_quantity' => $l['paidQuantity'], 'free_quantity' => $l['freeQuantity'],
+                    'bonus_quantity' => $l['bonusQuantity'], 'source' => $l['source'], 'gimme_box_id' => $l['gimmeBoxId']]);
+                if ($l['gimmeBoxId']) {
+                    GimmeBox::query()->whereKey($l['gimmeBoxId'])->update(['status' => 'ordered', 'order_id' => $order->id]);
+                }
             }
             $this->wallet->spendForOrder($order, $walletPart, $total);
             if ($cardPart === 0) {
@@ -91,6 +96,23 @@ final class Orders
         }
 
         return $this->result($order->refresh());
+    }
+
+    /**
+     * Free tickets (a referral voucher): a £0 order paid at once, so the tickets are issued by Verity in
+     * the same way as any other order and the player sees them in My Tickets.
+     */
+    public function issueFree(User $user, Competition $c, int $tickets, string $source): Order
+    {
+        $order = Order::query()->create([
+            'number' => Order::newNumber('GG'), 'user_id' => $user->id, 'order_type' => 'tickets', 'status' => 'created',
+            'total_pence' => 0, 'card_pence' => 0, 'request_id' => $source.'-'.bin2hex(random_bytes(8)),
+        ]);
+        $order->lines()->create(['competition_id' => $c->id, 'quantity' => $tickets, 'unit_pence' => $c->price_pence, 'line_pence' => 0,
+            'paid_quantity' => 0, 'free_quantity' => $tickets, 'source' => $source]);
+        $this->markPaid($order, null);
+
+        return $order->refresh();
     }
 
     /** A wallet top up by card. */
@@ -136,7 +158,7 @@ final class Orders
 
                 return $order;
             }
-            DB::transaction(fn () => $this->markPaid(Order::query()->lockForUpdate()->findOrFail($order->id), $answer->cardType));
+            DB::transaction(fn () => $this->markPaid(Order::query()->lockForUpdate()->findOrFail($order->id), $answer->cardType, $answer->cardToken));
 
             return $order->refresh();
         }
@@ -171,7 +193,7 @@ final class Orders
     }
 
     /** Mark paid and fulfil. Inside a transaction, with the order locked. A late payment on a closed order still counts. */
-    private function markPaid(Order $order, ?string $cardType): void
+    private function markPaid(Order $order, ?string $cardType, ?string $cardToken = null): void
     {
         if ($order->status === 'paid') {
             return;
@@ -186,7 +208,8 @@ final class Orders
                 $this->fulfilment->flag($order, 'Card paid after the order had closed, and the wallet no longer covers its wallet part.');
             }
         }
-        $order->forceFill(['status' => 'paid', 'paid_at' => now(), 'card_type' => $cardType])->save();
+        $order->forceFill(['status' => 'paid', 'paid_at' => now(), 'card_type' => $cardType,
+            'card_hash' => $cardToken ? hash_hmac('sha256', $cardToken, (string) config('app.key')) : null])->save();
         if ($order->promo_code) {
             PromoCode::query()->where('code', $order->promo_code)->increment('uses');
         }
@@ -194,6 +217,8 @@ final class Orders
             $this->wallet->credit($order->user_id, 'deposit', $order->total_pence, 'Top up · Card', 'order:'.$order->id.':deposit', $order->id);
         } else {
             $this->fulfilment->fulfil($order);
+            GimmeBox::query()->where('order_id', $order->id)->update(['status' => 'paid']);
+            app(Referrals::class)->orderPaid($order);
         }
         if ($wasClosed) {
             $this->fulfilment->flag($order, 'Paid after the order had closed.');

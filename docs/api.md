@@ -28,7 +28,7 @@ against it; the Laravel feature tests must cover the same behaviour.
 
 | Method | Path | Returns |
 | --- | --- | --- |
-| GET | `/api/site` | `SiteInfo` (cached 30s by Astro). `metaPixelId` is the Pixel ID set in the admin, or null; the site loads the Pixel only after the visitor accepts marketing cookies |
+| GET | `/api/site` | `SiteInfo` (cached 30s by Astro). `metaPixelId` is the Pixel ID set in the admin, or null; the site loads the Pixel only after the visitor accepts marketing cookies. `gimmeBox` and `referrals` are null while those features are off (both start off; see below) |
 | GET | `/api/health` | `{ status: "ok"\|"failing", checks: { database, scheduler } }`, `200` or `503` (for an uptime monitor; scheduler = ran in the last 5 minutes) |
 | GET | `/api/competitions?type=instant\|draw` | `{ data: CompetitionSummary[] }` (live and sold out, featured first, then closing soonest). `opensAt` is when a scheduled competition opens; `soldPercent` is rounded down (100 only when sold out); `featuredBundle` is a live draw's Our Pick bundle or null. **No ticket counts** (total, sold or left) are ever returned |
 | GET | `/api/competitions/{slug}` | `CompetitionDetail`; `heldByMe` for the signed-in player; `bundles` = the bundles on sale now (only ones that still fit) |
@@ -111,11 +111,50 @@ Return addresses given to Cashflows: success `/order/{n}` (deposits: `/account/w
 which calls `/return` server-side), failed `/payment/failed?order={n}`, cancelled
 `/payment/cancelled?order={n}`.
 
+## Gimme Box (lucky dip, live draws only)
+
+Off unless an admin switches it on (`site.gimmeBox` is then `{ available, chipsPence, minPence, maxPence, bonusPct }`;
+`available` is false when fewer than two draws can go in a box). While off every route below is `404`.
+
+| Method | Path | Body → Returns |
+| --- | --- | --- |
+| POST | `/api/gimme-box` | `{ budgetPence, mode: "surprise"\|"big"\|"most", replaces?: boxId }` → `201 GimmeBox`. Budget in whole pounds within min/max (`422` otherwise). `replaces` releases an earlier box. Works signed out. Rate limited (`GIMME_BOX_RATE_PER_MINUTE`, 20) |
+| POST | `/api/gimme-box/{id}/added` | — → `GimmeBox` (hold restarts); `410 { code: "gimme_box_gone" }` once released or paid |
+
+A `GimmeBox` is `{ id, mode, budgetPence, totalPence, unusedPence, tickets, bonusTickets, expiresAt, lines, basketLines }`.
+`totalPence` ≤ budget, and `unusedPence` is always less than one ticket of the cheapest draw in the box.
+Each line has the player's own counts only (`paidQuantity`, `freeQuantity`, `bonusQuantity`, `tickets`,
+`singles`, `bundleId`, `bundleLabel`, `linePence`, `unitPence`) and the draw's `soldPercent`: never a
+ticket count of a draw. Prices are the competition page prices. A box holds its tickets for
+`gimme_box_hold_minutes` (10). `basketLines` are `BasketLine`s with `boxId`: put them in the basket as
+they are. While a line still holds what the box packed (same bundle, at least its singles) and the box
+isn't released or paid, the server adds the box's bonus: the `PricedLine` then has `bonusQuantity` > 0
+(inside `quantity`), `source: "gimme_box"` and `gimmeBoxId`. Order lines record the same.
+
+## Refer a Friend
+
+Off unless an admin switches it on (`site.referrals` is then `{ rewardType: "tickets"\|"credit", rewardTickets,
+rewardCreditPence, minPurchasePence }`). While off every route below is `404`.
+
+| Method | Path | Body → Returns |
+| --- | --- | --- |
+| GET | `/api/referrals/{code}` | `{ code, firstName }` of the referrer, for the join page; `404` for an unknown or closed account's code |
+| GET | `/api/me/referrals` | `MyReferrals`: `{ code, link, stats: { invited, qualified, rewards, leftThisMonth, cap }, rewardType, rewardTickets, rewardCreditPence, minPurchasePence, vouchers: Voucher[], friends: { name, status, joinedAt }[] }` |
+| GET | `/api/me/vouchers/{id}/draws` | `{ data: CompetitionSummary[] }`: live draws the voucher can go into (% sold only) |
+| POST | `/api/me/vouchers/{id}/redeem` | `{ competitionId }` → `201 { order: { number, status } }`: a £0 order, tickets from Verity. `422` (`voucher_unavailable`, `voucher_draw`) or a play-check refusal |
+
+A referral qualifies on the friend's first paid ticket order if its real money (card + deposit +
+winnings; never bonus, vouchers or postal entries) is at least `minPurchasePence`. Then fraud checks
+(same card hash, device, sign-up IP, address or email pattern: blocked), the review flag (many friends
+from one IP or device), and the referrer's monthly cap (over it, only the friend is rewarded). A
+refund within `referral_clawback_days` takes back unused rewards. `/r/{code}` on the site sets a
+30-day first-party cookie and goes to `/join?ref={code}`.
+
 ## Account (signed in)
 
 | Method | Path | Body → Returns |
 | --- | --- | --- |
-| POST | `/api/auth/register` | `{ firstName, lastName, email, password, dateOfBirth, marketingOptIn }` → `Me` (signed in, email unverified); under 18 is `422` |
+| POST | `/api/auth/register` | `{ firstName, lastName, email, password, dateOfBirth, marketingOptIn, referralCode?, deviceId? }` → `Me` (signed in, email unverified); under 18 is `422`. `referralCode` links the friend to a referrer (now or never; an unknown code is ignored). `deviceId` is a random id the browser keeps; only its hash is stored, for the referral fraud checks |
 | POST | `/api/auth/login` | `{ email, password, remember }` → `Me`; throttled |
 | POST | `/api/auth/logout` | → `204` |
 | POST | `/api/auth/forgot-password` | `{ email }` → `204` always |

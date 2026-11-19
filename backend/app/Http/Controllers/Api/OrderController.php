@@ -107,8 +107,10 @@ class OrderController extends Controller
         return $r->validate([
             'lines' => ['required', 'array', 'min:1', 'max:'.Pricing::MAX_LINES],
             'lines.*.competitionId' => ['required', 'string', 'max:64'],
-            'lines.*.quantity' => ['required_without:lines.*.bundleId', 'nullable', 'integer', 'min:1', 'max:100000'],
+            // A bundle line's quantity is ignored (the site sends 0); single tickets need at least one.
+            'lines.*.quantity' => ['required_without:lines.*.bundleId', 'nullable', 'integer', 'min:0', 'max:100000'],
             'lines.*.bundleId' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'lines.*.boxId' => ['sometimes', 'nullable', 'string', 'max:40', 'regex:/^[a-z0-9]+$/'],
             'promoCode' => ['sometimes', 'nullable', 'string', 'max:32'],
         ]);
     }

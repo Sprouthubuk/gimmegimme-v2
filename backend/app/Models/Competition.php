@@ -29,6 +29,7 @@ class Competition extends Model
             'tags' => 'array',
             'featured' => 'boolean',
             'bundles_enabled' => 'boolean',
+            'gimme_box_enabled' => 'boolean',
             'opens_at' => 'datetime',
             'closes_at' => 'datetime',
             'published_at' => 'datetime',

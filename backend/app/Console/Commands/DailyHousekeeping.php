@@ -29,7 +29,9 @@ class DailyHousekeeping extends Command
             ->distinct()->pluck('user_id')->each(function ($id) use ($wallet, &$expired) {
                 $expired += $wallet->expireBonus($id);
             });
-        $this->info("limits applied {$applied}, bonus expired {$expired}p");
+        $vouchers = app(\App\Services\Referrals::class)->expireVouchers();
+        app(\App\Services\GimmeBoxes::class)->expire();
+        $this->info("limits applied {$applied}, bonus expired {$expired}p, vouchers expired {$vouchers}");
 
         return self::SUCCESS;
     }

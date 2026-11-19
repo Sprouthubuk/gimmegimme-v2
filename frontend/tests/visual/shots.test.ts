@@ -10,14 +10,14 @@ import { startSite, type Site } from "../e2e/harness";
 
 const OUT = process.env.SHOTS_DIR ?? "/tmp/gg-shots";
 const VIEWPORTS = { phone: { width: 390, height: 844 }, small: { width: 320, height: 640 }, tablet: { width: 820, height: 1180 }, desktop: { width: 1440, height: 900 } } as const;
-const PUBLIC = ["/", "/competitions", "/competitions?type=instant", "/competitions/bush-bucks-jungle-trial", "/competitions/lush-snow-fairy-wonderland", "/instant-winners", "/winners", "/entry-lists", "/competitions/bush-bucks-jungle-trial/winning-numbers", "/entry-lists/bush-bucks-jungle-trial", "/how-it-works", "/faq", "/contact", "/free-entry", "/legal/terms", "/menu", "/join", "/login", "/forgot-password", "/basket", "/demo/balloon_pop", "/payment/failed", "/verify-email?status=verified", "/nope-404"];
-const MEMBER = ["/account", "/account/tickets", "/account/wallet", "/account/safer-play", "/account/settings", "/checkout"];
+const PUBLIC = ["/", "/competitions", "/competitions?type=instant", "/competitions/bush-bucks-jungle-trial", "/competitions/lush-snow-fairy-wonderland", "/instant-winners", "/winners", "/entry-lists", "/competitions/bush-bucks-jungle-trial/winning-numbers", "/entry-lists/bush-bucks-jungle-trial", "/how-it-works", "/faq", "/contact", "/free-entry", "/legal/terms", "/menu", "/join", "/login", "/forgot-password", "/basket", "/gimme-box", "/demo/balloon_pop", "/payment/failed", "/verify-email?status=verified", "/nope-404"];
+const MEMBER = ["/account", "/account/tickets", "/account/wallet", "/account/safer-play", "/account/settings", "/account/refer", "/checkout"];
 
 let site: Site;
 let browser: PW;
 const problems: string[] = [];
 beforeAll(async () => {
-  site = await startSite("laravel");
+  site = await startSite("laravel", { features: true });
   browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome", args: ["--no-sandbox"] });
   fs.mkdirSync(OUT, { recursive: true });
 }, 180000);
@@ -54,7 +54,7 @@ async function check(ctx: BrowserContext, vp: string, p: string, expectStatus = 
     const smallTapNames = smallTapEls.slice(0, 6).map((e) => `${e.tagName.toLowerCase()}${e.className ? "." + String(e.className).split(" ")[0] : ""}"${(e.textContent ?? "").trim().slice(0, 18)}"(${Math.round(e.getBoundingClientRect().height)})`);
     const smallInputs = [...document.querySelectorAll("input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]), select, textarea")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 2 && r.height > 2 && parseFloat(getComputedStyle(e).fontSize) < 16; }).length;
     // Words run together in a heading ("MyTickets"): a space lost between a word and a styled word.
-    const joined = [...document.querySelectorAll("h1, h2, h3, .btn")].map((e) => (e as HTMLElement).innerText.trim()).filter((t) => /[a-z][A-Z]/.test(t.replace(/BeGambleAware|GamCare|GamStop|McD\w+/g, "")));
+    const joined = [...document.querySelectorAll("h1, h2, h3, .btn")].map((e) => (e as HTMLElement).innerText.trim()).filter((t) => /[a-z][A-Z]/.test(t.replace(/BeGambleAware|GamCare|GamStop|WhatsApp|McD\w+/g, "")));
     return { overflow: document.documentElement.scrollWidth > w + 1, wide, broken, smallTaps, smallTapNames, smallInputs, joined };
   });
   if (layout.overflow) errs.push(`scrolls sideways (${layout.wide.join(", ")})`);

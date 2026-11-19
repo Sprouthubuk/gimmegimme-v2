@@ -12,6 +12,8 @@ final class GatewayAnswer
         public readonly ?string $currency,
         public readonly string $status,          // paid | failed | cancelled | expired | pending
         public readonly ?string $cardType = null, // credit | debit | null
+        // The gateway's card token or fingerprint, when it gives one. Only ever stored hashed (Order::card_hash).
+        public readonly ?string $cardToken = null,
     ) {}
 
     /**

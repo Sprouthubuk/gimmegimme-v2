@@ -12,10 +12,12 @@ use App\Models\User;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
 use App\Services\Fulfilment;
+use App\Services\GimmeBoxPacker;
 use App\Services\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -55,6 +57,20 @@ class PublicController extends Controller
             'socials' => ['instagram' => Setting::get('instagram_url'), 'facebook' => Setting::get('facebook_url')],
             'supportEmail' => Setting::get('support_email'),
             'metaPixelId' => preg_match('/^\d{10,20}$/', (string) Setting::get('meta_pixel_id')) ? Setting::get('meta_pixel_id') : null,
+            // Switched-off features are null, so nothing of them shows anywhere.
+            'gimmeBox' => Settings::gimmeBoxOn() ? [
+                'available' => Cache::remember('gimme-box:available', 30, fn () => count(app(GimmeBoxPacker::class)->eligible('surprise')) >= 2),
+                'chipsPence' => Settings::gimmeBoxChips(),
+                'minPence' => Settings::bounded('gimme_box_min_pence', 100, 100000),
+                'maxPence' => max(Settings::bounded('gimme_box_min_pence', 100, 100000), Settings::bounded('gimme_box_max_pence', 100, 100000)),
+                'bonusPct' => Settings::bounded('gimme_box_bonus_pct', 0, 100),
+            ] : null,
+            'referrals' => Settings::referralsOn() ? [
+                'rewardType' => Setting::get('referral_reward_type') === 'credit' ? 'credit' : 'tickets',
+                'rewardTickets' => Settings::bounded('referral_reward_tickets', 1, 1000),
+                'rewardCreditPence' => Settings::bounded('referral_reward_credit_pence', 1, 100000),
+                'minPurchasePence' => Settings::bounded('referral_min_purchase_pence', 0, 100000),
+            ] : null,
         ]);
     }
 

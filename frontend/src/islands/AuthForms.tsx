@@ -32,7 +32,21 @@ function Password({ id, value, onChange, autoComplete, invalid }: { id: string; 
   );
 }
 
-export function JoinForm({ next }: { next: string | null }) {
+/** A random id kept in this browser (first-party, never shared), sent at sign-up for the referral fraud checks. Only its hash is stored. */
+function deviceId(): string | null {
+  try {
+    let id = localStorage.getItem("gg-device");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("gg-device", id);
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+export function JoinForm({ next, referralCode = null }: { next: string | null; referralCode?: string | null }) {
   const [f, setF] = useState({ firstName: "", lastName: "", email: "", password: "", day: "", month: "", year: "", marketing: false });
   const [errors, setErrors] = useState<Errors>({});
   const [general, setGeneral] = useState<string | null>(null);
@@ -44,7 +58,7 @@ export function JoinForm({ next }: { next: string | null }) {
     setBusy(true); setErrors({}); setGeneral(null);
     const dob = `${f.year.padStart(4, "0")}-${f.month.padStart(2, "0")}-${f.day.padStart(2, "0")}`;
     try {
-      await api("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing } });
+      await api("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing, deviceId: deviceId(), ...(referralCode ? { referralCode } : {}) } });
       track("CompleteRegistration");
       window.location.assign(`/verify-email?next=${encodeURIComponent(safeNext(next, "/competitions"))}`);
     } catch (err) {

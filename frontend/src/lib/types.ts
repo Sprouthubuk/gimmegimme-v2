@@ -89,6 +89,10 @@ export interface SiteInfo {
   supportEmail: string | null;
   /** Meta Pixel ID from the admin; null when none is set (then nothing from Meta ever loads). */
   metaPixelId: string | null;
+  /** Gimme Box (lucky dip): null while the feature is off. `available` is false when fewer than two draws can go in. */
+  gimmeBox: { available: boolean; chipsPence: Pence[]; minPence: Pence; maxPence: Pence; bonusPct: number } | null;
+  /** Refer a Friend: null while the feature is off. */
+  referrals: { rewardType: "tickets" | "credit"; rewardTickets: number; rewardCreditPence: Pence; minPurchasePence: Pence } | null;
 }
 
 export interface WalletBalances {
@@ -164,6 +168,53 @@ export interface BasketLine {
   quantity: number;
   /** A "Buy X Get Y Free" bundle (live draws). The server works out its price and tickets. */
   bundleId?: number | null;
+  /** Set when the line came from a Gimme Box: the server adds the box's bonus tickets while the line still matches it. */
+  boxId?: string | null;
+}
+
+export type GimmeBoxMode = "surprise" | "big" | "most";
+
+/** A box the server packed and priced. Only the player's own tickets and each draw's % sold: never a ticket count of a draw. */
+export interface GimmeBox {
+  id: string;
+  mode: GimmeBoxMode;
+  budgetPence: Pence;
+  totalPence: Pence;
+  /** Budget not spent: always less than one ticket of the cheapest draw in the box. */
+  unusedPence: Pence;
+  tickets: number;
+  bonusTickets: number;
+  /** The box's tickets are held until then. */
+  expiresAt: string;
+  lines: {
+    competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null;
+    soldPercent: number; unitPence: Pence; bundleId: number | null; bundleLabel: string | null; singles: number;
+    paidQuantity: number; freeQuantity: number; bonusQuantity: number; tickets: number; linePence: Pence;
+  }[];
+  /** What to put in the basket. */
+  basketLines: { competitionId: string; quantity: number; bundleId?: number; boxId: string }[];
+}
+
+export type ReferralStatus = "pending" | "missed" | "blocked" | "review" | "rewarded" | "capped" | "rejected" | "clawed_back";
+
+export interface Voucher {
+  id: number;
+  tickets: number;
+  status: "available" | "redeemed" | "expired" | "clawed_back";
+  expiresAt: string;
+  competition: { title: string; slug: string } | null;
+}
+
+export interface MyReferrals {
+  code: string;
+  link: string;
+  stats: { invited: number; qualified: number; rewards: number; leftThisMonth: number; cap: number };
+  rewardType: "tickets" | "credit";
+  rewardTickets: number;
+  rewardCreditPence: Pence;
+  minPurchasePence: Pence;
+  vouchers: Voucher[];
+  friends: { name: string; status: ReferralStatus; joinedAt: string }[];
 }
 
 /** A bundle a live draw is selling now. Only what fits is sent; nothing about the ticket pool. */
@@ -197,6 +248,10 @@ export interface PricedLine {
   unitPence: Pence;
   linePence: Pence;
   minQuantity: number;
+  /** Extra tickets from a Gimme Box, already inside `quantity`. */
+  bonusQuantity: number;
+  source: "gimme_box" | null;
+  gimmeBoxId: string | null;
   problem: string | null;
   /** The next bundle up, for "Upgrade to … for +£X". */
   upgrade: { bundleId: number; label: string; tickets: number; freeQuantity: number; extraPence: Pence } | null;

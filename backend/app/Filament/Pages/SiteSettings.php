@@ -8,7 +8,9 @@ use App\Models\Setting;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -37,13 +39,23 @@ class SiteSettings extends Page
     private const MONEY = ['min_deposit_pence' => 'Minimum top up', 'min_card_pence' => 'Minimum card payment', 'min_withdrawal_pence' => 'Minimum withdrawal',
         'max_top_up_pence' => 'Largest top up'];
 
-    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'meta_pixel_id'];
+    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'meta_pixel_id',
+        'gimme_box_chips', 'gimme_box_min_pence', 'gimme_box_max_pence', 'gimme_box_bonus_pct', 'gimme_box_max_sold_pct', 'gimme_box_slow_boost_pct',
+        'gimme_box_hold_minutes', 'gimme_box_share_of_sales_pct',
+        'referral_reward_type', 'referral_reward_tickets', 'referral_reward_credit_pence', 'referral_min_purchase_pence', 'referral_monthly_cap',
+        'referral_voucher_days', 'referral_clawback_days', 'referral_flag_after'];
+
+    /** On/off switches: shown as toggles, saved as 1/0. Both start off. */
+    private const FLAGS = ['feature_gimme_box', 'feature_referrals'];
 
     public function mount(): void
     {
         $data = [];
         foreach ([...array_keys(self::MONEY), ...self::TEXT] as $k) {
             $data[$k] = Setting::get($k);
+        }
+        foreach (self::FLAGS as $k) {
+            $data[$k] = Setting::bool($k);
         }
         $this->form->fill($data);
     }
@@ -62,6 +74,32 @@ class SiteSettings extends Page
                 TextInput::make('facebook_url')->url()->rule('starts_with:https://'),
                 TextInput::make('meta_pixel_id')->label('Meta Pixel ID')->regex('/^\d{10,20}$/')
                     ->helperText('Numbers only, from Meta Events Manager. Leave empty for no Pixel. It only loads for visitors who accept marketing cookies.'),
+            ]),
+            Section::make('Gimme Box')->description('Lucky-dip basket builder for live draws. Off until you switch it on; prices are always the competition page prices.')->columns(3)->collapsible()->components([
+                Toggle::make('feature_gimme_box')->label('Gimme Box on')->columnSpanFull()
+                    ->helperText('Shows the home page section, /gimme-box and the small links. It only appears when at least two live draws can go in a box.'),
+                TextInput::make('gimme_box_chips')->label('Budget buttons (pence, comma separated)')->regex('/^\d{3,6}(,\d{3,6}){0,5}$/')->required()->columnSpan(2),
+                TextInput::make('gimme_box_bonus_pct')->label('Bonus tickets (%)')->integer()->minValue(0)->maxValue(50)->required()
+                    ->helperText('Free extra tickets on every box, rounded down. Counts towards each draw’s bundle share limit.'),
+                Money::input('gimme_box_min_pence', 'Smallest budget')->required(),
+                Money::input('gimme_box_max_pence', 'Largest budget')->required(),
+                TextInput::make('gimme_box_hold_minutes')->label('Hold tickets for (minutes)')->integer()->minValue(1)->maxValue(30)->required(),
+                TextInput::make('gimme_box_max_sold_pct')->label('Leave out draws over (% sold)')->integer()->minValue(50)->maxValue(100)->required(),
+                TextInput::make('gimme_box_slow_boost_pct')->label('Slow-seller boost (%)')->integer()->minValue(100)->maxValue(400)->required()
+                    ->helperText('Draws selling slower than expected are this much more likely to be picked.'),
+                TextInput::make('gimme_box_share_of_sales_pct')->label('Report warning above (% of sales)')->integer()->minValue(1)->maxValue(100)->required()
+                    ->helperText('The Gimme Box report flags a draw where boxes are more than this share of its tickets.'),
+            ]),
+            Section::make('Refer A Friend')->description('Off until you switch it on. Load the draft terms first: php artisan gimme:legal-pages --drafts, then edit them in Pages.')->columns(3)->collapsible()->components([
+                Toggle::make('feature_referrals')->label('Refer a Friend on')->columnSpanFull(),
+                Select::make('referral_reward_type')->label('Reward')->options(['tickets' => 'Free tickets (voucher)', 'credit' => 'Bonus credit'])->required()->native(false),
+                TextInput::make('referral_reward_tickets')->label('Free tickets each')->integer()->minValue(1)->maxValue(100)->required(),
+                Money::input('referral_reward_credit_pence', 'Bonus credit each')->required(),
+                Money::input('referral_min_purchase_pence', 'Friend’s first order at least')->required(),
+                TextInput::make('referral_monthly_cap')->label('Referrer rewards a month')->integer()->minValue(0)->maxValue(100)->required(),
+                TextInput::make('referral_voucher_days')->label('Vouchers last (days)')->integer()->minValue(1)->maxValue(365)->required(),
+                TextInput::make('referral_clawback_days')->label('Take back on refund within (days)')->integer()->minValue(0)->maxValue(120)->required(),
+                TextInput::make('referral_flag_after')->label('Check by hand from (friends on one IP/device)')->integer()->minValue(2)->maxValue(50)->required(),
             ]),
         ]);
     }

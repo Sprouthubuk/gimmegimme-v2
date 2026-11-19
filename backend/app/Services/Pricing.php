@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\BundleTier;
 use App\Models\Competition;
+use App\Models\GimmeBox;
 use App\Models\PromoCode;
 use App\Models\User;
 
@@ -27,8 +28,12 @@ final class Pricing
         // Singles are merged per competition; a competition carries at most one bundle (the last one chosen).
         $singles = [];
         $bundleIds = [];
+        $boxIds = [];
         foreach (array_slice($lines, 0, self::MAX_LINES) as $l) {
             $id = (string) $l['competitionId'];
+            if (! empty($l['boxId'])) {
+                $boxIds[$id] = (string) $l['boxId'];
+            }
             if (! empty($l['bundleId'])) {
                 $bundleIds[$id] = (int) $l['bundleId'];
             } else {
@@ -36,6 +41,10 @@ final class Pricing
             }
         }
         $ids = array_values(array_unique([...array_keys($singles), ...array_keys($bundleIds)]));
+        // Gimme Boxes in the basket: their own holds don't count against them, and their bonus tickets apply
+        // while the basket still holds what the box packed (a released or paid box gives no bonus).
+        $boxes = $boxIds ? GimmeBox::query()->whereIn('id', array_unique($boxIds))->whereNotIn('status', ['released', 'paid'])->get()->keyBy('id') : collect();
+        $this->state->ignoreBoxes($boxes->keys()->all());
         $competitions = Competition::query()->with('bundleTiers')->whereIn('id', $ids)->get()->keyBy('id');
         $owner = $user?->ownerRef();
         $out = [];
@@ -92,6 +101,18 @@ final class Pricing
                 $singlesSubtotal += $line;
                 $count += $qty;
             }
+            if (! $closed && isset($boxIds[$id]) && ($bonus = $this->boxBonus($boxes->get($boxIds[$id]), $c, $bundleIds[$id] ?? null, $singles[$id] ?? 0, max(0, $room - ($singles[$id] ?? 0))))) {
+                // On the bundle line if there is one, otherwise the single tickets.
+                $k = array_key_last($out);
+                if (isset($bundleIds[$id]) && isset($singles[$id])) {
+                    $k--;
+                }
+                $out[$k]['quantity'] += $bonus;
+                $out[$k]['bonusQuantity'] = $bonus;
+                $out[$k]['source'] = 'gimme_box';
+                $out[$k]['gimmeBoxId'] = $boxIds[$id];
+                $count += $bonus;
+            }
         }
 
         $promo = null;
@@ -141,7 +162,7 @@ final class Pricing
     {
         return [
             'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, ...$c->pictureFields(), 'type' => $c->type,
-            'quantity' => $tickets, ...$bundle, 'unitPence' => $c->price_pence, 'linePence' => $linePence,
+            'quantity' => $tickets, ...$bundle, 'bonusQuantity' => 0, 'source' => null, 'gimmeBoxId' => null, 'unitPence' => $c->price_pence, 'linePence' => $linePence,
             'minQuantity' => (int) ($c->min_tickets ?: 1), 'problem' => $problem,
         ];
     }
@@ -158,5 +179,21 @@ final class Pricing
 
         return $next ? ['bundleId' => $next['tier']->id, 'label' => $next['label'], 'tickets' => $next['total'], 'freeQuantity' => $next['free'],
             'extraPence' => ($next['paid'] - $paidNow) * $c->price_pence] : null;
+    }
+
+    /**
+     * The free bonus tickets a Gimme Box adds to one competition: only while the basket still holds what
+     * the box packed there (the same bundle, at least its single tickets), capped by what's left and by
+     * the competition's biggest-bundle share.
+     */
+    private function boxBonus(?GimmeBox $box, Competition $c, ?int $bundleId, int $singles, int $room): int
+    {
+        $l = $box?->lineFor($c->id);
+        if (! $l || (int) ($l['bundle_tier_id'] ?? 0) !== (int) ($bundleId ?? 0) || $singles < (int) $l['singles']) {
+            return 0;
+        }
+        $tickets = (int) $l['paid'] + (int) $l['free'];
+
+        return max(0, min((int) $l['bonus'], $room, max(0, Bundles::shareLimit($c) - $tickets)));
     }
 }

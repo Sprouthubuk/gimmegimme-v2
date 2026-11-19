@@ -420,3 +420,11 @@ label:has(> .sw),label:has(.sw){min-height:44px;align-items:center}
 .buybar{bottom:68px;padding:8px 12px}
 .buybar .btn{min-height:48px;font-size:16px;gap:8px}
 @media (min-width:1024px){.buybar{display:none}}
+/* Gimme Box */
+.gb-stage{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;padding:0;color:inherit;cursor:default;min-height:44px}
+.gb-stage:enabled{cursor:pointer}
+.gb-art{filter:drop-shadow(0 0 22px rgba(255,45,170,.45))}
+.gb-shake{animation:gb-shake .5s ease-in-out infinite;transform-origin:50% 90%}
+.gb-shake .gb-lid{animation:gb-lid .5s ease-in-out infinite}
+@keyframes gb-shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg) translateY(-3px)}40%{transform:rotate(6deg)}60%{transform:rotate(-5deg) translateY(-2px)}80%{transform:rotate(4deg)}}
+@keyframes gb-lid{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
