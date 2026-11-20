@@ -61,6 +61,38 @@ class AdminTest extends TestCase
         }
     }
 
+    public function test_every_admin_screen_opens_with_demo_data(): void
+    {
+        $this->seed(\Database\Seeders\DemoSeeder::class);
+        Setting::put('feature_gimme_box', '1');
+        Setting::put('feature_referrals', '1');
+        $admin = $this->admin();
+        $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
+        $this->actingAs($admin->refresh());
+        Filament::setCurrentPanel('admin');
+        $opened = [];
+        foreach (Filament::getPanel('admin')->getPages() as $page) {
+            $url = $page::getUrl();
+            $this->get($url)->assertOk();
+            $opened[] = $url;
+        }
+        foreach (Filament::getPanel('admin')->getResources() as $resource) {
+            $pages = $resource::getPages();
+            $record = $resource::getEloquentQuery()->first();
+            foreach (array_keys($pages) as $name) {
+                $needsRecord = in_array($name, ['edit', 'view'], true);
+                if ($needsRecord && ! $record) {
+                    continue;
+                }
+                $url = $resource::getUrl($name, $needsRecord ? ['record' => $record] : []);
+                $res = $this->get($url);
+                $this->assertSame(200, $res->getStatusCode(), "{$url} answered {$res->getStatusCode()}");
+                $opened[] = $url;
+            }
+        }
+        $this->assertGreaterThan(20, count(array_unique($opened)));
+    }
+
     public function test_a_competition_made_in_the_admin_has_no_limit_per_person(): void
     {
         $this->signInAdmin();

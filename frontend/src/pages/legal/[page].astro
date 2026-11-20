@@ -27,5 +27,6 @@ const [first, ...rest] = title.split(" ");
   .legal h3 { font-size: 17px; color: #fff; margin: 18px 0 6px; }
   .legal a { color: #FF5CC0; }
   .legal ul, .legal ol { padding-left: 22px; }
-  .legal table { width: 100%; border-collapse: collapse; } .legal td, .legal th { border-top: 1px solid rgba(255,255,255,.08); padding: 8px; text-align: left; }
+  .legal table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; } .legal td, .legal th { border-top: 1px solid rgba(255,255,255,.08); padding: 8px; text-align: left; overflow-wrap: anywhere; min-width: 90px; }
+  .legal { overflow-wrap: break-word; }
 </style>

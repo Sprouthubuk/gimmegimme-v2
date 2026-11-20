@@ -69,7 +69,7 @@ describe("site-wide rules", () => {
   });
   it("members-only pages send visitors to log in and come back", async () => {
     const b = new Browser(site.origin);
-    for (const p of ["/account", "/account/wallet", "/account/tickets", "/account/safer-play", "/account/settings", "/checkout", "/order/GG-1234"]) {
+    for (const p of ["/account", "/account/wallet", "/account/tickets", "/account/safer-play", "/account/settings", "/checkout", "/order/GG-1234", "/payment/failed?order=GG-1234", "/payment/cancelled?order=GG-1234"]) {
       const res = await b.get(p);
       expect(res.status, p).toBe(302);
       expect(res.headers.get("location")).toBe(`/login?next=${encodeURIComponent(p)}`);

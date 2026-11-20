@@ -20,7 +20,7 @@ export default function PaymentReturn({ number, leftAs }: { number: string; left
   if (state === "checking" || state === "paid") return <div className="card empty"><span className="spin" /> Checking with the payment provider…</div>;
   return (
     <div className="card card-p stack g12" style={{ alignItems: "center", textAlign: "center" }} data-testid="payment-return">
-      <div className="h3">{leftAs === "cancelled" ? "Payment Cancelled" : "Payment Didn’t Go Through"}</div>
+      <h1 className="h3" style={{ margin: 0 }}>{leftAs === "cancelled" ? "Payment Cancelled" : "Payment Didn’t Go Through"}</h1>
       <p className="p">No money was taken by card and no tickets were issued. Anything taken from your wallet for this order has gone back, and your tickets are waiting in your basket.</p>
       {msg && <p className="hint">{msg}</p>}
       <div className="r2" style={{ width: "100%" }}><a className="btn btn-y" href="/basket">Try Again</a><a className="btn btn-o" href="/contact">Get Help</a></div>
