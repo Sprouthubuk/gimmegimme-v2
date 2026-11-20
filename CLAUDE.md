@@ -9,7 +9,9 @@ Read before every task. If a request conflicts with this, stop and ask.
   `cd frontend && npx astro check && npm run build && npm test && npm run test:fullstack && npm run test:visual`
   (the last saves screenshots of every page at four sizes to /tmp/gg-shots — look at the ones you changed — and
   runs `tests/visual/journey.test.ts`: a real phone browser joins, confirms the email, pays by card, plays, buys from
-  the wallet, tops up and recovers from a declined and a cancelled card, failing on any page or console error).
+  the wallet, tops up and recovers from a declined and a cancelled card, failing on any page or console error, and `tests/visual/mobile-audit.test.ts`: crawls every page at 390px and 320px,
+  signed out and in, and fails on errors, sideways scroll, taps under 40px, inputs under 16px or unlabelled, broken images or a
+  missing h1; findings and page weights go to /tmp/gg-audit).
 - `docs/api.md` + `frontend/src/lib/types.ts` are the contract. Change both together, and the mock
   API (`frontend/mock-api/server.mjs`) and the Laravel tests with them.
 

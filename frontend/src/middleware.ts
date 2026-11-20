@@ -40,7 +40,7 @@ const CSP = [
 ].join("; ");
 
 /** Pages that need a signed-in player. Anyone else is sent to log in and brought back. */
-const MEMBERS_ONLY = [/^\/account(\/|$)/, /^\/checkout$/, /^\/order\//];
+const MEMBERS_ONLY = [/^\/account(\/|$)/, /^\/checkout$/, /^\/order\//, /^\/payment\/(failed|cancelled)$/];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const setCookies: string[] = [];

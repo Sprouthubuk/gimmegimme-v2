@@ -52,6 +52,6 @@ const link = (k: string) => {
       <noscript><button class="btn btn-o" type="submit">Go</button></noscript>
     </form>
     <div class="scrollx gg-rise gg-d3" role="group" aria-label="Filter">{TYPES.map(([k, label, f]) => <a class={`chip ${k === t[0] ? "on" : ""}`} href={link(k)} aria-current={k === t[0] ? "true" : undefined}>{label} {all.filter(f).length}</a>)}</div>
-    {list.length ? <div class="grid-c gg-stagger">{list.map((c) => <CompCard c={c} />)}</div> : <div class="card empty">No competitions match that. <a href="/competitions">Show all</a></div>}
+    {list.length ? <div class="grid-c gg-stagger">{list.map((c) => <CompCard c={c} />)}</div> : <div class="card empty">No competitions match that. <a class="tap" href="/competitions">Show all</a></div>}
   </div></section>
 </Layout>
