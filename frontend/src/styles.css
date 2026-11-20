@@ -99,10 +99,11 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .cc .en b{color:#fff;font-weight:900;font-variant-numeric:tabular-nums}
 .cc .dt{width:7px;height:7px;border-radius:999px;background:#22E6FF;box-shadow:0 0 8px #22E6FF;flex-shrink:0}
 .cc .bar{margin-top:3px}
-.cc .sl{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:700;color:#8F849E}
+.cc .sl{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 6px;font-size:11px;font-weight:700;color:#8F849E}
+.cc .sl>span:first-child{white-space:nowrap}
 .cc .sl b{color:#fff;font-weight:900}
 .cc .sl .ag{color:#FF2DAA;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-.cc .sl .bb{color:#FFF23A;font-weight:900;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc .sl .bb{color:#FFF23A;font-weight:900;text-align:right;white-space:nowrap;margin-left:auto}
 .cc .go{margin-top:auto;height:44px;font-size:16px;letter-spacing:.02em;text-transform:uppercase;gap:6px}
 .cc .go .star{font-size:13px}
 @container (max-width:160px){.cc .st{font-size:9px;gap:4px;padding:6px 4px;letter-spacing:.02em}.cc .st svg{width:10px;height:10px}.cc .pp{font-size:22px}}
@@ -419,6 +420,8 @@ label:has(> .sw),label:has(.sw){min-height:44px;align-items:center}
 /* Fixed buy bar on phones, just above the bottom tab bar */
 .buybar{bottom:68px;padding:8px 12px}
 .buybar .btn{min-height:48px;font-size:16px;gap:8px}
+.buybar{transition:transform .25s ease,opacity .2s ease}
+.buybar-away{transform:translateY(120%);opacity:0;pointer-events:none}
 @media (min-width:1024px){.buybar{display:none}}
 /* Gimme Box */
 .gbx{display:grid;gap:22px;padding:18px;grid-template-columns:minmax(0,1fr)}

@@ -83,6 +83,15 @@ describe("basket", () => {
     localStorage.setItem("gg-basket-v1", "{not json");
     expect(readBasket()).toEqual([]);
   });
+  it("a 'buy now' card payment that fails puts its tickets in the basket, keeping what was already there", () => {
+    // Bug: "Enter Now" skips the basket, so after a declined card "Try Again" opened an empty basket.
+    addToBasket("other", 2);
+    setAside("GG-9", [{ competitionId: "x", quantity: 0, bundleId: 3 }]);
+    expect(readBasket()).toEqual([{ competitionId: "other", quantity: 2 }]);
+    expect(restoreAside("GG-9")).toBe(true);
+    expect(readBasket()).toEqual([{ competitionId: "other", quantity: 2 }, { competitionId: "x", quantity: 0, bundleId: 3 }]);
+  });
+
   it("a Gimme Box takes the place of the same kind of line for each draw and keeps its box id", () => {
     const box = "a".repeat(32);
     addToBasket("x", 3);

@@ -135,10 +135,17 @@ export default function OrderView({ number, initial }: { number: string; initial
       )}
 
       {draws.map((l) => (
-        <div key={`${l.competitionId}:${l.bundleLabel ?? ""}`} className="card card-cy card-p row g12 gg-rise gg-d3" data-testid="draw-line">
-          <img src={l.imageSmall} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover" }} />
-          <div style={{ flex: 1 }}><div className="d" style={{ fontSize: 20 }}>{l.title}</div>{l.bundleLabel && <span className="tag tag-y">{l.bundleLabel}</span>}<div className="hint">{lineMakeup(l)}{l.drawAt ? ` · live draw ${ukDateTime(l.drawAt)}` : ""}</div><div className="row wrapx g8" style={{ marginTop: 8 }}>{l.tickets.slice(0, 12).map((t) => <span key={t} className="tn">#{t}</span>)}{l.tickets.length > 12 && <span className="hint">+{l.tickets.length - 12} more</span>}</div></div>
-          <span className="tag tag-c">In The Draw</span>
+        <div key={`${l.competitionId}:${l.bundleLabel ?? ""}`} className="card card-cy card-p stack g12 gg-rise gg-d3" data-testid="draw-line">
+          {/* Picture and name on one row; the ticket numbers get the full width underneath (phones too). */}
+          <div className="row g12" style={{ alignItems: "center" }}>
+            <img src={l.imageSmall} alt="" width={64} height={64} style={{ width: 64, height: 64, borderRadius: 14, objectFit: "cover", flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="d" style={{ fontSize: 20, lineHeight: 1.1 }}>{l.title}</div>
+              <div className="row wrapx g8" style={{ marginTop: 6, alignItems: "center" }}>{l.bundleLabel && <span className="tag tag-y">{l.bundleLabel}</span>}<span className="tag tag-c">In The Draw</span></div>
+            </div>
+          </div>
+          <div className="hint">{lineMakeup(l)}{l.drawAt ? ` · live draw ${ukDateTime(l.drawAt)}` : ""}</div>
+          <div className="row wrapx g8">{l.tickets.slice(0, 12).map((t) => <span key={t} className="tn">#{t}</span>)}{l.tickets.length > 12 && <a className="hint tap" href="/account/tickets">+{l.tickets.length - 12} more in My Tickets</a>}</div>
         </div>
       ))}
 

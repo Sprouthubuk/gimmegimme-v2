@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
@@ -38,6 +39,7 @@ class AuthController extends Controller
             'marketingOptIn' => ['sometimes', 'boolean'],
             'referralCode' => ['sometimes', 'nullable', 'string', 'max:20'],
             'deviceId' => ['sometimes', 'nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/'],
+            'next' => ['sometimes', 'nullable', 'string', 'max:500'],
         ], [
             'email.unique' => "There's already an account with that email. Try logging in.",
             'dateOfBirth.before_or_equal' => 'You must be 18 or over to join.',
@@ -53,6 +55,11 @@ class AuthController extends Controller
         ])->save();
         // Refer a Friend: linked now or never. Device and IP are kept only as hashes, for the fraud checks.
         app(Referrals::class)->attach($u, $d['referralCode'] ?? null, $d['deviceId'] ?? null, $r->ip());
+        // Where they were going (e.g. the checkout for the tickets they picked): the confirmation link
+        // brings them back there, even when it's opened in another tab or browser.
+        if (($next = self::safeNext($d['next'] ?? null)) !== null) {
+            Cache::put('signup-next:'.$u->id, $next, now()->addDays(7));
+        }
         try {
             event(new Registered($u)); // sends the confirmation email
         } catch (\Throwable $e) {
@@ -135,7 +142,20 @@ class AuthController extends Controller
             $u->markEmailAsVerified();
         }
 
-        return redirect()->away(rtrim((string) config('app.frontend_url'), '/').'/verify-email?status=verified');
+        $next = self::safeNext(Cache::pull('signup-next:'.$u->id));
+
+        return redirect()->away(rtrim((string) config('app.frontend_url'), '/').'/verify-email?status=verified'.($next ? '&next='.rawurlencode($next) : ''));
+    }
+
+    /** A path on this site only, never another site, the API or the admin (the same rule as safeNext on the site). */
+    private static function safeNext(mixed $next): ?string
+    {
+        if (! is_string($next) || $next === '' || strlen($next) > 500 || ! str_starts_with($next, '/') || str_starts_with($next, '//')
+            || str_starts_with($next, '/\\') || preg_match('/[\x00-\x1f]/', $next) || preg_match('#^/(api|sanctum|admin)(/|$|\?)#', $next)) {
+            return null;
+        }
+
+        return $next;
     }
 
     public function password(Request $r): JsonResponse

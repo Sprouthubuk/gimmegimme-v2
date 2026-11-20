@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TicketPicker, { type PickerProps } from "../../src/islands/TicketPicker";
 import CheckoutView from "../../src/islands/CheckoutView";
 import { readBasket } from "../../src/lib/basket";
@@ -53,6 +53,20 @@ describe("ticket picker", () => {
     const href = screen.getByTestId("buy-now").getAttribute("href")!;
     expect(href).toBe("/join?next=" + encodeURIComponent("/checkout?buy=" + encodeURIComponent("c1:10")));
   });
+  it("the phone's sticky buy bar steps aside while the picker's own buttons are on screen", async () => {
+    let fire: (on: boolean) => void = () => {};
+    vi.stubGlobal("IntersectionObserver", class { constructor(cb: (e: { isIntersecting: boolean }[]) => void) { fire = (on) => cb([{ isIntersecting: on }]); } observe() {} disconnect() {} });
+    render(<TicketPicker {...base} />);
+    const bar = screen.getByTestId("buy-bar");
+    expect(bar.className).not.toContain("buybar-away");
+    act(() => fire(true));
+    expect(bar.className).toContain("buybar-away");
+    expect(bar.getAttribute("aria-hidden")).toBe("true");
+    act(() => fire(false));
+    expect(bar.className).not.toContain("buybar-away");
+    vi.unstubAllGlobals();
+  });
+
   it("adds to the basket", () => {
     render(<TicketPicker {...base} />);
     fireEvent.click(screen.getByRole("button", { name: "Add To Basket" }));
@@ -148,6 +162,21 @@ describe("checkout", () => {
     const co = calls.find((c) => c.url.endsWith("/api/checkout"))!.body;
     expect(co).toMatchObject({ lines: [{ competitionId: "c1", quantity: 10 }], payWith: "wallet", useWallet: true });
     expect(typeof co.requestId).toBe("string");
+  });
+
+  it("choosing the card when the wallet could pay it all pays by card, never 'Pay £0.00 By Card'", async () => {
+    const calls = stubApi(priced(100, true), () => ({ order: { number: "GG-11" }, next: "redirect", redirectUrl: "https://gateway-int.cashflows.com/y" }));
+    render(<CheckoutView buy="c1:10" walletPence={3005} minCardPence={100} />);
+    await screen.findByTestId("pay");
+    fireEvent.click(screen.getByText("Debit Or Credit Card"));
+    const btn = screen.getByTestId("pay");
+    expect(btn.textContent).toBe("Pay £1.00 By Card");
+    expect(screen.queryByRole("checkbox")).toBeNull(); // no "use my wallet first" when it isn't a split
+    fireEvent.click(btn);
+    await waitFor(() => expect(window.location.assign).toHaveBeenCalledWith("https://gateway-int.cashflows.com/y"));
+    expect(calls.find((c) => c.url.endsWith("/api/checkout"))!.body).toMatchObject({ payWith: "card", useWallet: false });
+    // A "buy now" keeps its tickets aside too, so a failed card can put them in the basket.
+    expect(localStorage.getItem("gg-basket-v1:aside:GG-11")).toContain('"add"');
   });
 
   it("splits wallet and card, and refuses a card part under the minimum", async () => {

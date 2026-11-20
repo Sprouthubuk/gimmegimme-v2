@@ -42,7 +42,10 @@ export default function CheckoutView({ buy, walletPence, minCardPence, minDeposi
   if (!priced) return <div className="card empty">{error ?? <><span className="spin" /> Getting your order ready…</>}</div>;
 
   const total = priced.totalPence;
-  const walletPart = pay === "wallet" ? total : useWallet ? Math.min(walletPence, total) : 0;
+  // "Use my wallet first" only splits a payment the wallet can't cover alone. Choosing the card when the
+  // wallet could pay it all means paying by card (never a "Pay £0.00 By Card" button).
+  const splitWallet = pay === "card" && useWallet && !priced.walletCovers && walletPence > 0;
+  const walletPart = pay === "wallet" ? total : splitWallet ? Math.min(walletPence, total) : 0;
   const cardPart = total - walletPart;
   const cardTooSmall = pay === "card" && cardPart > 0 && cardPart < minCardPence;
   const blocked = priced.problems.length > 0 || priced.lines.some((l) => l.problem);
@@ -52,9 +55,9 @@ export default function CheckoutView({ buy, walletPence, minCardPence, minDeposi
     setBusy(true);
     setError(null);
     try {
-      const res = await api<CheckoutResult>("/api/checkout", { json: { lines, payWith: pay, useWallet: pay === "wallet" || useWallet, promoCode: promoApplied, requestId: rid } });
+      const res = await api<CheckoutResult>("/api/checkout", { json: { lines, payWith: pay, useWallet: pay === "wallet" || splitWallet, promoCode: promoApplied, requestId: rid } });
       if (res.next === "redirect" && res.redirectUrl) {
-        if (!direct) setAside(res.order.number);
+        setAside(res.order.number, direct ?? undefined);
         window.location.assign(res.redirectUrl);
         return;
       }
@@ -95,7 +98,7 @@ export default function CheckoutView({ buy, walletPence, minCardPence, minDeposi
           <span style={{ flex: 1 }}><b className="d" style={{ fontSize: 18 }}>Debit Or Credit Card</b><span className="hint" style={{ display: "block" }}>On Cashflows’ secure payment page · from {formatMoney(minCardPence)}</span></span>
           <Svg name="card" />
         </label>
-        {pay === "card" && walletPence > 0 && (
+        {pay === "card" && walletPence > 0 && !priced.walletCovers && (
           <label className="row g12" style={{ padding: "6px 2px", cursor: "pointer" }}>
             <input type="checkbox" className="sw" checked={useWallet} onChange={(e) => setUseWallet(e.target.checked)} />
             <span style={{ fontWeight: 700, fontSize: 14 }}>Use my {formatMoney(Math.min(walletPence, total))} wallet balance first</span>
