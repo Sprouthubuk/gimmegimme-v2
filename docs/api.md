@@ -161,7 +161,7 @@ refund within `referral_clawback_days` takes back unused rewards. `/r/{code}` on
 
 | Method | Path | Body → Returns |
 | --- | --- | --- |
-| POST | `/api/auth/register` | `{ firstName, lastName, email, password, dateOfBirth, marketingOptIn, referralCode?, deviceId? }` → `Me` (signed in, email unverified); under 18 is `422`. `referralCode` links the friend to a referrer (now or never; an unknown code is ignored). `deviceId` is a random id the browser keeps; only its hash is stored, for the referral fraud checks |
+| POST | `/api/auth/register` | `{ firstName, lastName, email, password, dateOfBirth, marketingOptIn, referralCode?, deviceId?, next? }` → `Me` (signed in, email unverified); under 18 is `422`. `next` is a path on the site (e.g. the checkout for the tickets they picked): the confirmation link then redirects to `/verify-email?status=verified&next=…`, even in another browser; anything else is ignored. `referralCode` links the friend to a referrer (now or never; an unknown code is ignored). `deviceId` is a random id the browser keeps; only its hash is stored, for the referral fraud checks |
 | POST | `/api/auth/login` | `{ email, password, remember }` → `Me`; throttled |
 | POST | `/api/auth/logout` | → `204` |
 | POST | `/api/auth/forgot-password` | `{ email }` → `204` always |

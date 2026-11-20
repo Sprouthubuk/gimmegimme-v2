@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { addBundle, addToBasket } from "../lib/basket";
 import { formatCount, formatMoney, formatPence } from "../lib/money";
@@ -54,6 +54,17 @@ function BundleTitle({ b }: { b: Bundle }) {
 export default function TicketPicker(p: PickerProps) {
   const [bundles, setBundles] = useState<Bundle[]>(p.bundles ?? []);
   const [sold, setSold] = useState({ percent: p.soldPercent, out: p.soldOut });
+  // The phone's sticky buy bar hides while the picker's own total and buttons are on screen, so it never
+  // covers them (or shows the same button twice).
+  const actions = useRef<HTMLDivElement>(null);
+  const [actionsOnScreen, setActionsOnScreen] = useState(false);
+  useEffect(() => {
+    const el = actions.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setActionsOnScreen(e.isIntersecting), { rootMargin: "0px 0px -140px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const min = Math.max(1, p.minTickets ?? 1);
   const popular = p.popularPreset && p.presets.includes(p.popularPreset) ? p.popularPreset : null;
   const best = bundles.find((b) => b.ourPick) ?? null;
@@ -168,7 +179,7 @@ export default function TicketPicker(p: PickerProps) {
         )}
       </div>
 
-      <div className="row between wrapx g12" style={{ borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 14 }}>
+      <div ref={actions} className="row between wrapx g12" style={{ borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 14 }}>
         <div>
           <div className="eyebrow">To pay</div>
           <div className="d ny" style={{ fontSize: 38, lineHeight: 1 }} data-testid="total">{formatMoney(total)}</div>
@@ -198,8 +209,8 @@ export default function TicketPicker(p: PickerProps) {
       {added && <div className="notice notice-c gg-pop" role="status"><Svg name="check" size={18} stroke={2.6} /><span>Added {added} to your basket. <a href="/basket" style={{ color: "#22E6FF" }}>View basket</a> or keep browsing.</span></div>}
 
       {!blocked && (
-        <div className="buybar" data-testid="buy-bar">
-          <a className="btn btn-y btn-block gg-cta" href={buyHref}>{ticketWord(tickets)} · {formatMoney(total)} <Svg name="arrow" size={16} stroke={3} /> {verb}</a>
+        <div className={`buybar${actionsOnScreen ? " buybar-away" : ""}`} data-testid="buy-bar" aria-hidden={actionsOnScreen || undefined}>
+          <a className="btn btn-y btn-block gg-cta" href={buyHref} tabIndex={actionsOnScreen ? -1 : undefined}>{ticketWord(tickets)} · {formatMoney(total)} <Svg name="arrow" size={16} stroke={3} /> {verb}</a>
         </div>
       )}
     </div>

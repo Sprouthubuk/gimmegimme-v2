@@ -499,4 +499,35 @@ class ApiTest extends TestCase
         $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.50'])->withHeader('X-Forwarded-For', '198.51.100.77')->postJson('/api/contact', $msg)->assertNoContent();
         $this->assertSame(7, ContactMessage::query()->count());
     }
+
+    public function test_the_confirmation_link_takes_a_new_player_back_to_what_they_were_buying(): void
+    {
+        // Bug: "Enter Now" as a guest → join → confirm from the email (often another tab or browser)
+        // landed on a page with no way back to the tickets they'd picked.
+        Notification::fake();
+        $base = ['firstName' => 'Jo', 'lastName' => 'Bloggs', 'password' => 'correct-horse', 'dateOfBirth' => '1990-05-05'];
+        $this->postJson('/api/auth/register', $base + ['email' => 'jo@example.com', 'next' => '/checkout?buy=abc%3A10'])->assertSuccessful();
+        $u = User::query()->where('email', 'jo@example.com')->firstOrFail();
+        $url = null;
+        Notification::assertSentTo($u, VerifyEmail::class, function ($n) use ($u, &$url) {
+            $url = $n->toMail($u)->actionUrl;
+
+            return true;
+        });
+        auth()->forgetGuards();
+        $this->get($url)->assertRedirect(rtrim((string) config('app.frontend_url'), '/').'/verify-email?status=verified&next='.rawurlencode('/checkout?buy=abc%3A10'));
+        $this->assertTrue($u->refresh()->hasVerifiedEmail());
+
+        // Anything that isn't a path on our own site is ignored.
+        foreach (['//evil.example/x', 'https://evil.example', '/api/admin', "/x\nSet-Cookie: a"] as $i => $bad) {
+            $this->postJson('/api/auth/register', $base + ['email' => "bad{$i}@example.com", 'next' => $bad])->assertSuccessful();
+            $b = User::query()->where('email', "bad{$i}@example.com")->firstOrFail();
+            Notification::assertSentTo($b, VerifyEmail::class, function ($n) use ($b, &$url) {
+                $url = $n->toMail($b)->actionUrl;
+
+                return true;
+            });
+            $this->get($url)->assertRedirect(rtrim((string) config('app.frontend_url'), '/').'/verify-email?status=verified');
+        }
+    }
 }

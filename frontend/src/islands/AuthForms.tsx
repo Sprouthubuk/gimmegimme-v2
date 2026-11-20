@@ -58,7 +58,7 @@ export function JoinForm({ next, referralCode = null }: { next: string | null; r
     setBusy(true); setErrors({}); setGeneral(null);
     const dob = `${f.year.padStart(4, "0")}-${f.month.padStart(2, "0")}-${f.day.padStart(2, "0")}`;
     try {
-      await api("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing, deviceId: deviceId(), ...(referralCode ? { referralCode } : {}) } });
+      await api("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing, deviceId: deviceId(), next: safeNext(next, "/competitions"), ...(referralCode ? { referralCode } : {}) } });
       track("CompleteRegistration");
       window.location.assign(`/verify-email?next=${encodeURIComponent(safeNext(next, "/competitions"))}`);
     } catch (err) {

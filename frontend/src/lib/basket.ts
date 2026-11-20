@@ -97,10 +97,14 @@ export function clearBasket() {
   write([]);
 }
 
-/** Put the basket aside before going to pay by card; restored if the payment fails or is cancelled. */
-export function setAside(orderNumber: string) {
+/**
+ * Put the basket aside before going to pay by card; restored if the payment fails or is cancelled.
+ * A "buy now" passes its own lines instead: they're added to the basket on restore (the basket
+ * itself was never emptied), so "Try Again" has the tickets ready.
+ */
+export function setAside(orderNumber: string, buyNow?: BasketLine[]) {
   try {
-    localStorage.setItem(`${KEY}:aside:${orderNumber}`, JSON.stringify(readBasket()));
+    localStorage.setItem(`${KEY}:aside:${orderNumber}`, JSON.stringify(buyNow ? { add: buyNow } : readBasket()));
   } catch {
     /* ignore */
   }
@@ -111,7 +115,15 @@ export function restoreAside(orderNumber: string): boolean {
     const raw = localStorage.getItem(`${KEY}:aside:${orderNumber}`);
     if (!raw) return false;
     localStorage.removeItem(`${KEY}:aside:${orderNumber}`);
-    write(JSON.parse(raw));
+    const saved = JSON.parse(raw);
+    if (Array.isArray(saved)) {
+      write(saved);
+    } else if (saved && Array.isArray(saved.add)) {
+      const add = (saved.add as BasketLine[]).filter((l) => l && typeof l.competitionId === "string");
+      const kind = (l: BasketLine) => `${l.competitionId}:${l.bundleId ? `b${l.bundleId}` : "s"}`;
+      const taken = new Set(add.map(kind));
+      write([...readBasket().filter((l) => !taken.has(kind(l))), ...add]);
+    }
     return true;
   } catch {
     return false;

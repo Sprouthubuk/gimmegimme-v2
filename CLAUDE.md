@@ -7,7 +7,9 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Plan first for anything non-trivial. For a bug, write a failing test first.
 - Before every commit: `cd backend && php artisan test`, then
   `cd frontend && npx astro check && npm run build && npm test && npm run test:fullstack && npm run test:visual`
-  (the last saves screenshots of every page at four sizes to /tmp/gg-shots — look at the ones you changed).
+  (the last saves screenshots of every page at four sizes to /tmp/gg-shots — look at the ones you changed — and
+  runs `tests/visual/journey.test.ts`: a real phone browser joins, confirms the email, pays by card, plays, buys from
+  the wallet, tops up and recovers from a declined and a cancelled card, failing on any page or console error).
 - `docs/api.md` + `frontend/src/lib/types.ts` are the contract. Change both together, and the mock
   API (`frontend/mock-api/server.mjs`) and the Laravel tests with them.
 

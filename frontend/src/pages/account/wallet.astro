@@ -13,6 +13,8 @@ if (deposit && /^GD-[A-Z0-9]{4,16}$/.test(deposit)) {
   const order = await api.post<OrderView>(`/api/orders/${deposit}/return`).catch(() => null);
   deposit = order?.status === "paid" ? "paid" : order && ["failed", "cancelled", "expired"].includes(order.status) ? "failed" : "pending";
   m = (await api.maybe<Me>("/api/me")) ?? m;
+  // The header's balance reads the same, so it shows the new total too (not the one from before the top up).
+  Astro.locals.me = m;
 }
 const { data: tx } = await api.get<{ data: WalletTransaction[] }>("/api/me/wallet/transactions?limit=25");
 const BLOCK: Record<string, string> = { self_excluded: "Your account is self-excluded.", cool_off: "You're on a break.", on_hold: "Your account is on hold — please contact us.", staff: "Staff accounts can't top up.", email_unverified: "Confirm your email address first.", closed: "This account is closed.", under_18: "You must be 18 or over.", no_date_of_birth: "Add your date of birth in Settings first." };
