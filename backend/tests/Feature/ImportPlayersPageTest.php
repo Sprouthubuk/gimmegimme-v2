@@ -68,7 +68,7 @@ class ImportPlayersPageTest extends TestCase
         $page->assertActionVisible('import');
 
         // The import needs IMPORT typed, then brings the players and money across.
-        Livewire::test(ImportPlayers::class)->callAction('import', ['reason' => 'Switch-over', 'confirm' => 'nope'])->assertHasActionErrors(['confirm']);
+        Livewire::test(ImportPlayers::class)->assertSeeHtml("mountAction('import')")->callAction('import', ['reason' => 'Switch-over', 'confirm' => 'nope'])->assertHasActionErrors(['confirm']);
         $this->assertSame(0, User::query()->where('email', 'amy@example.com')->count());
         Livewire::test(ImportPlayers::class)->callAction('import', ['reason' => 'Switch-over', 'confirm' => 'IMPORT'])->assertHasNoActionErrors()
             ->assertSee('Import finished and the files were deleted from the server.');
@@ -95,13 +95,16 @@ class ImportPlayersPageTest extends TestCase
             ->callAction('check')
             ->assertActionHidden('import')
             ->assertSee('The check found problems');
+        Livewire::test(ImportPlayers::class)->assertDontSeeHtml("mountAction('import')")->assertSeeHtml("mountAction('remove')");
         $this->assertFalse(PlayerImportRun::current()->status()['ok']);
         $this->assertSame(0, User::query()->where('email', 'ben@example.com')->count());
     }
 
     public function test_the_import_is_refused_without_a_passing_check_of_the_same_files(): void
     {
-        Livewire::test(ImportPlayers::class)->assertActionHidden('import');
+        // Nothing uploaded yet: the page shows only the check button.
+        Livewire::test(ImportPlayers::class)->assertActionHidden('import')
+            ->assertSeeHtml("mountAction('check')")->assertDontSeeHtml("mountAction('import')")->assertDontSeeHtml("mountAction('remove')");
         $this->assertNull(PlayerImportRun::current());
     }
 

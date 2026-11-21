@@ -2,7 +2,7 @@
 @php($run = $this->run())
 <x-filament-panels::page>
     <x-filament::section heading="How It Works">
-        <ol style="margin:0;padding-left:20px;line-height:1.7">
+        <ol style="margin:0;padding-left:22px;line-height:1.7;list-style:decimal">
             <li>Close sales on the old site, then ask Lovable to run the two queries in <code>docs/lovable-import.md</code> and download <b>players.csv</b> and <b>balances.csv</b>.</li>
             <li>Upload both here and press <b>Check files</b>. Nothing is changed; any problem row is listed below.</li>
             <li>Take a database backup in Forge, then press <b>Import players</b>. When it finishes, the files are deleted from the server.</li>
@@ -13,9 +13,12 @@
     <x-filament::section heading="Upload">
         {{ $this->form }}
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">
-            {{ $this->checkAction }}
-            {{ $this->importAction }}
-            {{ $this->removeAction }}
+            {{-- Only the buttons that apply now: Import after a passing check, Delete once something is uploaded. --}}
+            @foreach ([$this->checkAction, $this->importAction, $this->removeAction] as $action)
+                @if ($action->isVisible())
+                    {{ $action }}
+                @endif
+            @endforeach
         </div>
     </x-filament::section>
 
