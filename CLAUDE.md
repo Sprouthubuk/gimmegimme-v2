@@ -75,6 +75,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Never write to `verity_*` tables or edit `vendor/sprouthub/verity-engine` (its fingerprints are checked).
 - Competition terms are fixed once published to Verity (`Competition::LOCKED_WHEN_PUBLISHED`).
 - Customer accounts are never deleted (model refuses); admin actions carry a reason and are logged.
+- Players from the old Lovable site come in only through `gimme:import-lovable` (Admin → Import Players runs it as
+  `ImportPlayersJob`): files on the private disk only, a passing check before the import, deleted afterwards.
 - Admin is Filament at `/admin` (`app/Filament`); admins and staff can't play.
 - Tests: `tests/Feature` (Verity runs for real on its local beacon; Cashflows is `FakeGateway`).
 - `DemoSeeder` is for laptops and tests only and refuses production.

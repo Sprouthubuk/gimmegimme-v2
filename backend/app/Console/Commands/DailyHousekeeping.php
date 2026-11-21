@@ -31,7 +31,9 @@ class DailyHousekeeping extends Command
             });
         $vouchers = app(\App\Services\Referrals::class)->expireVouchers();
         app(\App\Services\GimmeBoxes::class)->expire();
-        $this->info("limits applied {$applied}, bonus expired {$expired}p, vouchers expired {$vouchers}");
+        // Player spreadsheets uploaded for an import never stay on the server longer than a day.
+        $imports = \App\Support\PlayerImportRun::removeOld();
+        $this->info("limits applied {$applied}, bonus expired {$expired}p, vouchers expired {$vouchers}, old imports removed {$imports}");
 
         return self::SUCCESS;
     }

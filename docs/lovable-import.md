@@ -8,6 +8,14 @@ and writes nothing.
 Existing passwords keep working: the bcrypt hash from the old sign-in system is carried across, so
 nobody has to reset. Safer-play settings carry over and only ever get stricter on a re-run.
 
+## The easy way: Admin → Import Players
+
+Upload `players.csv` and `balances.csv` in **Admin → Players & Money → Import Players**, press
+**Check files** (a dry run that writes nothing and lists any problem row), take a database backup, then
+press **Import players** (type IMPORT). Both run this same command in the background (queue worker), so a big
+file can't time out the page. The files sit on the private disk, are deleted after the import and are
+removed by daily housekeeping after a day at most. The command below does the same from a shell.
+
 ## Getting the files
 
 Ask Lovable to run these two queries on the live database and save each result as CSV (with a
