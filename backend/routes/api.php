@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AccountController;
+use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FakePayController;
 use App\Http\Controllers\Api\HealthController;
@@ -22,6 +23,12 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('winners/draws', [PublicController::class, 'drawWinners']);
     Route::get('entry-lists', [PublicController::class, 'entryLists']);
     Route::get('entry-lists/{slug}', [PublicController::class, 'entryList']);
+    // The old site's public record (read-only archive, gimme:import-archive).
+    Route::get('archive', [ArchiveController::class, 'index']);
+    Route::get('archive/winners', [ArchiveController::class, 'winners']);
+    Route::get('archive/{slug}', [ArchiveController::class, 'show']);
+    Route::get('archive/{slug}/instant-wins', [ArchiveController::class, 'instantWins']);
+    Route::get('archive/{slug}/entries', [ArchiveController::class, 'entries']);
     Route::get('pages/{slug}', [PublicController::class, 'page']);
     Route::post('contact', [PublicController::class, 'contact'])->middleware('throttle:contact');
     Route::post('basket/price', [OrderController::class, 'price']);

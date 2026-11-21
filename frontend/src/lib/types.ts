@@ -323,6 +323,30 @@ export interface DrawWinnerRow {
   verifyUrl: string | null;
 }
 
+/** A competition from the old site's archive (read-only; not a Verity record). */
+export interface ArchiveCompetitionSummary {
+  slug: string;
+  title: string;
+  type: "instant" | "draw";
+  drawAt: string | null;
+  image: string;
+  imageSmall: string;
+  imageSrcset: string | null;
+}
+
+/** A winner on the old site: the masked name it showed, and the ticket that won. */
+export interface ArchiveWinnerRow {
+  id: string;
+  name: string;
+  town: string | null;
+  prizeName: string;
+  valuePence: number;
+  ticketNumber: number | null;
+  at: string | null;
+  competitionTitle: string | null;
+  competitionSlug: string | null;
+}
+
 export interface EntryRow {
   ticket: number;
   name: string;

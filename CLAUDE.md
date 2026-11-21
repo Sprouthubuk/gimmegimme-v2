@@ -77,6 +77,9 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Customer accounts are never deleted (model refuses); admin actions carry a reason and are logged.
 - Players from the old Lovable site come in only through `gimme:import-lovable` (Admin → Import Players runs it as
   `ImportPlayersJob`): files on the private disk only, a passing check before the import, deleted afterwards.
+- The old site's public record (competitions, winners, entry lists) is a read-only archive at `/previous`
+  (`archive_*` tables, `gimme:import-archive` from `resources/archive/*.csv` on every deploy; docs/old-site-archive.md).
+  Masked names only; never a Verity record, never linked to `/verify`, never mixed into the live lists.
 - Admin is Filament at `/admin` (`app/Filament`); admins and staff can't play.
 - Tests: `tests/Feature` (Verity runs for real on its local beacon; Cashflows is `FakeGateway`).
 - `DemoSeeder` is for laptops and tests only and refuses production.
