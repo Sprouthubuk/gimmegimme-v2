@@ -219,7 +219,7 @@ function issue(u, order) {
 }
 function orderJson(o, u) {
   return {
-    number: o.number, status: o.status, needsAttention: false, totalPence: o.totalPence, cardPence: o.cardPence, walletPence: o.walletPence, paidAt: o.paidAt ?? null,
+    number: o.number, status: o.status, needsAttention: false, totalPence: o.totalPence, cardPence: o.cardPence, walletPence: o.walletPence, trackValuePence: Math.max(0, o.totalPence - (o.bonusPence ?? 0)), paidAt: o.paidAt ?? null,
     lines: o.lines.map((l) => { const c = byId.get(l.competitionId); return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, type: c.type, quantity: l.quantity, paidQuantity: l.paidQuantity ?? l.quantity, freeQuantity: l.freeQuantity ?? 0, bundleLabel: l.bundleLabel ?? null, tickets: l.tickets ?? [], drawAt: c.drawAt }; }),
     toPlay: o.status === "paid" ? u.tickets.filter((t) => t.order === o.number && !t.played && byId.get(t.competitionId).type === "instant").length : 0,
   };

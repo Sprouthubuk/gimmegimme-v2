@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Tracking\MetaEvents;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
 use App\Models\Order;
@@ -40,6 +41,7 @@ class OrderController extends Controller
             'requestId' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/'],
         ]);
         $res = $orders->checkout($r->user(), $d['lines'], $d['payWith'], (bool) ($d['useWallet'] ?? false), $d['promoCode'] ?? null, $d['requestId']);
+        app(MetaEvents::class)->remember($r, $r->user(), 'Purchase', $res['order']->number, $res['order']);
 
         return response()->json([
             'order' => ['number' => $res['order']->number, 'status' => $res['order']->status],

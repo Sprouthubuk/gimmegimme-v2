@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { addBundle, onBasketChange, readBasket, removeFromBasket, setQuantity, upgradeLine } from "../lib/basket";
+import { trackAddToCart } from "../lib/consent";
 import { lineMakeup } from "../lib/bundles";
 import { formatMoney } from "../lib/money";
 import type { BasketLine, CompetitionSummary, PricedBasket } from "../lib/types";
@@ -100,7 +101,7 @@ export default function BasketView({ signedIn, gimmeBox = false }: { signedIn: b
                     <div style={{ fontWeight: 900, lineHeight: 1.15 }}>{c.title}</div>
                     <div className="hint">{c.featuredBundle!.label} · {c.featuredBundle!.tickets} tickets for {formatMoney(c.featuredBundle!.pricePence)}</div>
                   </div>
-                  <button type="button" className="btn btn-y" style={{ minHeight: 44 }} onClick={() => addBundle(c.id, c.featuredBundle!.id)}>Add</button>
+                  <button type="button" className="btn btn-y" style={{ minHeight: 44 }} onClick={() => { addBundle(c.id, c.featuredBundle!.id); trackAddToCart(c.slug, c.featuredBundle!.tickets, c.featuredBundle!.pricePence); }}>Add</button>
                 </div>
               ))}
             </div>

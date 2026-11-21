@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { addBoxLines, boxIdsIn, readBasket } from "../lib/basket";
 import { formatMoney, formatPence } from "../lib/money";
-import { trackCustom } from "../lib/consent";
+import { trackAddToCart, trackCustom } from "../lib/consent";
 import type { GimmeBox, GimmeBoxMode } from "../lib/types";
 import { Svg } from "./Svg";
 
@@ -130,6 +130,7 @@ export default function GimmeBoxBuilder({ chipsPence, minPence, maxPence, bonusP
       const fresh = await api<GimmeBox>(`/api/gimme-box/${box.id}/added`, { method: "POST" });
       addBoxLines(fresh.basketLines);
       trackCustom("GimmeBoxAdded", { mode: fresh.mode, value: fresh.totalPence / 100 });
+      for (const l of fresh.lines) trackAddToCart(l.slug, l.tickets, l.linePence);
       window.location.assign("/basket");
     } catch (e) {
       setError(errorText(e));

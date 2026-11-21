@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { addBundle, addToBasket } from "../lib/basket";
+import { trackAddToCart } from "../lib/consent";
 import { formatCount, formatMoney, formatPence } from "../lib/money";
 import { ukDateTime } from "../lib/time";
 import type { Bundle, CompetitionDetail } from "../lib/types";
@@ -117,6 +118,7 @@ export default function TicketPicker(p: PickerProps) {
   const addToBasketNow = () => {
     if (chosenBundle) addBundle(p.competitionId, chosenBundle.id);
     else addToBasket(p.competitionId, qty);
+    trackAddToCart(p.slug, chosenBundle ? chosenBundle.tickets : qty, total);
     setAdded(chosenBundle ? chosenBundle.label : `${formatCount(qty)} ${qty === 1 ? "ticket" : "tickets"}`);
   };
   const ticketWord = (n: number) => `${formatCount(n)} ${n === 1 ? "ticket" : "tickets"}`;

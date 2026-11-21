@@ -2,6 +2,7 @@
 
 namespace App\Http\Presenters;
 
+use App\Tracking\MetaEvents;
 use App\Models\Competition;
 use App\Models\LedgerEntry;
 use App\Models\Order;
@@ -198,6 +199,8 @@ final class AccountPresenter
             'totalPence' => $o->total_pence,
             'cardPence' => $o->card_pence,
             'walletPence' => $o->wallet_pence,
+            // What Meta is told this order was worth: real money only, never bonus credit.
+            'trackValuePence' => MetaEvents::realMoneyPence($o),
             'paidAt' => $o->paid_at?->toIso8601ZuluString(),
             'lines' => $lines->map(fn (OrderLine $l) => [
                 'competitionId' => $l->competition_id, 'slug' => $l->competition->slug, 'title' => $l->competition->title,

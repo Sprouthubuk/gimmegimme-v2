@@ -148,8 +148,8 @@ const [first, ...rest] = c.title.split(" – ");
   {more.length > 0 && <section class="sec"><div class="wrap stack g16"><h2 class="h2 gg-reveal">{isDraw ? <>More <span class="nc">Draws</span></> : <>You Might <span class="np">Also Like</span></>}</h2><div class="rail gg-stagger">{more.map((o) => <CompCard c={o} />)}</div></div></section>}
 </div>
 {open && <div class="mob" style="height:72px" aria-hidden="true"></div>}
-<script define:vars={{ slug: c.slug, title: c.title }}>
-  window.addEventListener("load", () => window.ggTrack?.("ViewContent", { content_ids: [slug], content_name: title, content_type: "product" }));
+<script define:vars={{ slug: c.slug, title: c.title, price: c.pricePence }}>
+  window.addEventListener("load", () => window.ggTrack?.("ViewContent", { content_ids: [slug], content_name: title, content_type: "product", value: price / 100, currency: "GBP" }));
   // The ticket picker re-reads % sold every minute; keep the bar and its words in step.
   window.addEventListener("gg-sold", (e) => {
     const { slug: s, percent } = e.detail || {};

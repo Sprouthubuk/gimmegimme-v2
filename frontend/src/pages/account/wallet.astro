@@ -9,8 +9,10 @@ const { api, me, site } = Astro.locals;
 let m = me!;
 // Back from the card page after a top up: ask the server to check the payment, then show the new balance.
 let deposit = Astro.url.searchParams.get("deposit");
+let paidTopUp: { number: string; valuePence: number } | null = null;
 if (deposit && /^GD-[A-Z0-9]{4,16}$/.test(deposit)) {
   const order = await api.post<OrderView>(`/api/orders/${deposit}/return`).catch(() => null);
+  if (order?.status === "paid") paidTopUp = { number: order.number, valuePence: order.trackValuePence };
   deposit = order?.status === "paid" ? "paid" : order && ["failed", "cancelled", "expired"].includes(order.status) ? "failed" : "pending";
   m = (await api.maybe<Me>("/api/me")) ?? m;
   // The header's balance reads the same, so it shows the new total too (not the one from before the top up).
@@ -33,4 +35,10 @@ const suggest = Number.isInteger(asked) && asked >= site.minDepositPence && aske
       {tx.length ? <div class="card" style="overflow:hidden">{tx.map((t) => <div class="feed"><div style="flex:1;min-width:0"><div style="font-weight:800">{t.description}</div><div class="hint">{ago(t.at)} · {t.bucket}</div></div><b class={`d ${t.direction === "in" ? "nc" : ""}`} style="font-size:18px">{t.direction === "in" ? "+" : "−"}{formatMoney(t.amountPence)}</b></div>)}</div> : <div class="card empty">No activity yet.</div>}
     </div>
   </AccountShell>
+  {paidTopUp && <div id="topup-track" hidden data-number={paidTopUp.number} data-value={paidTopUp.valuePence}></div>}
 </Layout>
+<script>
+  import { trackDepositOnce } from "../../lib/consent";
+  const t = document.getElementById("topup-track");
+  if (t) window.addEventListener("load", () => trackDepositOnce(t.dataset.number ?? "", Number(t.dataset.value)));
+</script>

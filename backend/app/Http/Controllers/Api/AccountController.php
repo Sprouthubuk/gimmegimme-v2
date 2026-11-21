@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Tracking\MetaEvents;
 use App\Exceptions\RefusedException;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
@@ -143,6 +144,7 @@ class AccountController extends Controller
     {
         $d = $r->validate(['amountPence' => ['required', 'integer', 'min:1']]);
         $o = $orders->deposit($r->user(), $d['amountPence']);
+        app(MetaEvents::class)->remember($r, $r->user(), 'Deposit', $o->number, $o);
 
         return response()->json(['redirectUrl' => $o->gateway_url, 'orderNumber' => $o->number], 201);
     }

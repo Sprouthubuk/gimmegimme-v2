@@ -1,10 +1,16 @@
 ---
+import { createHash } from "node:crypto";
 /** Asks once about marketing cookies (the Meta Pixel). Shown only when a Pixel ID is set in the admin. */
 const pixelId = Astro.locals.site.metaPixelId ?? "";
+// Signed-in players: hashed here (SHA-256, as Meta asks), so the plain email never sits in the page for the Pixel.
+const me = Astro.locals.me;
+const sha = (v: string) => createHash("sha256").update(v).digest("hex");
+const em = me ? sha(me.email.trim().toLowerCase()) : undefined;
+const xid = me ? sha(String(me.id)) : undefined;
 ---
 {pixelId && (
-  <div class="ck" id="cookie-banner" data-pixel={pixelId} role="dialog" aria-live="polite" aria-label="Cookie choice" hidden>
-    <p class="ck-t"><b>Cookies</b> We use marketing cookies (Meta Pixel) to see which of our adverts work. They stay off unless you accept. <a href="/legal/cookies">Cookie policy</a></p>
+  <div class="ck" id="cookie-banner" data-pixel={pixelId} data-em={em} data-xid={xid} role="dialog" aria-live="polite" aria-label="Cookie choice" hidden>
+    <p class="ck-t"><b>Cookies</b> We use Meta's marketing cookies, and tell Meta when you sign up or buy, to see which of our adverts work. They stay off unless you accept. <a href="/legal/cookies">Cookie policy</a></p>
     <div class="ck-b">
       <button type="button" class="ck-btn" data-choice="rejected">Reject</button>
       <button type="button" class="ck-btn is-on" data-choice="accepted">Accept</button>
@@ -12,7 +18,8 @@ const pixelId = Astro.locals.site.metaPixelId ?? "";
   </div>
 )}
 <script>
-  import { readConsent, saveConsent, startPixel } from "../lib/consent";
+  import { readConsent, saveConsent, startPixel, syncConsentCookie } from "../lib/consent";
+  syncConsentCookie();
   const banner = document.getElementById("cookie-banner");
   const id = banner?.dataset.pixel ?? "";
   if (banner && id) {
