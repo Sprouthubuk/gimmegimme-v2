@@ -8,7 +8,7 @@ const { data: winners } = await api.get<{ data: DrawWinnerRow[] }>("/api/winners
 const { data: comps } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
 const upcoming = comps.filter((c) => c.type === "draw");
 ---
-<Layout title="Winners" active="winners" description="Every draw winner, the ticket that won it, and the draw to watch back.">
+<Layout title="Competition Winners & Draw Results" active="winners" description="Every Gimme Gimme Prizes draw winner, the ticket number that won and the live draw to watch back.">
   <section class="sec" style="padding-top:20px"><div class="mid stack g16">
     <div class="gg-rise"><div class="eyebrow">Draw Winners</div><h1 class="h1">Our <span class="ny gg-flicker">Winners</span></h1><p class="p" style="margin-top:6px">Every draw winner, the ticket that won it, and the draw to watch back.</p></div>
     <div class="row g8 gg-rise gg-d2"><a class="chip" href="/instant-winners">Instant Winners</a><a class="chip on" href="/winners" aria-current="true">Draw Winners</a></div>

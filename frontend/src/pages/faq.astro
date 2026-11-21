@@ -2,11 +2,12 @@
 import Layout from "../layouts/Layout.astro";
 import Icon from "../components/Icon.astro";
 import { FAQS, FAQ_CATEGORIES } from "../lib/faqs";
+import { faqLd } from "../lib/seo";
 const cat = Astro.url.searchParams.get("c");
 const q = (Astro.url.searchParams.get("q") ?? "").trim().toLowerCase().slice(0, 60);
 const list = FAQS.filter(([c, qq, a]) => (!cat || c === cat) && (!q || `${qq} ${a}`.toLowerCase().includes(q)));
 ---
-<Layout title="FAQs" description="Answers to common questions about Gimme Gimme Prizes.">
+<Layout title="Competition FAQs" description="Answers about our UK prize competitions: entering, ticket numbers, instant wins, live draws, free postal entry, payments, winnings and safer play." noindex={!!q || !!cat} jsonLd={[faqLd(FAQS.map(([, qq, a]) => ({ q: qq, a })))]}>
   <section class="sec" style="padding-top:20px"><div class="mid stack g16">
     <div class="gg-rise"><div class="eyebrow">Help</div><h1 class="h1">Got A <span class="np gg-flicker">Question?</span></h1></div>
     <form method="get" class="gg-rise gg-d2" role="search"><label style="position:relative;display:block"><span style="position:absolute;left:14px;top:15px;color:#8E84A0"><Icon name="search" /></span><input class="inp" type="search" name="q" value={q} placeholder="Search FAQs" aria-label="Search FAQs" style="padding-left:44px"></label></form>

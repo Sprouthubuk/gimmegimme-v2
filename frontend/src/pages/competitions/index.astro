@@ -19,6 +19,15 @@ const TYPES: [string, string, (c: CompetitionSummary) => boolean][] = [
   ["christmas", "Christmas", (c) => c.skin === "christmas"],
 ];
 const t = TYPES.find((x) => x[0] === type) ?? TYPES[0];
+// Each category is its own search result (canonical keeps ?type); a search or a re-sort is not.
+const SEO: Record<string, { title: string; h1: [string, string]; description: string }> = {
+  all: { title: "Live UK Competitions & Raffles | Gimme Gimme Prizes", h1: ["All", "Competitions"], description: "Every live Gimme Gimme competition: instant win games and live draw raffles for cash, tech and more, from 1p a ticket. 18+ UK, free postal entry." },
+  instant: { title: "Instant Win Competitions UK | Gimme Gimme Prizes", h1: ["Instant Win", "Competitions"], description: "Instant win competitions: buy a ticket, play the reveal game and see straight away if you've won cash or a prize. 18+ UK, free postal entry." },
+  draw: { title: "Live Draw Competitions & Raffles | Gimme Gimme Prizes", h1: ["Live Draw", "Competitions"], description: "Prize draws and raffles drawn live when they close. Pick your tickets, watch the draw and see every winner published. 18+ UK, free postal entry." },
+  under10: { title: "Competitions Under 10p | Gimme Gimme Prizes", h1: ["Under 10p", "Competitions"], description: "Cheap UK competitions with tickets under 10p: instant win games and live draws for cash and prizes. 18+ UK only, free postal entry." },
+  christmas: { title: "Christmas Competitions | Gimme Gimme Prizes", h1: ["Christmas", "Competitions"], description: "Christmas prize competitions: festive instant win games and live draws for cash and prizes. 18+ UK only, free postal entry on every one." },
+};
+const seo = SEO[t[0]] ?? SEO.all;
 let list = all.filter(t[2]);
 if (q) list = list.filter((c) => `${c.title} ${c.gameLabel ?? ""} ${gameName(c) ?? ""}`.toLowerCase().includes(q.toLowerCase()));
 const sorters: Record<string, (a: CompetitionSummary, b: CompetitionSummary) => number> = {
@@ -37,9 +46,9 @@ const link = (k: string) => {
   return `/competitions${s ? "?" + s : ""}`;
 };
 ---
-<Layout title="All Competitions" active="competitions" description="Every live Gimme Gimme competition: instant win games and live draws.">
+<Layout title="All Competitions" fullTitle={seo.title} active="competitions" description={seo.description} canonicalKeys={["type"]} noindex={!!q}>
   <section class="sec" style="padding-top:20px"><div class="wrap stack g16">
-    <div class="gg-rise"><div class="eyebrow">{all.length} Live Now · New Comps Every Week</div><h1 class="h1">All <span class="np gg-flicker">Competitions</span></h1></div>
+    <div class="gg-rise"><div class="eyebrow">{all.length} Live Now · New Comps Every Week</div><h1 class="h1">{seo.h1[0]}{" "}<span class="np gg-flicker">{seo.h1[1]}</span></h1></div>
     <form class="row g8 gg-rise gg-d2" method="get" action="/competitions" role="search">
       {type !== "all" && <input type="hidden" name="type" value={type}>}
       <label style="position:relative;flex:1"><span style="position:absolute;left:14px;top:15px;color:#8E84A0"><Icon name="search" /></span><input class="inp" type="search" name="q" value={q} placeholder="Search prizes, games or cash" aria-label="Search competitions" style="padding-left:44px"></label>

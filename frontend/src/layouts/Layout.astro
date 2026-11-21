@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import BottomNav from "../components/BottomNav.astro";
 import Footer from "../components/Footer.astro";
 import CookieBanner from "../components/CookieBanner.astro";
+import { BRAND, ldJson, organisationLd, pageTitle, websiteLd } from "../lib/seo";
 interface Props {
   title: string;
   description?: string;
@@ -18,11 +19,28 @@ interface Props {
   noindex?: boolean;
   /** The picture shown when the page is shared (Facebook, WhatsApp); the logo when not given. */
   shareImage?: string | null;
+  /** Use this whole title in search results instead of "Title | Gimme Gimme Prizes". */
+  fullTitle?: string;
+  /** Query keys that make a different page worth its own search result (e.g. ["type"] on /competitions). */
+  canonicalKeys?: string[];
+  /** Structured data (schema.org) for this page. */
+  jsonLd?: Record<string, unknown>[];
 }
-const { title, description = "Tiny tickets, ginormous prizes. Instant win games and live draws from 1p. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false, bare = false, shareImage = null } = Astro.props;
-const full = title === "Home" ? "Gimme Gimme Prizes | Tiny Tickets, Ginormous Prizes" : `${title} | Gimme Gimme Prizes`;
-const robots = noindex || import.meta.env.PUBLIC_SEARCH_INDEXING !== "on" ? "noindex, nofollow" : "index, follow";
-const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const { title, description = "UK prize competitions from 1p: instant win games and live draws for cash, tech and more. 18+ UK only, free postal entry on every competition.", active = "", header = "main", headerBack, headerTitle, bottomNav = true, footer = true, noindex = false, bare = false, shareImage = null, fullTitle, canonicalKeys = [], jsonLd = [] } = Astro.props;
+const full = fullTitle ?? pageTitle(title);
+const robots = noindex || import.meta.env.PUBLIC_SEARCH_INDEXING !== "on" ? "noindex, nofollow" : "index, follow, max-image-preview:large";
+const base = Astro.site ?? Astro.url;
+const canonicalUrl = new URL(Astro.url.pathname, base);
+for (const k of canonicalKeys) {
+  const v = Astro.url.searchParams.get(k);
+  if (v) canonicalUrl.searchParams.set(k, v);
+}
+const canonical = canonicalUrl.toString();
+const origin = new URL(base).origin;
+const socials = Astro.locals.site?.socials;
+// Every page says who we are; pages add their own (breadcrumbs, FAQs).
+const ld = [organisationLd(origin, [socials?.instagram, socials?.facebook]), websiteLd(origin), ...jsonLd];
+const verification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION;
 ---
 <!doctype html>
 <html lang="en-GB">
@@ -38,11 +56,18 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString(
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preload" href="/fonts/lilita-one-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  {verification && <meta name="google-site-verification" content={verification}>}
+  <meta property="og:site_name" content={BRAND}>
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:url" content={canonical}>
   <meta property="og:title" content={full}>
   <meta property="og:description" content={description}>
   <meta property="og:type" content="website">
-  <meta property="og:image" content={new URL(shareImage || "/logo.png", Astro.site ?? Astro.url).toString()}>
+  <meta property="og:image" content={new URL(shareImage || "/logo.png", base).toString()}>
   <meta name="twitter:card" content={shareImage ? "summary_large_image" : "summary"}>
+  <meta name="twitter:title" content={full}>
+  <meta name="twitter:description" content={description}>
+  {!noindex && !bare && <script type="application/ld+json" set:html={ldJson(ld)} />}
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>

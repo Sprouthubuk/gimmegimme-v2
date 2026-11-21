@@ -248,7 +248,14 @@ function winningNumbers(c) {
   const max = 100000; // the mock instant wins have 100,000 tickets
   const used = new Set();
   let x = [...c.slug].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
-  const next = () => { do { x = (x * 1103515245 + 12345) >>> 0; } while (used.has((x % max) + 1)); used.add((x % max) + 1); return (x % max) + 1; };
+  // Math.imul keeps the sum in 32 bits: a plain * loses precision and, for some names, cycles forever.
+  const next = () => {
+    let n = 0;
+    for (let tries = 0; tries < 1000; tries++) { x = (Math.imul(x, 1103515245) + 12345) >>> 0; n = (x % max) + 1; if (!used.has(n)) break; }
+    while (used.has(n)) n = (n % max) + 1;
+    used.add(n);
+    return n;
+  };
   return LADDER.flatMap(([name, valuePence, q], i) => Array.from({ length: q }, (_, k) => {
     const won = i > 3 && k < Math.floor(q * 0.03);
     return { ticket: next(), prizeName: name, valuePence, type: "site_credit", won, winnerName: won ? "Emmie A." : null, wonAt: won ? iso(now - (k + 1) * 36e5) : null };
