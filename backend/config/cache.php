@@ -49,8 +49,9 @@ return [
 
         'file' => [
             'driver' => 'file',
-            'path' => storage_path('framework/cache/data'),
-            'lock_path' => storage_path('framework/cache/data'),
+            // CACHE_FILE_PATH lets each test site keep its own cache folder (frontend/tests/e2e/harness.ts).
+            'path' => env('CACHE_FILE_PATH', storage_path('framework/cache/data')),
+            'lock_path' => env('CACHE_FILE_PATH', storage_path('framework/cache/data')),
         ],
 
         'memcached' => [

@@ -47,7 +47,8 @@ export async function startSite(backend: "mock" | "laravel" = "mock", opts: { fe
     const lenv = {
       ...env, APP_ENV: "local", APP_DEBUG: "true", APP_URL: origin, FRONTEND_URL: origin, DB_CONNECTION: "sqlite", DB_DATABASE: dbFile,
       SESSION_DRIVER: "file", SESSION_COOKIE: "gimme_session", SESSION_DOMAIN: "", SANCTUM_STATEFUL_DOMAINS: `127.0.0.1:${proxyPort}`,
-      CACHE_STORE: "file", QUEUE_CONNECTION: "sync", MAIL_MAILER: "log", CASHFLOWS_DRIVER: "fake", VERITY_BEACON: "local",
+      // Each test site gets its own cache folder, so one site's sign-in limits never count against another running alongside.
+      CACHE_STORE: "file", CACHE_FILE_PATH: dbFile.replace(/\.sqlite$/, "-cache"), QUEUE_CONNECTION: "sync", MAIL_MAILER: "log", CASHFLOWS_DRIVER: "fake", VERITY_BEACON: "local",
       VERITY_OWNER_PEPPER: "fullstack-test-pepper-0123456789", PHP_CLI_SERVER_WORKERS: "12", LOG_CHANNEL: "single",
       // The log mailer writes emails at debug level; CI copies .env.example (LOG_LEVEL=info), which would hide them.
       LOG_LEVEL: "debug",
