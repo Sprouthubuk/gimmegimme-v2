@@ -9,8 +9,15 @@ if (!PAGES.some(([s]) => s === slug)) return Astro.rewrite("/404");
 const page = await Astro.locals.api.maybe<{ title: string; updatedAt: string | null; version: string | null; html: string; headings: { id: string; text: string }[] }>(`/api/pages/${slug}`);
 const title = page?.title ?? PAGES.find(([s]) => s === slug)![1];
 const [first, ...rest] = title.split(" ");
+const DESCRIPTIONS: Record<string, string> = {
+  terms: "The terms and conditions for entering Gimme Gimme Prizes competitions: who can enter, tickets, draws, instant wins, prizes and free entry.",
+  "free-entry": "How to enter any Gimme Gimme Prizes competition free by post, with the same chance of winning as a paid ticket.",
+  privacy: "How Gimme Gimme Prizes collects, uses and protects your personal information, and your rights over it.",
+  cookies: "The cookies Gimme Gimme Prizes uses, what each one does, and how to accept, reject or change your choice.",
+  complaints: "How to make a complaint to Gimme Gimme Prizes, how we handle it and what to do if you are not happy with our answer.",
+};
 ---
-<Layout title={title}>
+<Layout title={title} description={DESCRIPTIONS[slug]}>
   <section class="sec" style="padding-top:20px"><div class="wrap acct">
     <aside class="side"><nav class="card" style="overflow:hidden" aria-label="Legal pages">{PAGES.map(([s, n]) => <a class="li" href={`/legal/${s}`} aria-current={s === slug ? "page" : undefined} style={s === slug ? "color:#fff;background:rgba(255,45,170,.08)" : "color:#B9AFC6"}>{n}</a>)}</nav></aside>
     <div class="stack g12" style="max-width:760px;min-width:0">

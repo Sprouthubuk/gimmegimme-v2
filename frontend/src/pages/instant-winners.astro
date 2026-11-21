@@ -11,7 +11,7 @@ if (game) q.set("game", game);
 const { data: rows, hasMore } = await Astro.locals.api.get<{ data: InstantWinnerRow[]; hasMore: boolean }>(`/api/winners/instant?${q}`);
 const games = REVEAL_GAME_OPTIONS.filter((g) => g.id !== "classic");
 ---
-<Layout title="Instant Winners" active="instant-winners" description="Every instant win from the last 30 days.">
+<Layout title="Instant Win Winners" active="instant-winners" description="Every instant win from the last 30 days on Gimme Gimme Prizes: who won, what they won and the competition they won it in.">
   <section class="sec" style="padding-top:20px"><div class="mid stack g16">
     <div class="gg-rise"><div class="row g8"><span class="gg-ping" style="width:8px;height:8px;border-radius:999px;background:#FF2DAA"></span><span class="eyebrow" style="color:#FF5CC0">Live Feed</span></div><h1 class="h1">Instant <span class="ny gg-flicker">Winners</span></h1><p class="p" style="margin-top:6px">Every instant win from the last 30 days. Could you be next?</p></div>
     <div class="row g8 gg-rise gg-d2"><a class="chip on" href="/instant-winners" aria-current="true">Instant Winners</a><a class="chip" href="/winners">Draw Winners</a></div>

@@ -40,7 +40,9 @@ echo "Node $(node -v) / npm $(npm -v)"
 node -e 'const [a,b,c]=process.versions.node.split(".").map(Number);process.exit(a>22||(a===22&&(b>23||(b===23&&c>=4)))?0:1)' \
   || { echo "Node $(node -v) is too old for Astro 7: install Node 22.23.4+ (Forge: Server > Node.js) and deploy again."; exit 1; }
 npm ci --no-audit --no-fund
-PUBLIC_SITE_URL="$FRONTEND_URL" npm run build
+# Search engines stay shut out until PUBLIC_SEARCH_INDEXING=on is set in the site's environment (launch day).
+# PUBLIC_GOOGLE_SITE_VERIFICATION is the code from Google Search Console's "HTML tag" option, if used.
+PUBLIC_SITE_URL="$FRONTEND_URL" PUBLIC_SEARCH_INDEXING="${PUBLIC_SEARCH_INDEXING:-off}" PUBLIC_GOOGLE_SITE_VERIFICATION="${PUBLIC_GOOGLE_SITE_VERIFICATION:-}" npm run build
 cd ..
 
 $ACTIVATE_RELEASE()

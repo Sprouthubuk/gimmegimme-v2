@@ -98,6 +98,11 @@ Read before every task. If a request conflicts with this, stop and ask.
   alone: `GAMES_WORKERS=1 … -g smoothness`). A new game needs its id in `shared/game-ids.json`, `src/games/gameIds.ts`,
   the admin and presenter labels, and a migration calling `GameIds::replaceDatabaseChecks()`.
 - Legal wording loads from `backend/resources/legal/*.html` on deploy (`gimme:legal-pages`) and is then edited in the admin.
+- Search: titles, descriptions and structured data come from `src/lib/seo.ts` (titles ≤ 60, descriptions ≤ 155, "Win …" for
+  competitions, never a ticket count). Every public page needs its own `title` and `description` on `<Layout>`; private pages
+  are `noindex` and left out of `sitemap.xml.ts` / disallowed in `robots.txt.ts`. `tests/e2e/seo.test.ts` checks every sitemap
+  page. Google is shut out until the build has `PUBLIC_SEARCH_INDEXING=on` (launch day); `PUBLIC_GOOGLE_SITE_VERIFICATION` adds
+  Search Console's tag.
 - Redirects after sign-in go through `safeNext` (`src/lib/safe.ts`).
 - Astro trusts Host / X-Forwarded-* only for `allowedDomains` in `astro.config.mjs`; the build must
   have `PUBLIC_SITE_URL` set to the live address or form posts are refused.

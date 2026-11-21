@@ -137,3 +137,24 @@ describe("ukWhen", () => {
     expect(ukWhen("2027-06-20T20:00:00Z", Date.parse("2027-06-19T12:00:00Z"))).toBe("Tomorrow 9pm");
   });
 });
+
+describe("search titles and descriptions", async () => {
+  const seo = await import("../../src/lib/seo");
+  it("keeps titles within 60 characters and says Win once", () => {
+    expect(seo.competitionTitle({ title: "Win A Tesla" })).toBe("Win A Tesla");
+    expect(seo.competitionTitle({ title: "£250 Cash" })).toBe("Win £250 Cash");
+    expect(seo.pageTitle("Short")).toBe("Short | Gimme Gimme Prizes");
+    expect(seo.pageTitle("A Very Long Competition Title That Goes On And On Forever")).toBe("A Very Long Competition Title That Goes On And On Forever");
+    expect(seo.pageTitle("Win Chris Cracker’s Christmas Cash Bang Bash")).toBe("Win Chris Cracker’s Christmas Cash Bang Bash | Gimme Gimme");
+    expect(seo.pageTitle("x".repeat(80)).length).toBeLessThanOrEqual(60);
+  });
+  it("describes a competition with its price in pence, how it's won and the postal route, never a count", () => {
+    const d = seo.competitionDescription({ title: "Cash Bang", type: "instant", pricePence: 5, closesAt: "2026-12-01T20:00:00Z", drawAt: null, gameLabel: "Balloon Pop", endPrize: null });
+    expect(d).toBe("Win Cash Bang from 5p a ticket. Instant win Balloon Pop game: see if you've won the moment you buy. 18+ UK, free postal entry.");
+    const long = seo.competitionDescription({ title: "x ".repeat(120), type: "draw", pricePence: 99, closesAt: "2026-12-01T20:00:00Z", drawAt: "2026-12-01T21:00:00Z", gameLabel: null, endPrize: null });
+    expect(long.length).toBeLessThanOrEqual(155);
+  });
+  it("makes structured data safe inside the page", () => {
+    expect(seo.ldJson({ name: "</script><script>alert(1)</script>" })).not.toContain("</script>");
+  });
+});

@@ -9,6 +9,7 @@ import TicketPicker from "../../islands/TicketPicker";
 import type { CompetitionDetail, CompetitionSummary, WinningNumbersPage } from "../../lib/types";
 import { formatPence, formatCount } from "../../lib/money";
 import { ukDateTime, ukShortDay } from "../../lib/time";
+import { breadcrumbLd, competitionDescription, competitionTitle, pageTitle } from "../../lib/seo";
 
 const { api, site, me } = Astro.locals;
 const slug = Astro.params.slug!;
@@ -34,7 +35,7 @@ const endPrizeLine = c.endPrize ? `${endCount > 1 ? `${endCount} × ` : ""}${for
 const glow = ["np", "nc", "ny"];
 const [first, ...rest] = c.title.split(" – ");
 ---
-<Layout title={c.title} active="competitions" description={c.description.slice(0, 155)} shareImage={c.image}>
+<Layout title={c.title} fullTitle={pageTitle(competitionTitle(c))} active="competitions" description={competitionDescription(c)} shareImage={c.image} jsonLd={[breadcrumbLd(new URL(Astro.site ?? Astro.url).origin, [["Home", "/"], [isDraw ? "Live Draws" : "Instant Wins", `/competitions?type=${isDraw ? "draw" : "instant"}`], [c.title, `/competitions/${c.slug}`]])]}>
 <div class="lft">
   <section style="padding:12px 0 24px"><div class="wrap stack g16">
     <a href="/competitions" class="row g8 mob" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />All Competitions</a>

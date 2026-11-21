@@ -6,7 +6,7 @@ const gb = Astro.locals.site.gimmeBox;
 // Off: the page doesn't exist. On but fewer than two draws to pack: the box shows, waiting to open.
 if (!gb) return Astro.rewrite("/404");
 ---
-<Layout title="Gimme Box" active="comps">
+<Layout title="Gimme Box: Lucky Dip Tickets" active="comps" description="Set a budget and the Gimme Box picks a lucky dip of live draw tickets for you, with bonus tickets on top. 18+ UK only, free postal entry.">
   <section class="sec" style="padding-top:20px"><div class="wrap stack g16">
     <div class="stack g8"><div class="eyebrow">Lucky Dip</div><h1 class="h1">Gimme <span class="np">Box</span></h1>
       <p class="p" style="margin:0">Set a budget and we'll pack a mix of live draw tickets for you{gb.bonusPct > 0 ? <>, plus <b class="ny">{gb.bonusPct}% bonus tickets</b> free</> : null}. Same prices as each competition page.</p></div>
