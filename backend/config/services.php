@@ -35,6 +35,12 @@ return [
         ],
     ],
 
+    // Meta Conversions API. The token is only ever in the server's environment, never in the admin or the code.
+    'meta' => [
+        'capi_token' => env('META_CAPI_TOKEN'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v25.0'),
+    ],
+
     'cashflows' => [
         'driver' => env('CASHFLOWS_DRIVER', 'cashflows'), // 'fake' only for tests and local development
         'base_url' => env('CASHFLOWS_BASE_URL', env('CASHFLOWS_ENV') === 'production' ? 'https://gateway.cashflows.com' : 'https://gateway-int.cashflows.com'),

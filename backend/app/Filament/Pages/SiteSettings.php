@@ -38,7 +38,7 @@ class SiteSettings extends Page
     private const MONEY = ['min_deposit_pence' => 'Minimum top up', 'min_card_pence' => 'Minimum card payment', 'min_withdrawal_pence' => 'Minimum withdrawal',
         'max_top_up_pence' => 'Largest top up'];
 
-    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'meta_pixel_id',
+    private const TEXT = ['featured_slug', 'instagram_url', 'facebook_url', 'support_email', 'bonus_expiry_days', 'meta_pixel_id', 'meta_test_event_code',
         'gimme_box_chips', 'gimme_box_min_pence', 'gimme_box_max_pence', 'gimme_box_bonus_pct', 'gimme_box_max_sold_pct', 'gimme_box_slow_boost_pct',
         'gimme_box_hold_minutes', 'gimme_box_share_of_sales_pct',
         'referral_reward_type', 'referral_reward_tickets', 'referral_reward_credit_pence', 'referral_min_purchase_pence', 'referral_monthly_cap',
@@ -59,6 +59,18 @@ class SiteSettings extends Page
         $this->form->fill($data);
     }
 
+    /** Plain-English status for the Meta section: never the token itself. */
+    public static function metaStatus(): string
+    {
+        $token = (string) config('services.meta.capi_token') !== '' ? 'Access token is set on the server.' : 'No access token on the server yet (META_CAPI_TOKEN in Forge), so nothing is sent.';
+        $day = \App\Models\MetaEvent::query()->where('updated_at', '>=', now()->subDay());
+        $sent = (clone $day)->where('status', 'sent')->count();
+        $failed = (clone $day)->where('status', 'failed')->count();
+        $last = \App\Models\MetaEvent::query()->where('status', 'failed')->latest('updated_at')->value('last_error');
+
+        return "Sales, top ups and sign-ups are also sent to Meta from the server, for visitors who accepted cookies. {$token} Last 24 hours: {$sent} sent, {$failed} failed".($last ? " (last error: {$last})" : '').'.';
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->statePath('data')->components([
@@ -73,6 +85,10 @@ class SiteSettings extends Page
                 TextInput::make('facebook_url')->url()->rule('starts_with:https://'),
                 TextInput::make('meta_pixel_id')->label('Meta Pixel ID')->regex('/^\d{10,20}$/')
                     ->helperText('Numbers only, from Meta Events Manager. Leave empty for no Pixel. It only loads for visitors who accept marketing cookies.'),
+            ]),
+            Section::make('Meta tracking (server)')->description(fn () => self::metaStatus())->columns(2)->collapsible()->components([
+                TextInput::make('meta_test_event_code')->label('Meta test event code')->regex('/^[A-Za-z0-9]{4,20}$/')
+                    ->helperText('From Events Manager → Test events (e.g. TEST12345). While set, server events show in Test events instead of counting in your ads. Clear it before ads go live.'),
             ]),
             Section::make('Gimme Box')->description('Lucky-dip basket builder for live draws. Off until you switch it on; prices are always the competition page prices.')->columns(3)->collapsible()->components([
                 Toggle::make('feature_gimme_box')->label('Gimme Box on')->columnSpanFull()

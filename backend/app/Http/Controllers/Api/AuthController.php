@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Tracking\MetaEvents;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
 use App\Models\User;
@@ -66,6 +67,8 @@ class AuthController extends Controller
             Log::warning('Confirmation email not sent at sign-up', ['user' => $u->id]);
         }
         Auth::login($u);
+        // The browser pixel sends the same id (reg-{id}), so Meta counts the sign-up once.
+        app(MetaEvents::class)->remember($r, $u, 'CompleteRegistration', 'reg-'.$u->id);
         if ($r->hasSession()) {
             $r->session()->regenerate();
         }

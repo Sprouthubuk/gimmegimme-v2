@@ -281,6 +281,8 @@ export interface OrderView {
   totalPence: Pence;
   cardPence: Pence;
   walletPence: Pence;
+  /** What Meta is told the order was worth: real money only (card, deposit, winnings), never bonus credit. */
+  trackValuePence: Pence;
   paidAt: string | null;
   lines: { competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null; type: CompetitionType; quantity: number; paidQuantity: number; freeQuantity: number; bundleLabel: string | null; tickets: number[]; drawAt: string | null }[];
   /** Instant-win tickets in this order not yet revealed. */

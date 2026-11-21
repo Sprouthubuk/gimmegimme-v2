@@ -12,7 +12,7 @@ import type { AddressInfo } from "node:net";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const API_ROUTES = /^\/(api|sanctum|media|mock-pay|webhooks|admin|livewire|storage|verity)(\/|$)|^\/(css|js|fonts)\/filament\/|^\/vendor\/verity\//;
 
-export interface Site { origin: string; stop: () => Promise<void> }
+export interface Site { origin: string; stop: () => Promise<void>; /** Laravel only: run php artisan against the test database. */ artisan?: (args: string[]) => string }
 
 async function free(): Promise<number> {
   return new Promise((r) => { const s = http.createServer(); s.listen(0, "127.0.0.1", () => { const p = (s.address() as AddressInfo).port; s.close(() => r(p)); }); });
@@ -33,12 +33,13 @@ async function waitFor(url: string, ms = 20000) {
  * local beacon.
  */
 /** `features`: switch Gimme Box and Refer a Friend on in the Laravel test database (they start off, as on the real site). */
-export async function startSite(backend: "mock" | "laravel" = "mock", opts: { features?: boolean } = {}): Promise<Site> {
+export async function startSite(backend: "mock" | "laravel" = "mock", opts: { features?: boolean; pixel?: string } = {}): Promise<Site> {
   const [apiPort, astroPort, proxyPort] = [await free(), await free(), await free()];
   const origin = `http://127.0.0.1:${proxyPort}`;
   const env = { ...process.env, MOCK_API_PORT: String(apiPort), PUBLIC_SITE_URL: origin, API_INTERNAL_URL: `http://127.0.0.1:${apiPort}`, HOST: "127.0.0.1", PORT: String(astroPort) };
   let api: ChildProcess;
   let dbFile = "";
+  let artisan: ((args: string[]) => string) | undefined;
   if (backend === "laravel") {
     const be = path.resolve(ROOT, "../backend");
     dbFile = path.join(os.tmpdir(), `gg-fullstack-${process.pid}-${Date.now()}.sqlite`);
@@ -56,9 +57,12 @@ export async function startSite(backend: "mock" | "laravel" = "mock", opts: { fe
     const run = (args: string[]) => {
       const r = spawnSync("php", ["artisan", ...args], { cwd: be, env: lenv, encoding: "utf8" });
       if (r.status !== 0) throw new Error(`php artisan ${args.join(" ")} failed:\n${r.stdout}\n${r.stderr}`);
+      return r.stdout;
     };
+    artisan = run;
     run(["migrate:fresh", "--seed", "--seeder=Database\\Seeders\\DemoSeeder", "--force"]);
     if (opts.features) run(["tinker", "--execute", "foreach (['feature_gimme_box', 'feature_referrals'] as $k) App\\Models\\Setting::put($k, '1');"]);
+    if (opts.pixel) run(["tinker", "--execute", `App\\Models\\Setting::put('meta_pixel_id', '${opts.pixel.replace(/\D/g, "")}');`]);
     run(["storage:link", "--force"]);
     run(["vendor:publish", "--tag=verity-assets", "--force"]);
     // Laravel's own router script for PHP's built-in server; it expects to run from public/.
@@ -84,6 +88,7 @@ export async function startSite(backend: "mock" | "laravel" = "mock", opts: { fe
   await new Promise<void>((r) => proxy.listen(proxyPort, "127.0.0.1", () => r()));
   return {
     origin,
+    artisan,
     stop: async () => {
       api.kill(); astro.kill();
       if (dbFile) fs.rmSync(dbFile, { force: true });

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { clearBasket, readBasket, setAside } from "../lib/basket";
+import { trackInitiateCheckout } from "../lib/consent";
 import { lineMakeup, topUpFor } from "../lib/bundles";
 import { formatMoney } from "../lib/money";
 import type { BasketLine, CheckoutResult, PricedBasket } from "../lib/types";
@@ -34,7 +35,10 @@ export default function CheckoutView({ buy, walletPence, minCardPence, minDeposi
   useEffect(() => {
     if (!lines?.length) return;
     api<PricedBasket>("/api/basket/price", { json: { lines, promoCode: promoApplied } })
-      .then((p) => { setPriced(p); setPay(p.walletCovers ? "wallet" : "card"); setError(null); })
+      .then((p) => {
+        setPriced(p); setPay(p.walletCovers ? "wallet" : "card"); setError(null);
+        trackInitiateCheckout(p.totalPence, p.lines.map((l) => ({ slug: l.slug, quantity: l.quantity })));
+      })
       .catch((e) => setError(errorText(e)));
   }, [lines, promoApplied]);
 

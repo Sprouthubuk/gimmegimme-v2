@@ -88,6 +88,10 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Title Case for every title. Mobile first (44px taps, 16px inputs, no sideways scroll at 320px).
 - Nothing third-party loads before a cookie choice. The only one is the Meta Pixel (`src/lib/consent.ts`, ID set in
   Admin → Settings), loaded after "Accept" in the cookie banner; its addresses are the only extra ones in the CSP.
+- Meta tracking: the banner's choice is copied to a `gg_consent` cookie; only with it does the server keep and send
+  events to the Conversions API (`App\Tracking\MetaEvents`, `gimme:meta-events` every minute, token in `META_CAPI_TOKEN`
+  only). Browser and server share event ids (order number; `reg-{user id}`). Values are real money only, never bonus.
+  Personal details leave only SHA-256 hashed (`MetaTrackingTest`); never log Meta's error message or the token.
 - Reveal games are 2D (SVG and CSS, no WebGL): each board sits on an illustrated scene (`src/games/arcade/shell/scenery`,
   swappable for a painted picture through `PAINTED`). The classic skin's premium look is `shell/premium.css` plus a
   `.rg-skin-classic` block at the end of each game's CSS. `npm run test:games` plays every game (run the smoothness checks

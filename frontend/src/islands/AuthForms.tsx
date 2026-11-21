@@ -3,6 +3,7 @@ import { api, ApiFailure, errorText } from "../lib/api";
 import { safeNext } from "../lib/safe";
 import { Svg } from "./Svg";
 import { track } from "../lib/consent";
+import type { Me } from "../lib/types";
 
 type Errors = Record<string, string>;
 function fieldErrors(e: unknown): Errors {
@@ -58,8 +59,9 @@ export function JoinForm({ next, referralCode = null }: { next: string | null; r
     setBusy(true); setErrors({}); setGeneral(null);
     const dob = `${f.year.padStart(4, "0")}-${f.month.padStart(2, "0")}-${f.day.padStart(2, "0")}`;
     try {
-      await api("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing, deviceId: deviceId(), next: safeNext(next, "/competitions"), ...(referralCode ? { referralCode } : {}) } });
-      track("CompleteRegistration");
+      const me = await api<Me>("/api/auth/register", { json: { firstName: f.firstName.trim(), lastName: f.lastName.trim(), email: f.email.trim(), password: f.password, dateOfBirth: dob, marketingOptIn: f.marketing, deviceId: deviceId(), next: safeNext(next, "/competitions"), ...(referralCode ? { referralCode } : {}) } });
+      // The same id the server sends (reg-{id}), so Meta counts the sign-up once.
+      track("CompleteRegistration", {}, `reg-${me.id}`);
       window.location.assign(`/verify-email?next=${encodeURIComponent(safeNext(next, "/competitions"))}`);
     } catch (err) {
       setErrors(fieldErrors(err));

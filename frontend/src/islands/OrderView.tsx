@@ -28,7 +28,7 @@ export default function OrderView({ number, initial }: { number: string; initial
 
   // Meta Pixel (only with marketing cookies accepted): one Purchase per paid order.
   useEffect(() => {
-    if (order.status === "paid") trackPurchaseOnce(order.number, order.totalPence);
+    if (order.status === "paid") trackPurchaseOnce(order.number, order.trackValuePence, order.lines.map((l) => ({ slug: l.slug, quantity: l.quantity })));
   }, [order.status, order.number, order.totalPence]);
 
   // A card payment may still be on its way back from Cashflows: ask the server to check with them.

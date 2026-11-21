@@ -88,7 +88,15 @@ locks each competition row so two orders can't both take the last tickets.
 5. Otherwise create a Cashflows payment job for the card part, store its reference on the order,
    return `next: "redirect"` and `redirectUrl`.
 
-`GET /api/orders/{number}` → `OrderView` (own orders only; `404` otherwise).
+`GET /api/orders/{number}` → `OrderView` (own orders only; `404` otherwise). `trackValuePence` is
+what the Meta pixel reports for the order: real money only (card, deposit and winnings), never bonus credit.
+
+**Meta tracking (Conversions API).** No endpoint: `POST /api/checkout`, `POST /api/me/deposits` and
+`POST /api/auth/register` note the event when the request carries the `gg_consent=accepted` cookie (written
+by the cookie banner) and a Pixel ID is set; `_fbp`, `_fbc`, IP and browser name are kept with it. The
+scheduler (`gimme:meta-events`, every minute) sends it once the order is paid. Event ids match the browser
+pixel's so Meta counts each once: Purchase and the custom Deposit use the order number,
+CompleteRegistration uses `reg-{user id}`. Customer details leave only SHA-256 hashed.
 
 `POST /api/orders/{number}/return` — `{ leftAs?: "failed"|"cancelled" }` → `OrderView`. Called by
 the payment return pages and polled by the order page. Asks Cashflows about the **stored** job
