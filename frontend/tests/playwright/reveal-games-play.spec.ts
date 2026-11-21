@@ -354,7 +354,7 @@ for (const size of SIZES) {
         await expect(coin).toHaveAttribute("aria-label", "Drop the coin above slot 2");
         await page.locator(".rg-coin-board").click();
         await page.locator(".rg-coin-board").click({ force: true });
-        const board = page.locator(".rg-di-board svg");
+        const board = page.locator('.rg-di-board svg[role="img"]');
         await expect(board).toHaveAttribute("aria-label", /^Coin landed on /, { timeout: 8_000 });
         // The studs the coin bounced off light up on the way down.
         await expect(page.locator(".rg-di-stud.is-lit").first()).toBeAttached();

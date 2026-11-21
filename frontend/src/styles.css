@@ -28,6 +28,7 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .wrapx{flex-wrap:wrap}
 .g4{gap:4px}.g8{gap:8px}.g12{gap:12px}.g16{gap:16px}.g20{gap:20px}.g24{gap:24px}.g32{gap:32px}
 .ann{display:none;background:#07050B;border-bottom:1px solid rgba(255,255,255,.08);color:#B9AFC6;padding:8px 16px;justify-content:center;gap:14px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.ann a{display:inline-flex;align-items:center;min-height:40px;margin:-12px 0;padding:0 4px}
 .ann b{border:1px solid #FFF23A;color:#FFF23A;border-radius:999px;padding:1px 8px}
 .hd{position:sticky;top:0;z-index:30;background:rgba(10,7,15,.86);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.08)}
 .hd-in{display:flex;align-items:center;gap:10px;height:60px}
@@ -138,6 +139,8 @@ select.inp{appearance:none}
 .opt input{accent-color:#FF2DAA;width:20px;height:20px;margin:0;flex-shrink:0}
 .opt:has(input:checked){border-color:#FF2DAA;background:rgba(255,45,170,.08);box-shadow:0 0 18px rgba(255,45,170,.3)}
 .sw{appearance:none;width:46px;height:28px;border-radius:999px;background:#241A30;border:1px solid rgba(255,255,255,.2);position:relative;cursor:pointer;flex-shrink:0;transition:background-color .2s;margin:0}
+/* A switch sits in its label: the whole row is the tap target, at least 44px tall. */
+label:has(> .sw){min-height:44px;align-items:center}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:#8E84A0;transition:transform .2s,background-color .2s}
 .sw:checked{background:rgba(255,45,170,.3);border-color:#FF2DAA}
 .sw:checked::after{transform:translateX(18px);background:#FF2DAA;box-shadow:0 0 10px #FF2DAA}
@@ -159,7 +162,7 @@ select.inp{appearance:none}
 .av{width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-family:'Lilita One',sans-serif;flex-shrink:0}
 .split{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
 .ft{background:#050308;border-top:1px solid rgba(255,45,170,.35);padding:36px 0 28px;color:#8E84A0;font-size:13px}
-.ft a{color:#D8D0E2;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;justify-content:center;min-height:40px}
+.ft a{color:#D8D0E2;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;justify-content:center;min-height:40px;min-width:44px}
 .ft a:hover{color:#fff}
 .ft{text-align:center}
 .ft-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
@@ -452,3 +455,11 @@ label:has(> .sw),label:has(.sw){min-height:44px;align-items:center}
 @keyframes gbx-shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-6deg) translateY(-3px)}40%{transform:rotate(5deg)}60%{transform:rotate(-4deg) translateY(-2px)}80%{transform:rotate(3deg)}}
 @keyframes gbx-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.gbx-shaking,.gbx-line{animation:none}}
+
+/* Breadcrumbs: small text, full-size tap. */
+.crumbs a{display:inline-flex;align-items:center;min-height:40px;padding:0 2px;color:#8E84A0;text-decoration:none}
+.crumbs a:hover{color:#fff}
+/* Four steps: 1 column on phones, 2 on tablets, 4 on desktops (never 3 + 1). */
+.steps4{grid-template-columns:1fr}
+@media (min-width:600px){.steps4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1100px){.steps4{grid-template-columns:repeat(4,minmax(0,1fr))}}

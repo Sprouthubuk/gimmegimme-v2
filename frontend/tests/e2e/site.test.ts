@@ -67,6 +67,18 @@ describe("site-wide rules", () => {
     expect(html).not.toMatch(/fonts\.googleapis|googletagmanager|facebook\.net/);
     expect(html).toMatch(/noindex/); // search indexing stays off until launch
   });
+  it("a returning player who taps Buy while signed out can log in from the top of the join page", async () => {
+    const next = "/checkout?buy=c-cash:10";
+    const { html } = await new Browser(site.origin).page(`/join?next=${encodeURIComponent(next)}`);
+    const notice = html.match(/data-testid="join-from-buy"[\s\S]*?<\/div>/)?.[0] ?? "";
+    expect(notice).toContain("Your tickets are saved");
+    expect(notice).toContain(`/login?next=${encodeURIComponent(next).replace(/&/g, "&amp;")}`);
+  });
+  it("How It Works never promises a ticket count", async () => {
+    const t = text((await new Browser(site.origin).page("/how-it-works")).html);
+    expect(t).not.toMatch(/how many tickets there are|tickets left|max(imum)? entries/i);
+    expect(t).toContain("how much has sold");
+  });
   it("members-only pages send visitors to log in and come back", async () => {
     const b = new Browser(site.origin);
     for (const p of ["/account", "/account/wallet", "/account/tickets", "/account/safer-play", "/account/settings", "/checkout", "/order/GG-1234", "/payment/failed?order=GG-1234", "/payment/cancelled?order=GG-1234"]) {

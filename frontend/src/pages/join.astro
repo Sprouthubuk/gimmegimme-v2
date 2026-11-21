@@ -15,7 +15,7 @@ const reward = Astro.locals.site.referrals;
 <Layout title="Join Gimme Gimme" header="auth" bottomNav={false} footer={false} noindex>
   <section class="sec" style="padding-top:20px"><div class="narrow stack g16" style="max-width:480px">
     {inviter && reward && <div class="notice notice-c gg-rise" data-testid="invite-banner"><Icon name="gift" size={18} /><span><b>{inviter.firstName}</b> invited you. Spend {reward.minPurchasePence >= 100 ? `£${(reward.minPurchasePence / 100).toFixed(reward.minPurchasePence % 100 ? 2 : 0)}` : `${reward.minPurchasePence}p`} or more on your first order and you both get {reward.rewardType === "credit" ? `£${(reward.rewardCreditPence / 100).toFixed(2)} bonus credit` : `${reward.rewardTickets} free tickets`}. <a href="/legal/referral-terms" style="color:#22E6FF">Terms</a></span></div>}
-    {fromBuy && <div class="notice notice-c gg-rise"><Icon name="cart" size={18} /><span>Your tickets are saved. Create your account to pay.</span></div>}
+    {fromBuy && <div class="notice notice-c gg-rise" data-testid="join-from-buy"><Icon name="cart" size={18} /><span>Your tickets are saved. Create your account to pay, or <a href={`/login?next=${encodeURIComponent(next ?? "")}`} style="color:#22E6FF"><b>log in</b></a> if you already have one.</span></div>}
     <div class="gg-rise gg-d1"><h1 class="h1 h1-one">Join <span class="np gg-flicker">Gimme Gimme</span></h1><p class="p" style="margin-top:6px">Takes about 30 seconds.</p></div>
     <div class="gg-rise gg-d2"><JoinForm client:load next={next} referralCode={inviter?.code ?? null} /></div>
     <p class="p" style="text-align:center">Already have an account? <a href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}><b>Log in</b></a></p>

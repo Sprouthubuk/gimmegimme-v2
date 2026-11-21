@@ -243,3 +243,7 @@
 .rg-skin-christmas .rg-claw-machine { width: min(100%, 370px, calc((min(820px, 100svh) - 330px) / 1.65)); margin-inline: auto; }
 .rg-reveal.rg-fullscreen.rg-skin-christmas .rg-claw-machine,
 .rg-reveal.rg-fill.rg-skin-christmas .rg-claw-machine { width: min(100%, 370px, calc(((100svh - 180px) / var(--rg-z, 1) - 130px) / 1.65)); }
+
+/* Smooth on slower phones: the shadows round the whole machine come off while the claw is moving, since a
+   filter over moving artwork repaints the whole machine every frame (as the vault does while it turns). */
+.rg-claw-machine.rg-grinch:is(.is-descend, .is-close, .is-ascend, .is-carry, .is-drop) { filter: none; }

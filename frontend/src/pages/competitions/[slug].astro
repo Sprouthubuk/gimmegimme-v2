@@ -39,7 +39,7 @@ const [first, ...rest] = c.title.split(" – ");
 <div class="lft">
   <section style="padding:12px 0 24px"><div class="wrap stack g16">
     <a href="/competitions" class="row g8 mob" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />All Competitions</a>
-    <nav aria-label="Breadcrumb" class="dsk" style="font-size:13px;font-weight:800;color:#8E84A0"><a href="/" style="color:#8E84A0;text-decoration:none">Home</a> / <a href={`/competitions?type=${c.type}`} style="color:#8E84A0;text-decoration:none">{isDraw ? "Live Draws" : "Instant Wins"}</a> / <span style="color:#fff">{c.title}</span></nav>
+    <nav aria-label="Breadcrumb" class="dsk crumbs" style="font-size:13px;font-weight:800;color:#8E84A0"><a href="/">Home</a> / <a href={`/competitions?type=${c.type}`}>{isDraw ? "Live Draws" : "Instant Wins"}</a> / <span style="color:#fff">{c.title}</span></nav>
     <div class="split">
       <div class="stack g16">
         <HeroImage src={c.image} srcset={c.imageSrcset} alt={c.title}>

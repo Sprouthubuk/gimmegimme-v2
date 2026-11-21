@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { memo, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import type { BoardProps } from "../../games/types";
 import { COIN_BINS, generateCoinDrop } from "../../games/generators";
 import { BIN_TOP, BIN_W, COIN_R, H, LABEL_TOP, PEG_R, ROWS, ROW_DY, ROW_Y0, W, binX, pegsFor, useCoinDrop } from "../../games/coinDrop/useCoinDrop";
@@ -18,7 +18,8 @@ import "./dropIt.css";
  */
 
 /** "DROP IT · LIKE IT'S · HOT": dripping gold, with a flaming pink HOT. */
-function Title() {
+// The title and equaliser never change while the coin falls: memo keeps them out of each frame's re-render.
+const Title = memo(function Title() {
   const drips = [
     [44, 10], [70, 16], [104, 8], [138, 14], [176, 12], [208, 18], [246, 9], [276, 13],
   ];
@@ -49,10 +50,10 @@ function Title() {
       <text x="228" y="104" textAnchor="middle" className="rg-di-title-hot">HOT</text>
     </svg>
   );
-}
+});
 
 /** Equaliser bars that bounce to the beat, faster while the coin drops. */
-function Equaliser({ side }: { side: "left" | "right" }) {
+const Equaliser = memo(function Equaliser({ side }: { side: "left" | "right" }) {
   return (
     <span className={`rg-di-eq is-${side}`} aria-hidden="true">
       {Array.from({ length: 5 }, (_, i) => (
@@ -60,7 +61,7 @@ function Equaliser({ side }: { side: "left" | "right" }) {
       ))}
     </span>
   );
-}
+});
 
 export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: BoardProps) {
   const layout = useMemo(() => generateCoinDrop(ticket.prize, decoys, seed), [ticket.prize, decoys, seed]);
@@ -130,6 +131,9 @@ export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
         </div>
 
         <div className={`rg-coin-board rg-di-board is-${phase}`} onClick={dropCoin}>
+          {/* Two layers: the wall, studs and speakers (repainted only when a stud lights up), and above it the
+              coin and its trail, which move every frame. One picture would repaint every gradient stud per frame. */}
+          <div className="rg-di-stack">
           <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={landedBin != null ? `Coin landed on ${layout.bins[landedBin].label ?? "no prize"}` : "Coin drop board"}>
             <defs>
               <radialGradient id="rg-di-stud" cx="0.35" cy="0.3" r="0.8">
@@ -141,11 +145,6 @@ export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
                 <stop offset="0" stopColor="#ffe0f0" />
                 <stop offset="0.5" stopColor="#ff4fb0" />
                 <stop offset="1" stopColor="#a8005a" />
-              </radialGradient>
-              <radialGradient id="rg-di-coin" cx="0.35" cy="0.3" r="0.8">
-                <stop offset="0" stopColor="#fff6c2" />
-                <stop offset="0.5" stopColor="#ffd23f" />
-                <stop offset="1" stopColor="#c98200" />
               </radialGradient>
               <radialGradient id="rg-di-cone" cx="0.5" cy="0.5" r="0.5">
                 <stop offset="0" stopColor="#555" />
@@ -209,6 +208,15 @@ export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
             <line x1="0" x2={W} y1={BIN_TOP} y2={BIN_TOP} stroke="#141414" strokeWidth="3" />
             <line x1="0" x2={W} y1={LABEL_TOP} y2={LABEL_TOP} stroke="#141414" strokeWidth="3" />
 
+          </svg>
+          <svg viewBox={`0 0 ${W} ${H}`} className="rg-di-moving" aria-hidden="true">
+            <defs>
+              <radialGradient id="rg-di-coin" cx="0.35" cy="0.3" r="0.8">
+                <stop offset="0" stopColor="#fff6c2" />
+                <stop offset="0.5" stopColor="#ffd23f" />
+                <stop offset="1" stopColor="#c98200" />
+              </radialGradient>
+            </defs>
             {/* A blazing trail behind the coin. */}
             {trail.map((p, i) => (
               <circle key={i} cx={p.x} cy={p.y} r={COIN_R * (0.55 + i * 0.12)} className="rg-di-trail" opacity={0.18 + i * 0.14} />
@@ -222,6 +230,7 @@ export function DropItBoard({ ticket, seed, decoys, reducedMotion, onReveal }: B
               </g>
             )}
           </svg>
+          </div>
 
           {won && !reducedMotion && landedBin != null && (
             <div className="rg-di-pop" style={{ left: `${(binX(landedBin) / W) * 100}%` }} aria-hidden="true">
