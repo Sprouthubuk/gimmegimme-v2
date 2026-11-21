@@ -1,0 +1,53 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Icon from "../../components/Icon.astro";
+import type { ArchiveCompetitionSummary, ArchiveWinnerRow, EntryRow } from "../../lib/types";
+import { formatPence } from "../../lib/money";
+import { ukDate, ukDateTime } from "../../lib/time";
+import { clamp } from "../../lib/seo";
+const slug = Astro.params.slug!;
+const q = (Astro.url.searchParams.get("q") ?? "").replace(/\D/g, "").slice(0, 8);
+const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? 1) || 1);
+const wpage = Math.max(1, Number(Astro.url.searchParams.get("wins") ?? 1) || 1);
+const api = Astro.locals.api;
+const s = encodeURIComponent(slug);
+const res = await api.maybe<{ competition: ArchiveCompetitionSummary; drawWinners: ArchiveWinnerRow[]; hasInstantWins: boolean }>(`/api/archive/${s}`);
+if (!res) return Astro.rewrite("/404");
+const { competition: c, drawWinners, hasInstantWins } = res;
+const [entries, wins] = await Promise.all([
+  api.get<{ data: EntryRow[]; hasMore: boolean }>(`/api/archive/${s}/entries?${new URLSearchParams({ q, page: String(page) })}`),
+  hasInstantWins ? api.get<{ data: ArchiveWinnerRow[]; hasMore: boolean }>(`/api/archive/${s}/instant-wins?page=${wpage}`) : Promise.resolve({ data: [] as ArchiveWinnerRow[], hasMore: false }),
+]);
+const link = (o: Record<string, number | string>) => `?${new URLSearchParams({ q, page: String(page), wins: String(wpage), ...Object.fromEntries(Object.entries(o).map(([k, v]) => [k, String(v)])) })}`;
+const prize = (w: ArchiveWinnerRow) => (w.prizeName.startsWith("£") || /\d/.test(w.prizeName) ? w.prizeName : formatPence(w.valuePence));
+---
+<Layout title={`${c.title} — Results`} description={clamp(`${c.title} from our previous site: ${c.type === "draw" ? "the winner and winning ticket" : "every instant winner"}, plus the full entry list with masked names.`, 155)}>
+  <section class="sec" style="padding-top:20px"><div class="mid stack g16">
+    <a href="/previous" class="row g8" style="color:#B9AFC6;text-decoration:none;font-weight:800;font-size:14px;min-height:44px"><Icon name="back" size={18} />Previous Competitions</a>
+    <div class="card card-cy card-p stack g12">
+      <div class="row g12"><img src={c.imageSmall || c.image} alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover" /><div style="flex:1;min-width:0"><h1 class="d" style="font-size:22px;margin:0">{c.title}</h1><div class="hint">From our previous site{c.drawAt ? ` · ended ${ukDate(c.drawAt)}` : ""}</div></div></div>
+    </div>
+
+    {drawWinners.length > 0 && <div class="stack g8"><h2 class="h3">{drawWinners.length > 1 ? "Winners" : "Winner"}</h2>{drawWinners.map((w) => (
+      <div class="card card-ye card-p stack g8">
+        <div class="row g12"><span class="av" style="width:48px;height:48px;background:#FF2DAA;font-size:20px">{w.name.slice(0, 1)}</span><div style="flex:1"><div class="d" style="font-size:20px">{w.name}</div><div class="hint">{w.town ? `${w.town} · ` : ""}{w.at ? ukDateTime(w.at) : ""}</div></div><span class="tag tag-y">Winner</span></div>
+        <div class="d ny" style="font-size:22px">{w.prizeName}</div>
+        {w.ticketNumber && <div class="hint">Winning ticket #{w.ticketNumber}</div>}
+      </div>
+    ))}</div>}
+
+    {hasInstantWins && <div class="stack g8"><h2 class="h3">Instant Winners</h2>
+      <div class="card" style="overflow:hidden">{wins.data.map((w) => <div class="feed"><span class="av" style="background:#FF2DAA">{w.name.slice(0, 1)}</span><div style="flex:1;min-width:0"><div style="font-weight:800"><b>{w.name}</b> won <span class="ny">{prize(w)}</span></div><div class="hint">{w.ticketNumber ? `Ticket #${w.ticketNumber}` : ""}{w.at ? ` · ${ukDateTime(w.at)}` : ""}</div></div></div>)}</div>
+      <div class="row g8" style="justify-content:center">{wpage > 1 && <a class="btn btn-o btn-sm" href={link({ wins: wpage - 1 })}>Newer</a>}{wins.hasMore && <a class="btn btn-o btn-sm" href={link({ wins: wpage + 1 })}>Older</a>}</div>
+    </div>}
+
+    <div class="card card-p stack g12" id="entries">
+      <h2 class="h3" style="margin:0">Entry List</h2>
+      <form method="get" action="#entries" class="row g8"><input type="hidden" name="wins" value={wpage} /><input class="inp" name="q" inputmode="numeric" value={q} placeholder="Find a ticket number" aria-label="Find a ticket number" /><button class="btn btn-o" type="submit">Find</button></form>
+      {entries.data.length ? <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Ticket</th><th>Name</th><th>Entry</th></tr></thead><tbody>{entries.data.map((r) => <tr><td><span class="tn">#{r.ticket}</span>{r.prizeName && <span class="tag tag-p" style="display:block;width:max-content;margin-top:4px">Won {r.prizeName}</span>}</td><td>{r.name}</td><td class="hint">{r.source === "postal" ? "Postal" : "Paid"}</td></tr>)}</tbody></table></div> : <div class="empty">{q ? "No ticket with that number." : "No tickets."}</div>}
+      <div class="row g8" style="justify-content:center">{page > 1 && <a class="btn btn-o btn-sm" href={`${link({ page: page - 1 })}#entries`}>Previous</a>}{entries.hasMore && <a class="btn btn-o btn-sm" href={`${link({ page: page + 1 })}#entries`}>Next</a>}</div>
+    </div>
+
+    <div class="notice notice-c"><Icon name="info" size={18} /><span>This ran on our previous site, before our draws moved to Verity, so it doesn't have a Verity record. Names are shortened, as they were there.</span></div>
+  </div></section>
+</Layout>

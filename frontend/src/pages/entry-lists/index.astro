@@ -1,15 +1,19 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Icon from "../../components/Icon.astro";
-import type { CompetitionSummary } from "../../lib/types";
+import { ukDate } from "../../lib/time";
+import type { ArchiveCompetitionSummary, CompetitionSummary } from "../../lib/types";
 const q = (Astro.url.searchParams.get("q") ?? "").trim().toLowerCase().slice(0, 60);
 const { data } = await Astro.locals.api.get<{ data: CompetitionSummary[] }>("/api/entry-lists");
 const list = q ? data.filter((c) => c.title.toLowerCase().includes(q)) : data;
+const { data: old } = await Astro.locals.api.get<{ data: ArchiveCompetitionSummary[] }>("/api/archive").catch(() => ({ data: [] as ArchiveCompetitionSummary[] }));
+const oldList = q ? old.filter((c) => c.title.toLowerCase().includes(q)) : old;
 ---
 <Layout title="Competition Entry Lists" active="entry-lists" description="Every confirmed ticket in every Gimme Gimme competition, with its ticket number and a masked name, published from the first sale.">
   <section class="sec" style="padding-top:20px"><div class="mid stack g16">
     <div class="gg-rise"><div class="eyebrow">Confirmed Tickets</div><h1 class="h1">Entry <span class="nc gg-flicker">Lists</span></h1><p class="p" style="margin-top:6px">Every confirmed ticket, with its number and a masked name. Open from the first sale and updated as tickets sell.</p></div>
     <form method="get" class="gg-rise gg-d2" role="search"><label style="position:relative;display:block"><span style="position:absolute;left:14px;top:15px;color:#8E84A0"><Icon name="search" /></span><input class="inp" type="search" name="q" value={q} placeholder="Search a competition" aria-label="Search entry lists" style="padding-left:44px"></label></form>
     {list.length ? <div class="card gg-rise gg-d3" style="overflow:hidden">{list.map((c) => <a class="li" href={`/entry-lists/${c.slug}`}><img src={c.imageSmall ?? c.image} alt="" style="width:44px;height:44px;border-radius:12px;object-fit:cover" /><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{c.title}</span><span class="hint">{c.soldPercent}% sold · {c.status === "live" ? "on sale" : c.status.replace("_", " ")}</span></span><span class="chev"><Icon name="chev" size={18} /></span></a>)}</div> : <div class="card empty">{q ? "No competitions match that." : "Entry lists appear here as soon as a competition opens."}</div>}
+    {oldList.length > 0 && <div class="stack g8"><h2 class="h3">From Our Previous Site</h2><div class="card" style="overflow:hidden">{oldList.map((c) => <a class="li" href={`/previous/${c.slug}`}><img src={c.imageSmall || c.image} alt="" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover" /><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{c.title}</span><span class="hint">Ended{c.drawAt ? ` ${ukDate(c.drawAt)}` : ""}</span></span><span class="chev"><Icon name="chev" size={18} /></span></a>)}</div></div>}
   </div></section>
 </Layout>

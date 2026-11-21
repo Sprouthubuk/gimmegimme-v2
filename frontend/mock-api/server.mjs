@@ -269,6 +269,16 @@ route("GET", "/api/competitions/:slug/winning-numbers", (req, res, { params, que
   const rows = all.filter((r) => (show === "won" ? r.won : show === "left" ? !r.won : true) && (!q || String(r.ticket) === q) && (!prize || r.prizeName === prize));
   send(res, 200, { competition: c, data: rows.slice((page - 1) * 100, page * 100), total: all.length, won: all.filter((r) => r.won).length, matching: rows.length, hasMore: rows.length > page * 100 });
 });
+const ARCHIVE = [
+  { slug: "old-tax-free-cash", title: "£250 Tax-Free Cash – Live Draw", type: "draw", drawAt: iso(now - DAY), image: `${SELF}/media/fruity.webp`, imageSmall: `${SELF}/media/fruity.webp`, imageSrcset: null },
+  { slug: "old-pop-for-pennies", title: "Pop For Pennies – Instant Win", type: "instant", drawAt: iso(now - DAY), image: `${SELF}/media/pop.webp`, imageSmall: `${SELF}/media/pop.webp`, imageSrcset: null },
+];
+const ARCHIVE_WINNER = { id: "archive-1", name: "Abbie F.", town: "Barrow-in-Furness", prizeName: "£250 Tax-Free Cash", valuePence: 25000, ticketNumber: 2, at: iso(now - DAY), competitionTitle: ARCHIVE[0].title, competitionSlug: ARCHIVE[0].slug };
+route("GET", "/api/archive", (req, res) => send(res, 200, { data: ARCHIVE }));
+route("GET", "/api/archive/winners", (req, res) => send(res, 200, { data: [ARCHIVE_WINNER] }));
+route("GET", "/api/archive/:slug", (req, res, { params }) => { const c = ARCHIVE.find((a) => a.slug === params.slug); return c ? send(res, 200, { competition: c, drawWinners: c.type === "draw" ? [ARCHIVE_WINNER] : [], hasInstantWins: c.type === "instant" }) : fail(res, 404, "Not found"); });
+route("GET", "/api/archive/:slug/instant-wins", (req, res) => send(res, 200, { data: [{ ...ARCHIVE_WINNER, id: "archive-2", name: "Jamie D.", town: null, prizeName: "£0.05 Tiny Pop", valuePence: 5, ticketNumber: 3, competitionTitle: ARCHIVE[1].title, competitionSlug: ARCHIVE[1].slug }], hasMore: false }));
+route("GET", "/api/archive/:slug/entries", (req, res) => send(res, 200, { data: [{ ticket: 1, name: "Sam K.", source: "paid", prizeName: null }, { ticket: 2, name: "Entrant", source: "postal", prizeName: null }], hasMore: false }));
 route("GET", "/api/entry-lists", (req, res) => send(res, 200, { data: COMPS }));
 route("GET", "/api/entry-lists/:slug", (req, res, { params }) => { const c = bySlug.get(params.slug); return c ? send(res, 200, { competition: c, data: [{ ticket: 1, name: "N***** B.", source: "paid", prizeName: null }, { ticket: 2, name: "E**** A.", source: "postal", prizeName: c.type === "instant" ? "Bug Bite" : null }], hasMore: false }) : fail(res, 404, "Not found"); });
 route("GET", "/api/pages/:slug", (req, res, { params }) => send(res, 200, { title: { terms: "Terms & Conditions", privacy: "Privacy Policy", cookies: "Cookie Policy", complaints: "Complaints", "free-entry": "Free Entry Terms" }[params.slug] ?? "Page", updatedAt: iso(now - 10 * DAY), version: "1.0", html: `<h2 id="about">1. About Us</h2><p>Gimme Gimme Prizes is a trading name of GIMMEGIMMEPRIZES LTD.</p><h2 id="who">2. Who Can Enter</h2><p>UK residents aged 18 or over.</p>`, headings: [{ id: "about", text: "1. About Us" }, { id: "who", text: "2. Who Can Enter" }] }));

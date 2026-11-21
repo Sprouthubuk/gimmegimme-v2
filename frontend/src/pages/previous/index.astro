@@ -1,0 +1,14 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Icon from "../../components/Icon.astro";
+import type { ArchiveCompetitionSummary } from "../../lib/types";
+import { ukDate } from "../../lib/time";
+const { data } = await Astro.locals.api.get<{ data: ArchiveCompetitionSummary[] }>("/api/archive");
+---
+<Layout title="Previous Competitions" active="winners" description="Competitions from our previous site: every winner, the ticket that won and the full entry list, kept so you can still look them up.">
+  <section class="sec" style="padding-top:20px"><div class="mid stack g16">
+    <div class="gg-rise"><div class="eyebrow">From Our Previous Site</div><h1 class="h1">Previous <span class="ny gg-flicker">Competitions</span></h1><p class="p" style="margin-top:6px">Competitions that ran on our previous site, with their winners and entry lists, so you can still look them up.</p></div>
+    {data.length ? <div class="card gg-rise gg-d2" style="overflow:hidden">{data.map((c) => <a class="li" href={`/previous/${c.slug}`}><img src={c.imageSmall || c.image} alt="" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover" /><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{c.title}</span><span class="hint">{c.type === "instant" ? "Instant win" : "Live draw"}{c.drawAt ? ` · ended ${ukDate(c.drawAt)}` : ""}</span></span><span class="chev"><Icon name="chev" size={18} /></span></a>)}</div> : <div class="card empty">Nothing here yet.</div>}
+    <div class="notice notice-c"><Icon name="info" size={18} /><span>These ran on our previous site, before our draws moved to Verity, so they don't have a Verity record. Competitions from now on have one on their <a href="/winners" style="color:#22E6FF">winners</a> and <a href="/entry-lists" style="color:#22E6FF">entry list</a> pages.</span></div>
+  </div></section>
+</Layout>

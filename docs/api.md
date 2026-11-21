@@ -36,6 +36,11 @@ against it; the Laravel feature tests must cover the same behaviour.
 | GET | `/api/winners/draws` | `{ data: DrawWinnerRow[] }` |
 | GET | `/api/entry-lists` | `{ data: CompetitionSummary[] }` (no entry counts): every published competition once it opens, on sale first (closing soonest), then finished ones |
 | GET | `/api/entry-lists/{slug}?q=&page=` | `{ competition, data: EntryRow[], hasMore }` (no total); open from the first sale; names masked ("L*** P."); `prizeName` on an instant-win ticket that won |
+| GET | `/api/archive` | `{ data: ArchiveCompetitionSummary[] }`: the old (Lovable) site's competitions, read-only (`gimme:import-archive`). Not Verity records: never linked to `/verify` or called verified |
+| GET | `/api/archive/winners` | `{ data: ArchiveWinnerRow[] }`: the old site's announced live-draw winners, newest first (masked names, town, winning ticket) |
+| GET | `/api/archive/{slug}` | `{ competition: ArchiveCompetitionSummary, drawWinners: ArchiveWinnerRow[], hasInstantWins }` |
+| GET | `/api/archive/{slug}/instant-wins?page=` | `{ data: ArchiveWinnerRow[], hasMore }` (50 a page, newest first) |
+| GET | `/api/archive/{slug}/entries?q=&page=` | `{ data: EntryRow[], hasMore }` (no total, 100 a page; `q` is a ticket number); masked names as the old site showed them; `prizeName` on a ticket that won an instant prize |
 | GET | `/api/competitions/{slug}/winning-numbers?show=all\|won\|left&q=&prize=&page=` | `WinningNumbersPage` (`prize` = one prize's name). A paid win isn't named (here, in `/api/winners/instant` or as an entry list's `prizeName`) until its player has played the reveal, or for an hour: every instant prize's winning ticket number, public from publish, biggest prize first, 100 a page; `404` for draws |
 | GET | `/api/pages/{slug}` | `{ title, updatedAt, version, html, headings }` (terms, privacy, rules, cookies, free-entry) |
 | POST | `/api/contact` | `{ name, email, topic, message }` → `204`; rate limited |
