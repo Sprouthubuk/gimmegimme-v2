@@ -48,7 +48,7 @@ export async function startSite(backend: "mock" | "laravel" = "mock", opts: { fe
       ...env, APP_ENV: "local", APP_DEBUG: "true", APP_URL: origin, FRONTEND_URL: origin, DB_CONNECTION: "sqlite", DB_DATABASE: dbFile,
       SESSION_DRIVER: "file", SESSION_COOKIE: "gimme_session", SESSION_DOMAIN: "", SANCTUM_STATEFUL_DOMAINS: `127.0.0.1:${proxyPort}`,
       CACHE_STORE: "file", QUEUE_CONNECTION: "sync", MAIL_MAILER: "log", CASHFLOWS_DRIVER: "fake", VERITY_BEACON: "local",
-      VERITY_OWNER_PEPPER: "fullstack-test-pepper-0123456789", PHP_CLI_SERVER_WORKERS: "4", LOG_CHANNEL: "single",
+      VERITY_OWNER_PEPPER: "fullstack-test-pepper-0123456789", PHP_CLI_SERVER_WORKERS: "12", LOG_CHANNEL: "single",
       // Every request in a test comes from one IP; the limits themselves are covered by the PHP tests.
       API_RATE_PER_MINUTE: "100000", VERITY_ROUTES: "true",
       // Pages make side-by-side API calls; SQLite has one writer, so it waits briefly for it instead of failing.

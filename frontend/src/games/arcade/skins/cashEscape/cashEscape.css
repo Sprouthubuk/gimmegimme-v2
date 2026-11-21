@@ -78,8 +78,8 @@
   75% { translate: 0.5px 0.8px; }
 }
 .rg-ce-rotor { transform-origin: 0 0; will-change: transform; }
-.rg-ce.is-spinning .rg-ce-rotor { animation: rg-ce-blur 5.2s ease-out; }
-@keyframes rg-ce-blur { 0%, 55% { filter: blur(1.3px); } 100% { filter: blur(0); } }
+/* No motion blur on the turning door: a blur filter over a moving picture repaints it every frame, which
+   dropped slower phones under 40 frames a second. */
 .rg-ce-seg-text { font-family: var(--rg-font-display); font-size: 15px; stroke: rgba(20, 20, 20, 0.25); stroke-width: 0.6px; }
 .rg-ce-seg-text.is-none { font-size: 7.5px; font-family: var(--rg-font-body); font-weight: 900; stroke: none; }
 .rg-ce-hit { animation: rg-ce-flash 0.4s ease-in-out 5; }
@@ -181,3 +181,11 @@
 /* Premium labels: the same clean, thinner lettering as the classic wheel. */
 .rg-ce-seg-text { font-family: var(--rg-font-body); font-weight: 800; letter-spacing: -0.01em; stroke: rgba(0, 0, 0, 0.18); }
 .rg-ce-seg-text.is-none { font-weight: 800; letter-spacing: 0.08em; opacity: 0.9; }
+
+/* Smooth on slower phones: while the door turns, the swinging chains and the flickering title hold still
+   (both sit under shadow filters, so every frame of them repaints). */
+.rg-ce.is-spinning .rg-ce-chain,
+.rg-ce.is-spinning .rg-ce-title-escape { animation-play-state: paused; }
+/* The light rays turn on their own layer, and the siren drops its shadow while it wobbles. */
+.rg-ce-rays { will-change: transform; }
+.rg-ce.is-spinning .rg-ce-siren { filter: none; }

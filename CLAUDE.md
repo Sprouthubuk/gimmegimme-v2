@@ -11,7 +11,8 @@ Read before every task. If a request conflicts with this, stop and ask.
   runs `tests/visual/journey.test.ts`: a real phone browser joins, confirms the email, pays by card, plays, buys from
   the wallet, tops up and recovers from a declined and a cancelled card, failing on any page or console error, and `tests/visual/mobile-audit.test.ts`: crawls every page at 390px and 320px,
   signed out and in, and fails on errors, sideways scroll, taps under 40px, inputs under 16px or unlabelled, broken images or a
-  missing h1; findings and page weights go to /tmp/gg-audit).
+  missing h1, then checks the same pages on 768px and 1024px tablets and a 1440px desktop; findings and page weights go to
+  /tmp/gg-audit).
 - `docs/api.md` + `frontend/src/lib/types.ts` are the contract. Change both together, and the mock
   API (`frontend/mock-api/server.mjs`) and the Laravel tests with them.
 
@@ -92,6 +93,9 @@ Read before every task. If a request conflicts with this, stop and ask.
   events to the Conversions API (`App\Tracking\MetaEvents`, `gimme:meta-events` every minute, token in `META_CAPI_TOKEN`
   only). Browser and server share event ids (order number; `reg-{user id}`). Values are real money only, never bonus.
   Personal details leave only SHA-256 hashed (`MetaTrackingTest`); never log Meta's error message or the token.
+- Smooth games on slow phones: never animate or move anything under a `filter` (drop-shadow, blur), and take a board's
+  filter off while it moves (vault, claw, coin drop do). Keep fast-moving parts in their own layer (`will-change: transform`,
+  or a separate SVG over the still picture) and `memo` static artwork in boards that re-render every frame.
 - Reveal games are 2D (SVG and CSS, no WebGL): each board sits on an illustrated scene (`src/games/arcade/shell/scenery`,
   swappable for a painted picture through `PAINTED`). The classic skin's premium look is `shell/premium.css` plus a
   `.rg-skin-classic` block at the end of each game's CSS. `npm run test:games` plays every game (run the smoothness checks
