@@ -42,6 +42,10 @@ final class CompetitionPresenter
             'topPrizePence' => $top ?: null,
             'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format((int) $c->prizes->sum('quantity')).' instant wins' : null),
             'soldPercent' => $this->state->soldPercent($c),
+            // Shown to players since 22 Nov 2026 (owner): the maximum, how many sold and how many are left.
+            'maxTickets' => (int) $c->max_tickets,
+            'ticketsSold' => $this->state->sold($c),
+            'ticketsLeft' => $this->state->left($c),
             'prizeCount' => $c->isInstant() ? (int) $c->prizes->sum('quantity') : null,
             'endPrize' => $c->isInstant() && $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence, 'count' => $c->endPrizeCount()] : null,
             'opensAt' => $c->opens_at?->toIso8601ZuluString(),

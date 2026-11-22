@@ -46,12 +46,12 @@ Read before every task. If a request conflicts with this, stop and ask.
   tier is badged "Our Pick" (owner, 19 Nov 2026): never "Best Value" (it isn't the cheapest per ticket) or
   "Most Popular" (not backed by sales data). Promo codes apply to singles only. Unpaid orders
   hold tickets for `Order::HOLD_MINUTES` (15).
-- Players never see ticket counts (total, sold, left, max entries, odds): only `soldPercent` (rounded
-  down; 100 only when sold out), "Almost gone!" from 90% and "Sold Out". No public response may carry
-  a count (`BundlesTest::test_no_public_response_gives_away_how_many_tickets_there_are`). Admin sees all.
-- No "max", "sold" or "left" ticket count anywhere a player buys: competition pages, cards, basket,
-  checkout, the Gimme Box and the voucher draw picker show % sold only (owner, 19 Nov 2026). Entry lists
-  and the fair-play record stay public as they are (don't gate them or touch Verity), and Terms 4.3 stays.
+- Players see each competition's ticket counts (owner, 22 Nov 2026, replacing the 19 Nov "% sold only" rule):
+  `maxTickets`, `ticketsSold` and `ticketsLeft` on every competition summary, shown on cards ("X left of Y tickets")
+  and the competition page (tickets / sold / left), alongside `soldPercent` (rounded down; 100 only when sold out),
+  "Almost gone!" from 90% and "Sold Out" (`BundlesTest::test_competitions_show_players_the_maximum_sold_and_left_tickets`).
+  Never shown: a per-person limit (there isn't one) or the promo cap and how much of it is used. Entry lists and
+  the fair-play record stay public as they are (don't gate them or touch Verity), and Terms 4.3 stays.
 - Gimme Box (lucky dip, live draws only) and Refer a Friend are each behind a setting (`feature_gimme_box`,
   `feature_referrals`, Admin → Settings), off by default; never switch them on in a migration or seeder.
   A box is packed and priced only by `GimmeBoxPacker` at the competition page prices, never over budget;

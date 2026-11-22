@@ -67,6 +67,7 @@ const [first, ...rest] = c.title.split(" – ");
           <Countdown until={opensLater ?? (isDraw && c.drawAt ? c.drawAt : c.closesAt)} />
           <div class={`bar ${isDraw ? "cy" : ""}`} data-sold-bar={c.slug}><div class="gg-shine" style={`width:${c.soldPercent > 0 ? Math.max(c.soldPercent, 2) : 0}%`}></div></div>
           <div class="row between hint"><span data-sold-text={c.slug}><b>{c.status === "sold_out" ? "SOLD OUT" : `${c.soldPercent}% SOLD`}</b>{c.status !== "sold_out" && c.soldPercent >= 90 && <span class="ny"> · Almost gone!</span>}</span><span>{isDraw ? "" : "Results fixed when you buy"}</span></div>
+          <div class="tcounts" data-ticket-counts={c.slug}><span><b>{c.maxTickets.toLocaleString("en-GB")}</b> tickets</span><span><b>{c.ticketsSold.toLocaleString("en-GB")}</b> sold</span><span><b>{c.ticketsLeft.toLocaleString("en-GB")}</b> left</span></div>
         </div>
         <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} bundles={c.bundles ?? []} soldPercent={c.soldPercent} soldOut={c.status === "sold_out"} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
         {c.type === "draw" && site.gimmeBox?.available && <a class="tap" href="/gimme-box" style="font-weight:800" data-testid="gb-link">Can't decide? Try a Gimme Box →</a>}
@@ -153,12 +154,15 @@ const [first, ...rest] = c.title.split(" – ");
   window.addEventListener("load", () => window.ggTrack?.("ViewContent", { content_ids: [slug], content_name: title, content_type: "product", value: price / 100, currency: "GBP" }));
   // The ticket picker re-reads % sold every minute; keep the bar and its words in step.
   window.addEventListener("gg-sold", (e) => {
-    const { slug: s, percent } = e.detail || {};
+    const { slug: s, percent, max, sold, left } = e.detail || {};
     if (s !== slug) return;
     const bar = document.querySelector(`[data-sold-bar="${slug}"] > div`);
     if (bar) bar.style.width = `${percent > 0 ? Math.max(percent, 2) : 0}%`;
     const text = document.querySelector(`[data-sold-text="${slug}"]`);
     if (text) text.innerHTML = `<b>${percent}% SOLD</b>${percent >= 90 && percent < 100 ? '<span class="ny"> · Almost gone!</span>' : ""}`;
+    const counts = document.querySelector(`[data-ticket-counts="${slug}"]`);
+    const n = (v) => Number(v).toLocaleString("en-GB");
+    if (counts && Number.isFinite(max)) counts.innerHTML = `<span><b>${n(max)}</b> tickets</span><span><b>${n(sold)}</b> sold</span><span><b>${n(left)}</b> left</span>`;
   });
 </script>
 </Layout>

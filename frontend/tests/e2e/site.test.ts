@@ -101,7 +101,7 @@ describe("site-wide rules", () => {
     expect(html).toMatch(/Emmie A\.<\/b> won <b class="ny">£0\.50 site credit<\/b><small>Pop For Pennies · /);
     expect(html).not.toContain('aria-label="Prize ladder"');
   });
-  it("competition cards show price, wins, highlight, time left and % sold, never a ticket count", async () => {
+  it("competition cards show price, wins, highlight, time left, % sold and the tickets left of the maximum", async () => {
     const { html } = await new Browser(site.origin).page("/competitions");
     const t = text(html);
     expect(t).toMatch(/25p/);
@@ -109,7 +109,7 @@ describe("site-wide rules", () => {
     expect(t).toMatch(/Top Prize £/);
     expect(t).toMatch(/\d+d \d+h/);
     expect(t).toMatch(/2% sold/);
-    expect(t).not.toMatch(/\d ?left|tickets in total|max entries/i); // players only ever see % sold
+    expect(t).toMatch(/49,000 left of 50,000 tickets/); // ticket counts shown since 22 Nov 2026 (owner)
     expect(t).toMatch(/Buy 10 Get 15 Free/); // a live draw card names its Our Pick bundle
     expect(html).toContain("data-ends=");
     // No game tag on a card (only live draws keep their Live Draw tag), and no limit per person anywhere.
@@ -142,7 +142,7 @@ describe("site-wide rules", () => {
     expect((await b.page("/demo/slots")).html).toContain("GIMMEGIMMEPRIZES LTD");
     expect((await b.page("/")).res.headers.get("x-frame-options")).toBe("DENY");
   });
-  it("a live draw's page shows its bundles, Our Pick first choice, and no ticket counts", async () => {
+  it("a live draw's page shows its bundles, Our Pick first choice, and its ticket counts", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/lush-snow-fairy-wonderland");
     const t = text(html);
     expect(t).toMatch(/Buy 10 Get 15 FREE!/);
@@ -151,7 +151,8 @@ describe("site-wide rules", () => {
     expect(t).toMatch(/Save £8\.85/);
     expect(t).toMatch(/Bundle and free tickets are entered into the draw exactly like paid tickets/);
     expect(t).toMatch(/8% SOLD/);
-    expect(html).not.toMatch(/maxTickets|ticketsLeft|maxPerPerson/);
+    expect(t).toMatch(/50,000 tickets\s*4,000 sold\s*46,000 left/);
+    expect(html).not.toMatch(/maxPerPerson/);
   });
   it("the competition page renders the ticket picker on the server", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");

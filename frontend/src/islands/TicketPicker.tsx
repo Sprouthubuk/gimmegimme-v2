@@ -83,7 +83,7 @@ export default function TicketPicker(p: PickerProps) {
         const c = await api<CompetitionDetail>(`/api/competitions/${encodeURIComponent(p.slug)}`);
         setBundles(Array.isArray(c.bundles) ? c.bundles : []);
         setSold({ percent: c.soldPercent ?? 0, out: c.status === "sold_out" });
-        window.dispatchEvent(new CustomEvent("gg-sold", { detail: { slug: p.slug, percent: c.soldPercent ?? 0 } }));
+        window.dispatchEvent(new CustomEvent("gg-sold", { detail: { slug: p.slug, percent: c.soldPercent ?? 0, max: c.maxTickets, sold: c.ticketsSold, left: c.ticketsLeft } }));
       } catch { /* try again next minute */ }
     }, 60000);
     return () => window.clearInterval(t);
