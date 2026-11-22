@@ -42,7 +42,7 @@ class SiteSettings extends Page
         'gimme_box_chips', 'gimme_box_min_pence', 'gimme_box_max_pence', 'gimme_box_bonus_pct', 'gimme_box_max_sold_pct', 'gimme_box_slow_boost_pct',
         'gimme_box_hold_minutes', 'gimme_box_share_of_sales_pct',
         'referral_reward_type', 'referral_reward_tickets', 'referral_reward_credit_pence', 'referral_min_purchase_pence', 'referral_monthly_cap',
-        'referral_voucher_days', 'referral_clawback_days', 'referral_flag_after'];
+        'referral_voucher_days', 'referral_clawback_days', 'referral_flag_after', 'big_win_alert_pence', 'big_win_alert_emails'];
 
     /** On/off switches: shown as toggles, saved as 1/0. Both start off. */
     private const FLAGS = ['feature_gimme_box', 'feature_referrals'];
@@ -77,6 +77,12 @@ class SiteSettings extends Page
             Section::make('Money')->columns(3)->components(array_map(fn ($k) => Money::input($k, self::MONEY[$k])->required(), array_keys(self::MONEY))),
             Section::make('Bonus credit')->description('Credit you add to a player by hand, and bonus brought over from the old site.')->components([
                 TextInput::make('bonus_expiry_days')->label('Bonus credit expires after (days)')->integer()->minValue(1)->maxValue(365)->required(),
+            ]),
+            Section::make('Big Win Alerts')->description('An email the moment a player wins this much or more (instant wins and draws). Big wins also show on the dashboard and in the Wins report.')->columns(2)->components([
+                Money::input('big_win_alert_pence', 'Alert for wins of')->required(),
+                TextInput::make('big_win_alert_emails')->label('Send to (comma separated)')->maxLength(300)
+                    ->rule('regex:/^\\s*[^,\\s]+@[^,\\s]+(\\s*,\\s*[^,\\s]+@[^,\\s]+)*\\s*$/')
+                    ->helperText('Leave empty to use the usual admin alert address.'),
             ]),
             Section::make('Site')->columns(2)->components([
                 TextInput::make('featured_slug')->label('Featured competition (web address name)')->alphaDash(),

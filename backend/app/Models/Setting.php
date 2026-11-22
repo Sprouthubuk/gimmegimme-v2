@@ -28,6 +28,9 @@ class Setting extends Model
         'instagram_url' => null,
         'facebook_url' => null,
         'support_email' => null,
+        // Admin reports: a win at or above this sends an alert (Reports::bigWinPence); blank addresses = the usual alert addresses.
+        'big_win_alert_pence' => '10000',
+        'big_win_alert_emails' => null,
         // Gimme Box (off until switched on in Admin → Settings)
         'feature_gimme_box' => '0',
         'gimme_box_chips' => '500,1000,2000,5000',

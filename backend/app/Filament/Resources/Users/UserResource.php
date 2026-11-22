@@ -2,6 +2,14 @@
 
 namespace App\Filament\Resources\Users;
 
+use Filament\Tables\Filters\Filter;
+
+use Filament\Actions\ViewAction;
+
+use App\Support\Reports;
+
+use App\Filament\Resources\Users\Pages\ViewUser;
+
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Support\Money;
@@ -88,12 +96,33 @@ class UserResource extends Resource
 
     public static function table(Table $table): Table
     {
+        // Balances and lifetime figures as sub-selects, so they sort and filter in the database.
+        $bucket = fn (string $b) => fn ($q) => $q->from('wallet_ledger')->whereColumn('wallet_ledger.user_id', 'users.id')->where('wallet_ledger.bucket', $b)
+            ->selectRaw("COALESCE(SUM(CASE WHEN direction = 'credit' THEN amount_pence ELSE -amount_pence END), 0)");
+        $paid = fn ($q) => $q->from('orders')->whereColumn('orders.user_id', 'users.id')->where('orders.status', 'paid');
+
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->select('users.*')
+                ->selectSub($bucket('winnings'), 'winnings_pence')->selectSub($bucket('deposit'), 'deposit_pence')->selectSub($bucket('bonus'), 'bonus_pence')
+                ->selectSub(fn ($q) => $paid($q)->where('orders.order_type', 'tickets')->selectRaw('COALESCE(SUM(orders.total_pence), 0)'), 'spent_pence')
+                ->selectSub(fn ($q) => $paid($q)->selectRaw('COALESCE(SUM(orders.card_pence), 0)'), 'paid_in_pence')
+                ->selectSub(fn ($q) => $paid($q)->where('orders.paid_at', '>=', now()->subDays(7))->selectRaw('COALESCE(SUM(orders.card_pence), 0)'), 'paid_in_7d_pence')
+                ->selectSub(fn ($q) => $q->from('verity_winners as w')->whereRaw(Reports::ownerOf('w.owner_ref'))->where('w.status', 'active')
+                    ->selectRaw('COALESCE(SUM(w.prize_value_pence), 0)'), 'won_pence')
+                ->selectSub(fn ($q) => $paid($q)->selectRaw('MAX(orders.paid_at)'), 'last_order_at'))
             ->defaultSort('created_at', 'desc')
+            ->recordUrl(fn (User $u) => self::getUrl('view', ['record' => $u]))
             ->columns([
                 TextColumn::make('first_name')->label('Name')->formatStateUsing(fn ($state, User $u) => $u->first_name.' '.$u->last_name)->searchable(['first_name', 'last_name']),
                 TextColumn::make('email')->searchable()->copyable(),
-                TextColumn::make('wallet')->state(fn (User $u) => Money::show(app(Wallet::class)->total($u))),
+                TextColumn::make('winnings_pence')->label('Winnings')->sortable(query: fn ($query, string $direction) => $query->orderBy('winnings_pence', $direction))->formatStateUsing(fn ($state) => Money::show((int) $state))
+                    ->color(fn ($state) => (int) $state > 0 ? 'success' : null),
+                TextColumn::make('deposit_pence')->label('Deposit')->sortable(query: fn ($query, string $direction) => $query->orderBy('deposit_pence', $direction))->formatStateUsing(fn ($state) => Money::show((int) $state)),
+                TextColumn::make('bonus_pence')->label('Bonus')->sortable(query: fn ($query, string $direction) => $query->orderBy('bonus_pence', $direction))->formatStateUsing(fn ($state) => Money::show((int) $state)),
+                TextColumn::make('spent_pence')->label('Spent')->tooltip('Lifetime on tickets, card and wallet')->sortable(query: fn ($query, string $direction) => $query->orderBy('spent_pence', $direction))->formatStateUsing(fn ($state) => Money::show((int) $state)),
+                TextColumn::make('paid_in_7d_pence')->label('Paid In 7 Days')->sortable(query: fn ($query, string $direction) => $query->orderBy('paid_in_7d_pence', $direction))->formatStateUsing(fn ($state) => Money::show((int) $state))->toggleable(),
+                TextColumn::make('won_pence')->label('Won')->tooltip('Lifetime prize value')->sortable(query: fn ($query, string $direction) => $query->orderBy('won_pence', $direction))->formatStateUsing(fn ($state) => Money::show((int) $state)),
+                TextColumn::make('last_order_at')->label('Last Order')->sortable(query: fn ($query, string $direction) => $query->orderBy('last_order_at', $direction))->since('Europe/London')->placeholder('—')->toggleable(),
                 IconColumn::make('email_verified_at')->label('Email')->boolean()->state(fn (User $u) => $u->email_verified_at !== null),
                 IconColumn::make('id_verified_at')->label('ID')->boolean()->state(fn (User $u) => $u->id_verified_at !== null),
                 TextColumn::make('flags')->badge()->separator(',')->state(fn (User $u) => array_values(array_filter([
@@ -103,10 +132,20 @@ class UserResource extends Resource
                 TextColumn::make('created_at')->label('Joined')->date('j M Y', 'Europe/London')->sortable(),
             ])
             ->filters([
+                Filter::make('winnings')->label('Holding winnings')
+                    ->schema([TextInput::make('min')->label('Winnings of at least (£)')->numeric()->minValue(0)->default(null)])
+                    ->query(fn ($query, array $data) => filled($data['min'] ?? null) ? $query->whereRaw("(SELECT COALESCE(SUM(CASE WHEN direction = 'credit' THEN amount_pence ELSE -amount_pence END), 0) FROM wallet_ledger WHERE wallet_ledger.user_id = users.id AND wallet_ledger.bucket = 'winnings') >= ?", [(int) round(((float) $data['min']) * 100)]) : $query)
+                    ->indicateUsing(fn (array $data) => filled($data['min'] ?? null) ? 'Winnings ≥ £'.$data['min'] : null),
+                Filter::make('spender')->label('Paid in, last 7 days')
+                    ->schema([TextInput::make('min7')->label('Paid in over the last 7 days of at least (£)')->numeric()->minValue(0)->default(null)])
+                    ->query(fn ($query, array $data) => filled($data['min7'] ?? null) ? $query->whereRaw("(SELECT COALESCE(SUM(orders.card_pence), 0) FROM orders WHERE orders.user_id = users.id AND orders.status = 'paid' AND orders.paid_at >= ?) >= ?", [now()->subDays(7), (int) round(((float) $data['min7']) * 100)]) : $query)
+                    ->indicateUsing(fn (array $data) => filled($data['min7'] ?? null) ? '7-day paid in ≥ £'.$data['min7'] : null),
+                TernaryFilter::make('legacy_id')->label('From the old site')->nullable(),
                 TernaryFilter::make('on_hold_at')->label('On hold')->nullable(),
                 TernaryFilter::make('is_staff')->label('Staff'),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
                 ActionGroup::make([
                     self::reasoned('hold', 'Put on hold', fn (User $u) => ! $u->on_hold_at, function (User $u, string $reason) {
@@ -162,6 +201,6 @@ class UserResource extends Resource
 
     public static function getPages(): array
     {
-        return ['index' => ListUsers::route('/'), 'edit' => EditUser::route('/{record}/edit')];
+        return ['index' => ListUsers::route('/'), 'view' => ViewUser::route('/{record}'), 'edit' => EditUser::route('/{record}/edit')];
     }
 }
