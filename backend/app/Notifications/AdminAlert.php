@@ -19,9 +19,10 @@ class AdminAlert extends Notification
     /** @param list<string> $lines */
     public function __construct(public string $subject, public array $lines, public string $path) {}
 
-    public static function send(string $subject, array $lines, string $path): void
+    /** @param list<string>|null $to who to tell; null: the usual alert addresses (ADMIN_ALERT_EMAILS, else CONTACT_INBOX). */
+    public static function send(string $subject, array $lines, string $path, ?array $to = null): void
     {
-        $to = array_values(array_filter(array_map('trim', explode(',', (string) (config('app.alert_emails') ?: config('app.contact_inbox'))))));
+        $to ??= array_values(array_filter(array_map('trim', explode(',', (string) (config('app.alert_emails') ?: config('app.contact_inbox'))))));
         if ($to === []) {
             return;
         }

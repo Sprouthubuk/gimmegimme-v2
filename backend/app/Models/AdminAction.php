@@ -18,6 +18,11 @@ class AdminAction extends Model
         static::query()->create(['admin_id' => $admin->id, 'action' => $action, 'subject' => $subject, 'reason' => $reason, 'detail' => $detail]);
     }
 
+    public function admin(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_id');
+    }
+
     protected $table = 'admin_actions';
 
     protected $guarded = ['id'];

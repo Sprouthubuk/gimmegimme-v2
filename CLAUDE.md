@@ -82,6 +82,10 @@ Read before every task. If a request conflicts with this, stop and ask.
   (`archive_*` tables, `gimme:import-archive` from `resources/archive/*.csv` on every deploy; docs/old-site-archive.md).
   Masked names only; never a Verity record, never linked to `/verify`, never mixed into the live lists.
 - Admin is Filament at `/admin` (`app/Filament`); admins and staff can't play.
+- Admin reports are read only and share one set of sums, `App\Support\Reports` (player page `Users/Pages/ViewUser`, players list
+  balance columns, Wins / Money / Competition reports, dashboard `MoneyStats`, `BigWins`, `TopBuyers`); wins are read from Verity's
+  winners, never written. A win at or above `big_win_alert_pence` (Settings, default £100) emails `big_win_alert_emails` (else the
+  usual alert address) once, from `Fulfilment` via `App\Support\BigWinAlert`. CSV downloads go through `App\Support\Csv`.
 - Tests: `tests/Feature` (Verity runs for real on its local beacon; Cashflows is `FakeGateway`).
 - `DemoSeeder` is for laptops and tests only and refuses production.
 - Emails are Laravel notifications in the Gimme Gimme mail theme (`resources/views/vendor/mail`, `vendor/notifications/email.blade.php`):

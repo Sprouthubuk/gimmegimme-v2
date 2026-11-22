@@ -14,7 +14,7 @@ use Illuminate\Support\HtmlString;
 
 class LiveCompetitions extends TableWidget
 {
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 5;
 
     protected int|string|array $columnSpan = 'full';
 

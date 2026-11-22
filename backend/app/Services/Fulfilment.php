@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\PrizeClaim;
 use App\Models\User;
 use App\Notifications\PrizeWon;
+use App\Support\BigWinAlert;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Sprouthub\Verity\Engine\VerityException;
@@ -100,11 +101,13 @@ final class Fulfilment
         $type = $prize?->meta['type'] ?? 'site_credit';
         if ($type === 'physical') {
             $this->claim($w, $userId, 'instant');
+            BigWinAlert::check($w, $userId);
 
             return;
         }
         if ($w->prize_value_pence > 0) {
             $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'Instant win · '.$w->prize_name, 'verity-winner:'.$w->id);
+            BigWinAlert::check($w, $userId);
         }
     }
 
@@ -135,6 +138,7 @@ final class Fulfilment
             } else {
                 $this->claim($w, $userId, 'draw');
             }
+            BigWinAlert::check($w, $userId);
         }
         // A redraw's replacement may free the next repeat win for its own redraw.
         $rules->enforce($w->competition);
