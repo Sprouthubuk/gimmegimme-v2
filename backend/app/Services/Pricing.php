@@ -190,12 +190,12 @@ final class Pricing
     /**
      * The free bonus tickets a Gimme Box adds to one competition: only while the basket still holds what
      * the box packed there (the same bundle, at least its single tickets), capped by what's left and by
-     * the competition's biggest-bundle share.
+     * the competition's biggest-bundle share. Never on an instant-win game.
      */
     private function boxBonus(?GimmeBox $box, Competition $c, ?int $bundleId, int $singles, int $room): int
     {
         $l = $box?->lineFor($c->id);
-        if (! $l || (int) ($l['bundle_tier_id'] ?? 0) !== (int) ($bundleId ?? 0) || $singles < (int) $l['singles']) {
+        if (! $l || $c->type !== 'draw' || (int) ($l['bundle_tier_id'] ?? 0) !== (int) ($bundleId ?? 0) || $singles < (int) $l['singles']) {
             return 0;
         }
         $tickets = (int) $l['paid'] + (int) $l['free'];

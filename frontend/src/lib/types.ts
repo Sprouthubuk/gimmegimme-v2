@@ -194,6 +194,8 @@ export interface GimmeBox {
   expiresAt: string;
   lines: {
     competitionId: string; slug: string; title: string; image: string; imageSmall: string; imageSrcset: string | null;
+    /** Instant-win lines are paid single tickets only, never a bonus; every box has at least one draw. */
+    type: CompetitionType;
     soldPercent: number; unitPence: Pence; bundleId: number | null; bundleLabel: string | null; singles: number;
     paidQuantity: number; freeQuantity: number; bonusQuantity: number; tickets: number; linePence: Pence;
     /** Neutral note when the draw's promo ticket cap stops its bonus (never a number). */

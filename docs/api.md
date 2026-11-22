@@ -135,8 +135,10 @@ Off unless an admin switches it on (`site.gimmeBox` is then `{ available, chipsP
 | POST | `/api/gimme-box/{id}/added` | — → `GimmeBox` (hold restarts); `410 { code: "gimme_box_gone" }` once released or paid |
 
 A `GimmeBox` is `{ id, mode, budgetPence, totalPence, unusedPence, tickets, bonusTickets, expiresAt, lines, basketLines }`.
-`totalPence` ≤ budget, and `unusedPence` is always less than one ticket of the cheapest draw in the box.
-Each line has the player's own counts only (`paidQuantity`, `freeQuantity`, `bonusQuantity`, `tickets`,
+`totalPence` ≤ budget, and `unusedPence` is always less than one ticket of the cheapest competition in the box.
+A box packs live draws and the instant-win games an admin has switched on (`gimme_box_enabled`), always at
+least one live draw. Instant-win lines are paid single tickets only: no bundle and no bonus.
+Each line has its competition's `type` (`draw` or `instant`), the player's own counts only (`paidQuantity`, `freeQuantity`, `bonusQuantity`, `tickets`,
 `singles`, `bundleId`, `bundleLabel`, `linePence`, `unitPence`) and the draw's `soldPercent`: never a
 ticket count of a draw. Prices are the competition page prices. A box holds its tickets for
 `gimme_box_hold_minutes` (10). `basketLines` are `BasketLine`s with `boxId`: put them in the basket as

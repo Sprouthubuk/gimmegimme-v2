@@ -17,6 +17,7 @@ use App\Services\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -59,7 +60,7 @@ class PublicController extends Controller
             'metaPixelId' => preg_match('/^\d{10,20}$/', (string) Setting::get('meta_pixel_id')) ? Setting::get('meta_pixel_id') : null,
             // Switched-off features are null, so nothing of them shows anywhere.
             'gimmeBox' => Settings::gimmeBoxOn() ? [
-                'available' => Cache::remember('gimme-box:available', 30, fn () => count(app(GimmeBoxPacker::class)->eligible('surprise')) >= 2),
+                'available' => Cache::remember('gimme-box:available', 30, fn () => app(GimmeBoxPacker::class)->available()),
                 'chipsPence' => Settings::gimmeBoxChips(),
                 'minPence' => Settings::bounded('gimme_box_min_pence', 100, 100000),
                 'maxPence' => max(Settings::bounded('gimme_box_min_pence', 100, 100000), Settings::bounded('gimme_box_max_pence', 100, 100000)),
@@ -287,7 +288,7 @@ class PublicController extends Controller
     }
 
     /** Group ids among $ids that are paid wins their player hasn't seen yet (see seenOnly). @return array<int, true> */
-    private function unseenGroups(\Illuminate\Support\Collection $ids): array
+    private function unseenGroups(Collection $ids): array
     {
         $ids = $ids->filter()->unique()->values();
 
@@ -308,7 +309,7 @@ class PublicController extends Controller
      *
      * @return array<string, string>
      */
-    private function names(\Illuminate\Support\Collection $ownerRefs): array
+    private function names(Collection $ownerRefs): array
     {
         $ids = $ownerRefs->unique()->mapWithKeys(fn ($ref) => [$ref => Fulfilment::userIdFromOwner((string) $ref)])->filter();
         $users = $ids->isEmpty() ? collect() : User::query()->whereIn('id', $ids->values())->whereNull('closed_at')->get(['id', 'first_name', 'last_name', 'name_hidden'])->keyBy('id');

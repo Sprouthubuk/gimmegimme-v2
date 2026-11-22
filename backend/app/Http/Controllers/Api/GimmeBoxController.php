@@ -51,7 +51,7 @@ class GimmeBoxController extends Controller
                 continue;
             }
             $lines[] = [
-                'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, ...$c->pictureFields(),
+                'competitionId' => $c->id, 'slug' => $c->slug, 'title' => $c->title, 'type' => $c->type, ...$c->pictureFields(),
                 'soldPercent' => $state->soldPercent($c), 'unitPence' => $c->price_pence,
                 'bundleId' => $l['bundle_tier_id'], 'bundleLabel' => $l['bundle_label'], 'singles' => $l['singles'],
                 'paidQuantity' => $l['paid'], 'freeQuantity' => $l['free'], 'bonusQuantity' => $l['bonus'],

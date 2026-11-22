@@ -172,20 +172,23 @@ function price(lines, u, promoCode) {
 // Gimme Box: packs live draws with bundles first, then singles, never over the budget.
 const boxes = new Map();
 function packBox(budget, mode, seed) {
-  const draws = COMPS.filter((c) => c.type === "draw" && c.status === "live");
+  const live = COMPS.filter((c) => c.type === "draw" && c.status === "live");
+  // Instant wins join a box too (paid singles only, no bonus), after at least one live draw.
+  const draws = [...live, ...COMPS.filter((c) => c.type === "instant" && c.status === "live").slice(0, 1)];
   const rnd = (() => { let x = seed || 1; return () => (x = (x * 16807) % 2147483647) / 2147483647; })();
   const order = mode === "big" ? [...draws].sort((a, b) => b.topPrizePence - a.topPrizePence) : mode === "most" ? [...draws].sort((a, b) => a.pricePence - b.pricePence) : [...draws].sort(() => rnd() - 0.5);
-  const picks = order.slice(0, budget < 1000 ? 2 : Math.min(3, order.length));
+  const sorted = [...order.filter((c) => c.type === "draw").slice(0, 1), ...order.filter((c, i, a) => c !== a.find((d) => d.type === "draw"))];
+  const picks = sorted.slice(0, budget < 1000 ? 2 : Math.min(3, sorted.length));
   const share = Math.floor(budget / picks.length);
   let spent = 0;
   const lines = picks.map((c) => {
-    const b = [...(c.bundles ?? [])].sort((x, y) => y.pricePence - x.pricePence).find((x) => x.pricePence <= share) ?? null;
+    const b = c.type !== "draw" ? null : [...(c.bundles ?? [])].sort((x, y) => y.pricePence - x.pricePence).find((x) => x.pricePence <= share) ?? null;
     const left = share - (b ? b.pricePence : 0);
     const singles = Math.floor(left / c.pricePence);
-    const paid = (b ? b.paid : 0) + singles, free = b ? b.free : 0, bonus = Math.floor((paid + free) * 0.1);
+    const paid = (b ? b.paid : 0) + singles, free = b ? b.free : 0, bonus = c.type === "draw" ? Math.floor((paid + free) * 0.1) : 0;
     const linePence = paid * c.pricePence;
     spent += linePence;
-    return { competitionId: c.id, slug: c.slug, title: c.title, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, soldPercent: c.soldPercent, unitPence: c.pricePence, bundleId: b?.id ?? null, bundleLabel: b?.label ?? null, singles, paidQuantity: paid, freeQuantity: free, bonusQuantity: bonus, tickets: paid + free + bonus, linePence, notice: null };
+    return { competitionId: c.id, slug: c.slug, title: c.title, type: c.type, image: c.image, imageSmall: c.imageSmall, imageSrcset: c.imageSrcset, soldPercent: c.soldPercent, unitPence: c.pricePence, bundleId: b?.id ?? null, bundleLabel: b?.label ?? null, singles, paidQuantity: paid, freeQuantity: free, bonusQuantity: bonus, tickets: paid + free + bonus, linePence, notice: null };
   });
   // Spend what's left on single tickets of the cheapest draw.
   const cheap = [...lines].sort((a, b) => a.unitPence - b.unitPence)[0];

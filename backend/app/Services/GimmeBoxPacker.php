@@ -8,9 +8,12 @@ use Random\Engine\Secure;
 use Random\Randomizer;
 
 /**
- * Packs a Gimme Box: a budget spread over 2–4 live draws, priced only with the competition page's own
- * bundle and single-ticket prices (App\Services\Bundles), plus a stated percentage of free bonus tickets.
- * Nothing here is shown to the player until the server has priced it; the browser sends only budget + mode.
+ * Packs a Gimme Box: a budget spread over 2–4 competitions (live draws, and instant-win games an admin has
+ * switched on), priced only with the competition page's own bundle and single-ticket prices
+ * (App\Services\Bundles), plus a stated percentage of free bonus tickets on the live draws only.
+ * Instant-win lines are paid single tickets, never a bonus (owner, 22 Nov 2026), and every box holds at
+ * least one live draw. Nothing here is shown to the player until the server has priced it; the browser
+ * sends only budget + mode.
  */
 final class GimmeBoxPacker
 {
@@ -28,7 +31,7 @@ final class GimmeBoxPacker
         $maxSold = Settings::bounded('gimme_box_max_sold_pct', 0, 100);
         $boost = Settings::bounded('gimme_box_slow_boost_pct', 100, 1000) / 100;
         $out = [];
-        $draws = Competition::query()->published()->with('bundleTiers')->where('type', 'draw')->where('gimme_box_enabled', true)
+        $draws = Competition::query()->published()->with(['bundleTiers', 'prizes'])->whereIn('type', ['draw', 'instant'])->where('gimme_box_enabled', true)
             ->where('gimme_box_weight', '>', 0)->where('closes_at', '>', now()->addHour())->orderBy('id')->get();
         foreach ($draws as $c) {
             if ($this->state->status($c) !== 'live' || $this->state->soldPercent($c) > $maxSold) {
@@ -67,7 +70,14 @@ final class GimmeBoxPacker
             [$min, $max] = [1, min(2, $max)];
         }
         $n = min(count($pool), $rand->getInt($min, $max));
-        $chosen = $this->pickWeighted($pool, $n, $rand);
+        // At least one live draw in every box: one is picked from the draws first, then the rest from all.
+        $live = array_values(array_filter($pool, fn ($d) => $d['c']->type === 'draw'));
+        if ($live === []) {
+            return $empty;
+        }
+        $first = $this->pickWeighted($live, 1, $rand);
+        $rest = array_values(array_filter($pool, fn ($d) => $d['c']->id !== $first[0]['c']->id));
+        $chosen = [...$first, ...$this->pickWeighted($rest, $n - 1, $rand)];
         // Cheapest draws last, so leftovers are mopped up by the cheapest single tickets.
         usort($chosen, fn ($a, $b) => $b['c']->price_pence <=> $a['c']->price_pence);
 
@@ -103,7 +113,7 @@ final class GimmeBoxPacker
         foreach ($lines as $l) {
             $c = $l['competition'];
             $tickets = $l['paid'] + $l['free'];
-            $bonus = intdiv($tickets * $pct, 100);
+            $bonus = $c->type === 'draw' ? intdiv($tickets * $pct, 100) : 0; // no bonus on instant wins
             // Never past what's left, nor past the competition's biggest-bundle share.
             $bonus = max(0, min($bonus, $l['room'] - $tickets, max(0, Bundles::shareLimit($c) - $tickets)));
             // The draw's promo ticket cap: once reached, the box still sells paid tickets but adds no bonus.
@@ -121,7 +131,7 @@ final class GimmeBoxPacker
     {
         $bundle = null;
         foreach (array_reverse($this->bundles->available($c, $room)) as $b) {
-            if ($b['paid'] * $c->price_pence <= $share) {
+            if ($share >= $b['paid'] * $c->price_pence) {
                 $bundle = $b;
                 break;
             }
@@ -138,10 +148,28 @@ final class GimmeBoxPacker
     private function modeFactor(Competition $c, string $mode, int $room): float
     {
         return match ($mode) {
-            'big' => max(1, (int) $c->end_prize_value_pence) / 10000,             // in proportion to the prize value
+            'big' => max(1, $this->prizeValue($c)) / 10000,                         // in proportion to the prize value
             'most' => 100 / max(0.01, $this->bestPencePerTicket($c, $room)),        // the cheaper per ticket, the more weight
             default => 1.0,
         };
+    }
+
+    /** A draw's end prize; an instant-win game's whole prize list (plus its end prize, if it has one). */
+    private function prizeValue(Competition $c): int
+    {
+        if ($c->type === 'draw') {
+            return (int) $c->end_prize_value_pence;
+        }
+
+        return (int) $c->prizes->sum(fn ($p) => (int) $p->value_pence * (int) $p->quantity) + (int) $c->end_prize_value_pence;
+    }
+
+    /** Whether a box can be packed now: at least two competitions, one of them a live draw. */
+    public function available(): bool
+    {
+        $pool = $this->eligible('surprise');
+
+        return count($pool) >= 2 && array_filter($pool, fn ($d) => $d['c']->type === 'draw') !== [];
     }
 
     /** The lowest effective price per ticket on offer: the biggest bundle that fits, or a single ticket. */
