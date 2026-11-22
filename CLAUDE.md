@@ -30,8 +30,9 @@ Read before every task. If a request conflicts with this, stop and ask.
   Reveal games are presentation only (`frontend/src/games/`); `tests/games` proves a board can only
   show the result it was given.
 - One play check on every path: sales switch (off by default), staff can't play, 18+, email
-  verified, self-exclusion, break, hold, spend limits. No credit-card cap and no limit per person
-  (owner's decision, 18 Nov 2026).
+  verified, self-exclusion, break, hold, spend limits, the per-person limit. No credit-card cap (owner, 18 Nov 2026).
+  Max tickets per person is set per competition in the admin (owner, 22 Nov 2026; empty = no limit, stored as the
+  number of tickets), fixed at publish, enforced by `CompetitionState::canBuy` and shown as `maxPerPerson` (null = no limit).
   Self-exclusion and breaks always apply at once — no check or delay in front of them.
 - At fulfilment only WINNING entries are played through Verity (`Fulfilment::playAll`: entries with an
   `instant_ticket_id`), so an order's cost doesn't grow with its ticket count; never go back to
@@ -46,12 +47,12 @@ Read before every task. If a request conflicts with this, stop and ask.
   tier is badged "Our Pick" (owner, 19 Nov 2026): never "Best Value" (it isn't the cheapest per ticket) or
   "Most Popular" (not backed by sales data). Promo codes apply to singles only. Unpaid orders
   hold tickets for `Order::HOLD_MINUTES` (15).
-- Players never see ticket counts (total, sold, left, max entries, odds): only `soldPercent` (rounded
-  down; 100 only when sold out), "Almost gone!" from 90% and "Sold Out". No public response may carry
-  a count (`BundlesTest::test_no_public_response_gives_away_how_many_tickets_there_are`). Admin sees all.
-- No "max", "sold" or "left" ticket count anywhere a player buys: competition pages, cards, basket,
-  checkout, the Gimme Box and the voucher draw picker show % sold only (owner, 19 Nov 2026). Entry lists
-  and the fair-play record stay public as they are (don't gate them or touch Verity), and Terms 4.3 stays.
+- Ticket counts (owner, 22 Nov 2026, replacing the 19 Nov "% sold only" rule): every competition summary carries
+  `maxTickets`, `ticketsSold`, `ticketsLeft` and `maxPerPerson`. Players see them only on the competition page, as one
+  quiet line under the % sold bar ("Max X tickets · Y sold · Z left · Max N per person"), and the per-person limit in the
+  ticket picker; cards show % sold, "Almost gone!" from 90% and "Sold Out" only
+  (`BundlesTest::test_competitions_show_players_the_maximum_sold_and_left_tickets`). Never shown: the promo cap and how much of it is used. Entry lists and
+  the fair-play record stay public as they are (don't gate them or touch Verity), and Terms 4.3 stays.
 - Gimme Box (lucky dip, live draws only) and Refer a Friend are each behind a setting (`feature_gimme_box`,
   `feature_referrals`, Admin → Settings), off by default; never switch them on in a migration or seeder.
   A box is packed and priced only by `GimmeBoxPacker` at the competition page prices, never over budget;

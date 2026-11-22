@@ -44,7 +44,7 @@ class ApiTest extends TestCase
         $this->assertSame(10000, $list[1]['topPrizePence']);
         $this->assertSame('Scratch Card', $list[1]['gameLabel']);
         $this->assertSame(0, $list[1]['soldPercent']);
-        $this->assertArrayNotHasKey('ticketsLeft', $list[1]);
+        $this->assertSame($list[1]['maxTickets'], $list[1]['ticketsLeft']); // counts shown since 22 Nov 2026
 
         $d = $this->getJson('/api/competitions/'.$instant->slug)->assertOk()->json();
         $this->assertSame(['£100 Cash', '50p Credit'], array_column($d['prizes'], 'name'));

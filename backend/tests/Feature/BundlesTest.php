@@ -169,8 +169,9 @@ class BundlesTest extends TestCase
         $this->assertSame((int) ceil(24000 / $perOrder) * 360, $m['breakEvenTickets']);
     }
 
-    public function test_no_public_response_gives_away_how_many_tickets_there_are(): void
+    public function test_competitions_show_players_the_maximum_sold_and_left_tickets(): void
     {
+        // Owner, 22 Nov 2026: players see the maximum, how many are sold and how many are left (was % sold only).
         $u = $this->player();
         $this->topUp($u, 5000);
         $c = $this->draw(['max_tickets' => 3947, 'max_per_person' => 3947]);
@@ -178,26 +179,25 @@ class BundlesTest extends TestCase
         $this->buy($u, $c, ['quantity' => 7])->assertCreated();
         $this->app['auth']->forgetGuards();
 
-        $pages = ['/api/site', '/api/competitions', '/api/competitions/'.$c->slug, '/api/competitions/'.$i->slug, '/api/entry-lists',
-            '/api/entry-lists/'.$c->slug, '/api/winners/draws', '/api/winners/instant', '/api/competitions/'.$i->slug.'/winning-numbers'];
-        foreach ($pages as $url) {
-            $body = $this->getJson($url)->assertOk()->getContent();
-            foreach (['ticketsLeft', 'maxTickets', 'maxPerPerson', 'total_tickets', 'tickets_sold', 'tickets_remaining', 'max_tickets', '"entries"'] as $key) {
-                $this->assertStringNotContainsString($key, $body, "{$url} mentions {$key}");
-            }
-            // Entry lists and winning numbers print ticket numbers, which are random from 1 to the total, so a
-            // number like 3940 can appear there by chance: those pages are outside this check's raw-number part
-            // (owner, 19 Nov 2026: entry lists and the fair-play record stay public). Their keys are still checked.
-            if (str_contains($url, '/entry-lists/') || str_contains($url, '/winning-numbers')) {
-                continue;
-            }
-            foreach (['3947', '3940', '3989'] as $count) { // the totals, and what's left of the draw
-                $this->assertStringNotContainsString($count, $body, "{$url} gives away a ticket count");
-            }
-        }
-        $price = $this->actingAs($u)->postJson('/api/basket/price', ['lines' => [['competitionId' => $c->id, 'quantity' => 1]]])->getContent();
-        $this->assertStringNotContainsString('maxQuantity', $price);
-        $this->assertStringNotContainsString('3940', $price);
+        $this->getJson('/api/competitions/'.$c->slug)->assertOk()
+            ->assertJsonPath('maxTickets', 3947)->assertJsonPath('ticketsSold', 7)->assertJsonPath('ticketsLeft', 3940);
+        $this->getJson('/api/competitions/'.$i->slug)->assertOk()
+            ->assertJsonPath('maxTickets', 3989)->assertJsonPath('ticketsSold', 0)->assertJsonPath('ticketsLeft', 3989);
+        $list = collect($this->getJson('/api/competitions')->assertOk()->json('data'))->keyBy('slug');
+        $this->assertSame([3947, 7, 3940], [$list[$c->slug]['maxTickets'], $list[$c->slug]['ticketsSold'], $list[$c->slug]['ticketsLeft']]);
+        $this->getJson('/api/competitions/'.$c->slug)->assertJsonPath('maxPerPerson', null); // no limit: per person = tickets
+    }
+
+    public function test_the_max_per_person_is_shown_and_enforced(): void
+    {
+        $u = $this->player();
+        $this->topUp($u, 5000);
+        $c = $this->draw(['max_tickets' => 1000, 'max_per_person' => 25]);
+        $this->getJson('/api/competitions/'.$c->slug)->assertJsonPath('maxPerPerson', 25);
+        $this->buy($u, $c, ['quantity' => 20])->assertCreated();
+        $this->actingAs($u)->getJson('/api/competitions/'.$c->slug)->assertJsonPath('heldByMe', 20);
+        $this->buy($u, $c, ['quantity' => 6])->assertStatus(422); // 26 would pass the limit
+        $this->buy($u, $c, ['quantity' => 5])->assertCreated(); // 25 is the limit
     }
 
     public function test_sold_percent_rounds_down_and_is_100_only_when_sold_out(): void

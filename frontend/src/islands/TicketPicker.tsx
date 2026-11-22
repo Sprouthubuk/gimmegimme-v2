@@ -21,6 +21,9 @@ export interface PickerProps {
   bundles?: Bundle[];
   soldPercent: number;
   soldOut: boolean;
+  /** The most tickets one person may hold (null: no limit), and how many this player already has. */
+  maxPerPerson?: number | null;
+  heldByMe?: number;
   open: boolean;
   /** Set while the competition is scheduled: when entries open. */
   opensAt?: string | null;
@@ -83,7 +86,7 @@ export default function TicketPicker(p: PickerProps) {
         const c = await api<CompetitionDetail>(`/api/competitions/${encodeURIComponent(p.slug)}`);
         setBundles(Array.isArray(c.bundles) ? c.bundles : []);
         setSold({ percent: c.soldPercent ?? 0, out: c.status === "sold_out" });
-        window.dispatchEvent(new CustomEvent("gg-sold", { detail: { slug: p.slug, percent: c.soldPercent ?? 0 } }));
+        window.dispatchEvent(new CustomEvent("gg-sold", { detail: { slug: p.slug, percent: c.soldPercent ?? 0, max: c.maxTickets, sold: c.ticketsSold, left: c.ticketsLeft } }));
       } catch { /* try again next minute */ }
     }, 60000);
     return () => window.clearInterval(t);
@@ -101,7 +104,10 @@ export default function TicketPicker(p: PickerProps) {
   // One nudge: the smallest bundle that gives more tickets for at least as many paid ones.
   const next = bundles.filter((b) => b.paid >= paidNow && b.tickets > tickets && b.id !== chosenBundle?.id).sort((a, b) => a.tickets - b.tickets)[0] ?? null;
 
-  const clamp = (n: number) => Math.max(min, Math.min(MAX_SINGLES, Math.floor(n) || min));
+  // The most this player can still buy: the per-person limit less what they hold (the server checks it again).
+  const allowance = p.maxPerPerson ? Math.max(0, p.maxPerPerson - (p.heldByMe ?? 0)) : null;
+  const maxSingles = allowance === null ? MAX_SINGLES : Math.min(MAX_SINGLES, allowance);
+  const clamp = (n: number) => Math.max(min, Math.min(maxSingles, Math.floor(n) || min));
   const setSingles = (n: number) => { setChoice({ kind: "single", qty: clamp(n) }); setTyped(null); setAdded(null); };
   const pickBundle = (b: Bundle) => { setChoice({ kind: "bundle", id: b.id }); setAdded(null); };
 
@@ -113,7 +119,8 @@ export default function TicketPicker(p: PickerProps) {
   const blocked = !p.open ? (p.opensAt ? `Entries open ${ukDateTime(p.opensAt)}.` : "This competition isn't open for entries.")
     : sold.out ? "Sold out."
     : !p.salesOpen ? "Entries open soon."
-    : p.playBlock ? BLOCK_TEXT[p.playBlock] ?? "You can't enter right now." : null;
+    : p.playBlock ? BLOCK_TEXT[p.playBlock] ?? "You can't enter right now."
+    : allowance !== null && allowance < min ? `You have the maximum of ${formatCount(p.maxPerPerson ?? 0)} tickets for this competition.` : null;
   const verb = p.type === "draw" ? "Enter Now" : "Buy & Play";
   const addToBasketNow = () => {
     if (chosenBundle) addBundle(p.competitionId, chosenBundle.id);
@@ -150,7 +157,7 @@ export default function TicketPicker(p: PickerProps) {
           <div className="stepper">
             <button type="button" aria-label="One fewer ticket" onClick={() => setSingles((choice.kind === "single" ? qty : min + 1) - 1)} disabled={!!blocked || (choice.kind === "single" && qty <= min)}><Svg name="minus" size={18} stroke={2.6} /></button>
             <output className="qty" aria-live="polite" data-testid="qty">{choice.kind === "single" ? qty : "–"}</output>
-            <button type="button" className="plus" aria-label="One more ticket" onClick={() => setSingles(choice.kind === "single" ? qty + 1 : min)} disabled={!!blocked || qty >= MAX_SINGLES}><Svg name="plus" size={18} stroke={2.6} /></button>
+            <button type="button" className="plus" aria-label="One more ticket" onClick={() => setSingles(choice.kind === "single" ? qty + 1 : min)} disabled={!!blocked || qty >= maxSingles}><Svg name="plus" size={18} stroke={2.6} /></button>
           </div>
         </div>
 
@@ -166,19 +173,22 @@ export default function TicketPicker(p: PickerProps) {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+        <div className="stack g8" style={{ marginTop: 14 }}>
             <label className="lbl" htmlFor={`qty-${p.slug}`} style={{ marginTop: 4 }}>Or choose your own amount</label>
             <div className="row g8">
               <input
-                className="inp" id={`qty-${p.slug}`} type="number" inputMode="numeric" min={min} max={MAX_SINGLES}
-                value={typed ?? String(qty || min)} disabled={!!blocked}
+                className="inp" id={`qty-${p.slug}`} type="number" inputMode="numeric" min={min} max={maxSingles}
+                value={typed ?? (choice.kind === "bundle" ? "" : String(qty || min))} placeholder="Type a number" disabled={!!blocked}
                 onChange={(e) => { setTyped(e.target.value); const n = Number(e.target.value); if (Number.isFinite(n) && n >= min) { setChoice({ kind: "single", qty: clamp(n) }); setAdded(null); } }}
                 onBlur={() => setTyped(null)}
                 style={{ flex: 1, fontFamily: "'Lilita One',sans-serif", fontSize: 22, textAlign: "center" }}
               />
               <span className="muted" style={{ fontWeight: 800 }}>tickets</span>
             </div>
-          </div>
-        )}
+          {allowance !== null && <span className="hint" data-testid="per-person">Max {formatCount(p.maxPerPerson ?? 0)} per person{p.heldByMe ? ` · you have ${formatCount(p.heldByMe)}` : ""}</span>}
+        </div>
       </div>
 
       <div ref={actions} className="row between wrapx g12" style={{ borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 14 }}>

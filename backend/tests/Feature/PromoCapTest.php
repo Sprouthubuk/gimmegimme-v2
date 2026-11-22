@@ -177,15 +177,20 @@ class PromoCapTest extends TestCase
         $u = $this->player();
         app(Referrals::class)->redeem($this->voucher($u, 10), $u, $a); // 10 of cap 19
         $v = $this->voucher($u, 10);
-        $bodies = [
-            $this->actingAs($u)->getJson("/api/me/vouchers/{$v->id}/draws")->getContent(),
-            $this->actingAs($u)->postJson("/api/me/vouchers/{$v->id}/redeem", ['competitionId' => $a->id])->getContent(),
-            $box = $this->postJson('/api/gimme-box', ['budgetPence' => 5000, 'mode' => 'most'])->getContent(),
-            $this->postJson('/api/basket/price', ['lines' => json_decode($box, true)['basketLines']])->getContent(),
-            $this->getJson('/api/competitions/'.$a->slug)->getContent(),
-        ];
-        foreach ($bodies as $json) {
-            foreach (['promo_ticket_cap', 'promoTicketCap', 'promoCap', 'promoUsed', 'ticketsLeft', 'maxTickets', 'max_tickets', 'room'] as $key) {
+        $draws = $this->actingAs($u)->getJson("/api/me/vouchers/{$v->id}/draws")->getContent();
+        $redeem = $this->actingAs($u)->postJson("/api/me/vouchers/{$v->id}/redeem", ['competitionId' => $a->id])->getContent();
+        $box = $this->postJson('/api/gimme-box', ['budgetPence' => 5000, 'mode' => 'most'])->getContent();
+        $price = $this->postJson('/api/basket/price', ['lines' => json_decode($box, true)['basketLines']])->getContent();
+        $page = $this->getJson('/api/competitions/'.$a->slug)->getContent();
+        // The promo cap, and how much of it is used, is never shown anywhere.
+        foreach ([$draws, $redeem, $box, $price, $page] as $json) {
+            foreach (['promo_ticket_cap', 'promoTicketCap', 'promoCap', 'promoUsed', 'room'] as $key) {
+                $this->assertStringNotContainsString($key, $json);
+            }
+        }
+        // Competition pages and the draw picker show the ticket counts (owner, 22 Nov 2026); the Gimme Box and basket don't need them.
+        foreach ([$box, $price] as $json) {
+            foreach (['ticketsLeft', 'maxTickets', 'max_tickets'] as $key) {
                 $this->assertStringNotContainsString($key, $json);
             }
             $this->assertDoesNotMatchRegularExpression('/(?<![0-9a-z.])(3947|3989)(?![0-9a-z.])/i', $json);

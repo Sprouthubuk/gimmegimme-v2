@@ -30,8 +30,14 @@ export interface CompetitionSummary {
   topPrizePence: Pence | null;
   /** Shown under the price, e.g. "£50 cash alternative" or "2,516 wins". */
   subtitle: string | null;
-  /** Rounded down; 100 only when it has actually sold out. Players never see ticket counts, only this. */
+  /** Rounded down; 100 only when it has actually sold out. */
   soldPercent: number;
+  /** The most tickets there will ever be, how many are sold and how many are left (shown to players since 22 Nov 2026). */
+  maxTickets: number;
+  ticketsSold: number;
+  ticketsLeft: number;
+  /** The most tickets one person may hold; null when there's no limit. */
+  maxPerPerson: number | null;
   /** Instant wins: how many instant prizes there are in total. Null for draws. */
   prizeCount: number | null;
   /** Instant wins with an end prize: what is drawn at the close, and for how many winners. Null otherwise. */

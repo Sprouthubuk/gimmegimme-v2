@@ -93,18 +93,20 @@ class AdminTest extends TestCase
         $this->assertGreaterThan(20, count(array_unique($opened)));
     }
 
-    public function test_a_competition_made_in_the_admin_has_no_limit_per_person(): void
+    public function test_the_admin_sets_a_max_per_person_and_empty_means_no_limit(): void
     {
+        // Owner, 22 Nov 2026: a per-person limit is set per competition (it was removed on 18 Nov).
         $this->signInAdmin();
         Storage::fake('public');
-        Livewire::test(CreateCompetition::class)->fillForm([
-            'title' => 'No Limit', 'slug' => 'no-limit', 'type' => 'draw', 'image' => null, 'price_pence' => '1.00', 'max_tickets' => 5000,
-            'closes_at' => now('Europe/London')->addDays(10)->format('Y-m-d H:i'), 'end_prize_name' => 'Cash', 'end_prize_value_pence' => '100.00',
-        ])->assertFormFieldDoesNotExist('max_per_person');
+        Livewire::test(CreateCompetition::class)->assertFormFieldExists('max_per_person');
         Storage::disk('public')->put('competitions/nl.webp', 'img');
-        $c = Competition::query()->create(['slug' => 'nl', 'title' => 'NL', 'type' => 'draw', 'image' => 'competitions/nl.webp', 'price_pence' => 100, 'max_tickets' => 10, 'max_per_person' => 3, 'closes_at' => now()->addDays(10), 'end_prize_name' => 'Cash', 'end_prize_value_pence' => 1000]);
-        Livewire::test(EditCompetition::class, ['record' => $c->getKey()])->fillForm(['max_tickets' => 8000])->call('save')->assertHasNoFormErrors();
-        $this->assertSame(8000, $c->refresh()->max_per_person, 'follows the number of tickets');
+        $c = Competition::query()->create(['slug' => 'nl', 'title' => 'NL', 'type' => 'draw', 'image' => 'competitions/nl.webp', 'price_pence' => 100, 'max_tickets' => 10, 'max_per_person' => 10, 'closes_at' => now()->addDays(10), 'end_prize_name' => 'Cash', 'end_prize_value_pence' => 1000]);
+        Livewire::test(EditCompetition::class, ['record' => $c->getKey()])->assertFormSet(['max_per_person' => null]) // equal to the tickets: shown as no limit
+            ->fillForm(['max_tickets' => 8000, 'max_per_person' => 250])->call('save')->assertHasNoFormErrors();
+        $this->assertSame(250, $c->refresh()->max_per_person);
+        Livewire::test(EditCompetition::class, ['record' => $c->getKey()])->fillForm(['max_per_person' => null])->call('save')->assertHasNoFormErrors();
+        $this->assertSame(8000, $c->refresh()->max_per_person, 'empty is no limit');
+        Livewire::test(EditCompetition::class, ['record' => $c->getKey()])->fillForm(['max_per_person' => 9000])->call('save')->assertHasFormErrors(['max_per_person']);
     }
 
     public function test_the_games_page_lists_every_game_in_every_look(): void

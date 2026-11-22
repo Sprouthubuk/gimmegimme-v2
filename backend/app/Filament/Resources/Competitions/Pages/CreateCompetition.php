@@ -9,12 +9,14 @@ class CreateCompetition extends CreateRecord
 {
     protected static string $resource = CompetitionResource::class;
 
-    /** No limit per person (owner's decision, 18 Nov 2026): anyone may buy up to every ticket. */
     use SavesBundles;
 
+    /** Max tickets per person (owner, 22 Nov 2026): left empty means no limit, stored as the number of tickets. */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return $this->takeBundleData(['max_per_person' => (int) ($data['max_tickets'] ?? 1)] + $data);
+        $data['max_per_person'] = (int) ($data['max_per_person'] ?? 0) ?: (int) ($data['max_tickets'] ?? 1);
+
+        return $this->takeBundleData($data);
     }
 
     protected function afterCreate(): void
