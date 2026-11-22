@@ -34,6 +34,7 @@ const endCount = c.endPrize?.count ?? 0;
 const endPrizeLine = c.endPrize ? `${endCount > 1 ? `${endCount} × ` : ""}${formatPence(c.endPrize.valuePence, { short: false })}` : "";
 const glow = ["np", "nc", "ny"];
 const [first, ...rest] = c.title.split(" – ");
+const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toLocaleString("en-GB")} tickets · ${sold.toLocaleString("en-GB")} sold · ${left.toLocaleString("en-GB")} left`;
 ---
 <Layout title={c.title} fullTitle={pageTitle(competitionTitle(c))} active="competitions" description={competitionDescription(c)} shareImage={c.image} jsonLd={[breadcrumbLd(new URL(Astro.site ?? Astro.url).origin, [["Home", "/"], [isDraw ? "Live Draws" : "Instant Wins", `/competitions?type=${isDraw ? "draw" : "instant"}`], [c.title, `/competitions/${c.slug}`]])]}>
 <div class="lft">
@@ -67,9 +68,9 @@ const [first, ...rest] = c.title.split(" – ");
           <Countdown until={opensLater ?? (isDraw && c.drawAt ? c.drawAt : c.closesAt)} />
           <div class={`bar ${isDraw ? "cy" : ""}`} data-sold-bar={c.slug}><div class="gg-shine" style={`width:${c.soldPercent > 0 ? Math.max(c.soldPercent, 2) : 0}%`}></div></div>
           <div class="row between hint"><span data-sold-text={c.slug}><b>{c.status === "sold_out" ? "SOLD OUT" : `${c.soldPercent}% SOLD`}</b>{c.status !== "sold_out" && c.soldPercent >= 90 && <span class="ny"> · Almost gone!</span>}</span><span>{isDraw ? "" : "Results fixed when you buy"}</span></div>
-          <div class="tcounts" data-ticket-counts={c.slug}><span><b>{c.maxTickets.toLocaleString("en-GB")}</b> tickets</span><span><b>{c.ticketsSold.toLocaleString("en-GB")}</b> sold</span><span><b>{c.ticketsLeft.toLocaleString("en-GB")}</b> left</span></div>
+          <div class="tcounts" data-testid="ticket-counts"><span data-ticket-counts={c.slug}>{ticketCounts(c.maxTickets, c.ticketsSold, c.ticketsLeft)}</span>{c.maxPerPerson ? ` · Max ${c.maxPerPerson.toLocaleString("en-GB")} per person` : ""}</div>
         </div>
-        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} bundles={c.bundles ?? []} soldPercent={c.soldPercent} soldOut={c.status === "sold_out"} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
+        <TicketPicker client:load competitionId={c.id} slug={c.slug} type={c.type} pricePence={c.pricePence} presets={presets} popularPreset={c.popularPreset ?? null} minTickets={c.minTickets ?? 1} bundles={c.bundles ?? []} soldPercent={c.soldPercent} soldOut={c.status === "sold_out"} maxPerPerson={c.maxPerPerson ?? null} heldByMe={c.heldByMe ?? 0} open={open} opensAt={opensLater} salesOpen={site.salesOpen} signedIn={!!me} playBlock={me?.playBlock ?? null} />
         {c.type === "draw" && site.gimmeBox?.available && <a class="tap" href="/gimme-box" style="font-weight:800" data-testid="gb-link">Can't decide? Try a Gimme Box →</a>}
         <p class="hint" style="margin:0">No purchase necessary — <a href="/free-entry">enter free by post</a> with the same chance of winning. 18+ UK only · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
@@ -162,7 +163,7 @@ const [first, ...rest] = c.title.split(" – ");
     if (text) text.innerHTML = `<b>${percent}% SOLD</b>${percent >= 90 && percent < 100 ? '<span class="ny"> · Almost gone!</span>' : ""}`;
     const counts = document.querySelector(`[data-ticket-counts="${slug}"]`);
     const n = (v) => Number(v).toLocaleString("en-GB");
-    if (counts && Number.isFinite(max)) counts.innerHTML = `<span><b>${n(max)}</b> tickets</span><span><b>${n(sold)}</b> sold</span><span><b>${n(left)}</b> left</span>`;
+    if (counts && Number.isFinite(max)) counts.textContent = `Max ${n(max)} tickets · ${n(sold)} sold · ${n(left)} left`;
   });
 </script>
 </Layout>

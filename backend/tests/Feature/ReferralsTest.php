@@ -262,7 +262,7 @@ class ReferralsTest extends TestCase
         $list = $this->actingAs($r)->getJson("/api/me/vouchers/{$v->id}/draws")->assertOk();
         $this->assertContains($this->draw->id, array_column($list->json('data'), 'id'));
         $raw = json_encode($list->json());
-        foreach (['max_tickets', 'maxPerPerson', 'odds'] as $key) { // the draw's ticket counts are public since 22 Nov 2026
+        foreach (['max_tickets', 'odds'] as $key) { // the draw's ticket counts and per-person limit are public since 22 Nov 2026
             $this->assertStringNotContainsString($key, $raw, "the voucher draw picker must not give away {$key}");
         }
 

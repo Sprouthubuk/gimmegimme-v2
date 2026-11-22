@@ -25,7 +25,7 @@ const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Sc
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {
-  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, maxTickets: 50000, ticketsSold: sold * 500, ticketsLeft: 50000 - sold * 500, prizeCount: type === "instant" ? 2516 : null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, ...extra };
+  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, maxTickets: 50000, ticketsSold: sold * 500, ticketsLeft: 50000 - sold * 500, maxPerPerson: null, prizeCount: type === "instant" ? 2516 : null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, ...extra };
 }
 const COMPS = [
   comp("c-bush", "bush-bucks-jungle-trial", "Bush Bucks – Jungle Trial", "instant", "claw_machine", "classic", "bush-lg", 25, 75000, 2, "2,516 wins", { featured: true }),
@@ -39,7 +39,7 @@ const COMPS = [
   comp("c-bingo", "jingle-bell-bingo-bonanza", "Jingle Bell Bingo Bonanza", "instant", "bingo_card", "christmas", "bingo", 10, 33333, 7, "Instant wins"),
   comp("c-cracker", "chris-crackers-cash-bang", "Chris Cracker’s Cash Bang", "instant", "balloon_pop", "christmas", "cracker", 5, 22222, 8, "Instant wins"),
   comp("c-scrooge", "scrooges-secret-stash", "Scrooge’s Secret Stash", "instant", "scratch_card", "christmas", "scrooge", 49, 33333, 2, "Instant wins"),
-  comp("c-lush", "lush-snow-fairy-wonderland", "Lush Snow Fairy Wonderland Set", "draw", null, "classic", "lush", 59, 5000, 8, "£50 cash alternative", { cashAlternativePence: 5000 }),
+  comp("c-lush", "lush-snow-fairy-wonderland", "Lush Snow Fairy Wonderland Set", "draw", null, "classic", "lush", 59, 5000, 8, "£50 cash alternative", { cashAlternativePence: 5000, maxPerPerson: 100 }),
   comp("c-cash", "250-tax-free-cash", "£250 Tax-Free Cash", "draw", null, "classic", "cash", 99, 25000, 14, "Cash prize", { closesAt: iso(now + 20 * 36e5), drawAt: iso(now + 20 * 36e5) }), // ending soon: the red strip
   comp("c-ninja", "ninja-possiblecooker", "Ninja PossibleCooker Plus 6-in-1", "draw", null, "classic", "ninja", 79, 15000, 11, "£100 cash alternative", { cashAlternativePence: 10000 }),
 ];

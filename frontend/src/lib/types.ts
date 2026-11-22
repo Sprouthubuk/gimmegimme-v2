@@ -36,6 +36,8 @@ export interface CompetitionSummary {
   maxTickets: number;
   ticketsSold: number;
   ticketsLeft: number;
+  /** The most tickets one person may hold; null when there's no limit. */
+  maxPerPerson: number | null;
   /** Instant wins: how many instant prizes there are in total. Null for draws. */
   prizeCount: number | null;
   /** Instant wins with an end prize: what is drawn at the close, and for how many winners. Null otherwise. */

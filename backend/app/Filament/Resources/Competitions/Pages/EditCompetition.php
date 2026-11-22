@@ -15,13 +15,18 @@ class EditCompetition extends EditRecord
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        if ((int) ($data['max_per_person'] ?? 0) >= (int) ($data['max_tickets'] ?? 0)) {
+            $data['max_per_person'] = null; // no limit
+        }
+
         return $data + $this->bundleFormData($this->record);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Empty means no limit (stored as the number of tickets); both are fixed once published.
         if ($this->record->verity_ref === null && isset($data['max_tickets'])) {
-            $data['max_per_person'] = (int) $data['max_tickets'];
+            $data['max_per_person'] = (int) ($data['max_per_person'] ?? 0) ?: (int) $data['max_tickets'];
         }
 
         return $this->takeBundleData($data);

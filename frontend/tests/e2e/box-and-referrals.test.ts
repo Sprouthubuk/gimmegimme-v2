@@ -65,8 +65,8 @@ describe("Refer a Friend", () => {
     const v = (await a.api("/api/me/referrals")).body.vouchers[0];
     expect(v.status).toBe("available");
     const draws = await a.api(`/api/me/vouchers/${v.id}/draws`);
-    // The draw picker lists competitions, whose ticket counts are public since 22 Nov 2026; never a per-person limit.
-    for (const k of ["maxPerPerson", "maxEntries"]) expect(JSON.stringify(draws.body)).not.toContain(k);
+    // The draw picker lists competitions, whose ticket counts and per-person limits are public since 22 Nov 2026.
+    expect(JSON.stringify(draws.body)).not.toContain("maxEntries");
     const used = await a.api(`/api/me/vouchers/${v.id}/redeem`, { competitionId: "c-ninja" });
     expect(used.status).toBe(201);
     expect((await a.api(`/api/me/vouchers/${v.id}/redeem`, { competitionId: "c-ninja" })).status).toBe(422);

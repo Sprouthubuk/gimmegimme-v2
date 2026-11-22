@@ -46,6 +46,8 @@ final class CompetitionPresenter
             'maxTickets' => (int) $c->max_tickets,
             'ticketsSold' => $this->state->sold($c),
             'ticketsLeft' => $this->state->left($c),
+            // Max tickets one person may hold (owner, 22 Nov 2026); null when there's no limit.
+            'maxPerPerson' => $c->max_per_person < $c->max_tickets ? (int) $c->max_per_person : null,
             'prizeCount' => $c->isInstant() ? (int) $c->prizes->sum('quantity') : null,
             'endPrize' => $c->isInstant() && $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence, 'count' => $c->endPrizeCount()] : null,
             'opensAt' => $c->opens_at?->toIso8601ZuluString(),

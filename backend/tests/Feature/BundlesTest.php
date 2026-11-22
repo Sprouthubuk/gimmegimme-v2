@@ -185,8 +185,19 @@ class BundlesTest extends TestCase
             ->assertJsonPath('maxTickets', 3989)->assertJsonPath('ticketsSold', 0)->assertJsonPath('ticketsLeft', 3989);
         $list = collect($this->getJson('/api/competitions')->assertOk()->json('data'))->keyBy('slug');
         $this->assertSame([3947, 7, 3940], [$list[$c->slug]['maxTickets'], $list[$c->slug]['ticketsSold'], $list[$c->slug]['ticketsLeft']]);
-        // A player's own limit is never shown: there isn't one (owner, 18 Nov 2026).
-        $this->assertStringNotContainsString('maxPerPerson', $this->getJson('/api/competitions/'.$c->slug)->getContent());
+        $this->getJson('/api/competitions/'.$c->slug)->assertJsonPath('maxPerPerson', null); // no limit: per person = tickets
+    }
+
+    public function test_the_max_per_person_is_shown_and_enforced(): void
+    {
+        $u = $this->player();
+        $this->topUp($u, 5000);
+        $c = $this->draw(['max_tickets' => 1000, 'max_per_person' => 25]);
+        $this->getJson('/api/competitions/'.$c->slug)->assertJsonPath('maxPerPerson', 25);
+        $this->buy($u, $c, ['quantity' => 20])->assertCreated();
+        $this->actingAs($u)->getJson('/api/competitions/'.$c->slug)->assertJsonPath('heldByMe', 20);
+        $this->buy($u, $c, ['quantity' => 6])->assertStatus(422); // 26 would pass the limit
+        $this->buy($u, $c, ['quantity' => 5])->assertCreated(); // 25 is the limit
     }
 
     public function test_sold_percent_rounds_down_and_is_100_only_when_sold_out(): void

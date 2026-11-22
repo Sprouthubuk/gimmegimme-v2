@@ -104,10 +104,7 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .cc .sl>span:first-child{white-space:nowrap}
 .cc .sl b{color:#fff;font-weight:900}
 .cc .sl .ag{color:#FF2DAA;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-.cc .tc{margin-top:2px;font-size:11px;font-weight:700;color:#8F849E}
-.cc .tc b{color:#fff;font-weight:900}
-.tcounts{display:flex;justify-content:space-between;gap:8px;margin-top:8px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);font-size:13px;font-weight:700;color:#B9AFC6}
-.tcounts b{color:#fff;font-weight:900}
+.tcounts{margin-top:6px;font-size:12px;font-weight:600;color:#8F849E;line-height:1.5}
 .cc .sl .bb{color:#FFF23A;font-weight:900;text-align:right;white-space:nowrap;margin-left:auto}
 .cc .go{margin-top:auto;height:44px;font-size:16px;letter-spacing:.02em;text-transform:uppercase;gap:6px}
 .cc .go .star{font-size:13px}
