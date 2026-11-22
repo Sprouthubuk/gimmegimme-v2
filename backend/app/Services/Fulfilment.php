@@ -6,6 +6,7 @@ use App\Models\Competition;
 use App\Models\Order;
 use App\Models\PrizeClaim;
 use App\Models\User;
+use App\Notifications\AdminAlert;
 use App\Notifications\PrizeWon;
 use App\Support\BigWinAlert;
 use Illuminate\Support\Facades\DB;
@@ -112,20 +113,14 @@ final class Fulfilment
     }
 
     /**
-     * A drawn (end) prize. One per person: a repeat win isn't paid and goes to a redraw (EndPrizeRules).
+     * A drawn (end) prize. Every place is paid, even when one person wins more than one (owner, 22 Nov 2026).
      * A site-credit end prize is paid to winnings once (reference verity-winner:{id}) and recorded as a
      * fulfilled claim; anything else is a claim handled by a person.
      */
     public function recordDrawWin(Winner $w): void
     {
-        $rules = app(EndPrizeRules::class);
         $w->refresh(); // a just-created winner hasn't loaded its database defaults (status)
         if ($w->status !== 'active') {
-            return;
-        }
-        if ($rules->isRepeatWinner($w)) {
-            $rules->enforce($w->competition);
-
             return;
         }
         if (($userId = self::userIdFromOwner($w->owner_ref)) !== null) {
@@ -140,14 +135,12 @@ final class Fulfilment
             }
             BigWinAlert::check($w, $userId);
         }
-        // A redraw's replacement may free the next repeat win for its own redraw.
-        $rules->enforce($w->competition);
     }
 
     public function flag(Order $order, string $reason): void
     {
         if (! $order->needs_attention) {
-            DB::afterCommit(fn () => \App\Notifications\AdminAlert::send('Order '.$order->number.' needs attention', [$reason], '/admin/orders'));
+            DB::afterCommit(fn () => AdminAlert::send('Order '.$order->number.' needs attention', [$reason], '/admin/orders'));
         }
         $order->forceFill(['needs_attention' => true, 'attention_reason' => mb_substr(trim(($order->attention_reason ? $order->attention_reason.' ' : '').$reason), 0, 300)])->save();
     }

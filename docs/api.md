@@ -51,7 +51,7 @@ That is safe only because Verity gives each buyer random unsold numbers at payme
 in-order numbering with instant wins); never publish with `ticket_allocation` other than `random`.
 The seed that made the list stays sealed until the competition ends.
 `CompetitionDetail.endPrize` is `{ name, valuePence, count }`: `count` winners each win the prize
-(Verity draws that many different tickets; one end prize per person, a repeat win is redrawn).
+(Verity draws that many different tickets; one person can win more than one, and every place is paid).
 `presets` are the ticket quick-pick buttons (smallest first), `popularPreset` the one marked
 "Most popular" (or null), and `minTickets` the fewest tickets one order can hold.
 

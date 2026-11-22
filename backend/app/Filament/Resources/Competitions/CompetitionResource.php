@@ -125,7 +125,7 @@ class CompetitionResource extends Resource
                     ->required(fn (Get $get) => $get('type') === 'draw')->maxLength(120)->disabled($locked),
                 Money::input('end_prize_value_pence', 'Prize value')->disabled($locked),
                 TextInput::make('end_prize_count')->label('How many winners')->integer()->minValue(1)->maxValue(Publishing::MAX_END_PRIZES)->default(1)->required()
-                    ->disabled($locked)->helperText('Each wins the prize above. One end prize per person: a repeat win is redrawn.'),
+                    ->disabled($locked)->helperText('Each wins the prize above. One person can win more than one.'),
                 Select::make('end_prize_type')->label('How the end prize is paid')->options(Competition::END_PRIZE_TYPES)->default('physical')->required()->disabled($locked),
                 Repeater::make('prizes')->relationship()->label('Instant-win prizes')->visible(fn (Get $get) => $get('type') === 'instant')
                     ->disabled($locked)->orderColumn('sort')->columnSpanFull()->columns(4)->defaultItems(1)
