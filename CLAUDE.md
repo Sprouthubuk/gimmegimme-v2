@@ -53,9 +53,11 @@ Read before every task. If a request conflicts with this, stop and ask.
   ticket picker; cards show % sold, "Almost gone!" from 90% and "Sold Out" only
   (`BundlesTest::test_competitions_show_players_the_maximum_sold_and_left_tickets`). Never shown: the promo cap and how much of it is used. Entry lists and
   the fair-play record stay public as they are (don't gate them or touch Verity), and Terms 4.3 stays.
-- Gimme Box (lucky dip, live draws only) and Refer a Friend are each behind a setting (`feature_gimme_box`,
+- Gimme Box (lucky dip: live draws, plus instant-win games an admin has switched on, which start switched off; owner, 22 Nov 2026)
+  and Refer a Friend are each behind a setting (`feature_gimme_box`,
   `feature_referrals`, Admin → Settings), off by default; never switch them on in a migration or seeder.
-  A box is packed and priced only by `GimmeBoxPacker` at the competition page prices, never over budget;
+  A box is packed and priced only by `GimmeBoxPacker` at the competition page prices, never over budget, always with at
+  least one live draw; instant-win lines are paid singles only, never a bundle or bonus (also refused in `Pricing`);
   its bonus tickets are added by `Pricing` only while the basket line still matches the box. Referral
   rewards come only from `App\Services\Referrals` on the friend's first real-money order; card and
   device fingerprints are stored as hashes only, never a card number. Vouchers become £0 orders through

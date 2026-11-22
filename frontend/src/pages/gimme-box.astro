@@ -6,17 +6,17 @@ const gb = Astro.locals.site.gimmeBox;
 // Off: the page doesn't exist. On but fewer than two draws to pack: the box shows, waiting to open.
 if (!gb) return Astro.rewrite("/404");
 ---
-<Layout title="Gimme Box: Lucky Dip Tickets" active="comps" description="Set a budget and the Gimme Box picks a lucky dip of live draw tickets for you, with bonus tickets on top. 18+ UK only, free postal entry.">
+<Layout title="Gimme Box: Lucky Dip Tickets" active="comps" description="Set a budget and the Gimme Box picks a lucky dip of live draw and instant win tickets for you, with bonus tickets on live draws. 18+ UK only, free postal entry.">
   <section class="sec" style="padding-top:20px"><div class="wrap stack g16">
     <div class="stack g8"><div class="eyebrow">Lucky Dip</div><h1 class="h1">Gimme <span class="np">Box</span></h1>
-      <p class="p" style="margin:0">Set a budget and we'll pack a mix of live draw tickets for you{gb.bonusPct > 0 ? <>, plus <b class="ny">{gb.bonusPct}% bonus tickets</b> free</> : null}. Same prices as each competition page.</p></div>
+      <p class="p" style="margin:0">Set a budget and we'll pack a mix of live draw and instant win tickets for you{gb.bonusPct > 0 ? <>, plus <b class="ny">{gb.bonusPct}% bonus tickets</b> free on the live draws</> : null}. Same prices as each competition page.</p></div>
     <GimmeBoxBuilder client:load available={gb.available} chipsPence={gb.chipsPence} minPence={gb.minPence} maxPence={gb.maxPence} bonusPct={gb.bonusPct} />
   </div></section>
   <section class="sec" style="padding-top:0"><div class="mid stack g16" style="max-width:640px">
     <h2 class="h2">How It Works</h2>
     <div class="tl gg-stagger">
       <div class="gg-card"><span class="d np" style="font-size:26px;width:38px">01</span><div><div style="font-weight:900">Pick A Budget And Style</div><div class="hint" style="font-size:13px">From £{gb.minPence / 100} to £{gb.maxPence / 100}. Biggest prizes, most tickets, or a surprise.</div></div></div>
-      <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Shake It</div><div class="hint" style="font-size:13px">We pick two to four live draws and the best bundles your budget buys. Don't like it? Shake again.</div></div></div>
+      <div class="gg-card"><span class="d nc" style="font-size:26px;width:38px">02</span><div><div style="font-weight:900">Shake It</div><div class="hint" style="font-size:13px">We pick two to four competitions, always at least one live draw, and the best bundles your budget buys. Instant win games are played as soon as you've paid. Don't like it? Shake again.</div></div></div>
       <div class="gg-card"><span class="d ny" style="font-size:26px;width:38px">03</span><div><div style="font-weight:900">Check Out</div><div class="hint" style="font-size:13px">Your box goes in your basket. Ticket numbers are given at random, as always.</div></div></div>
     </div>
     <div class="notice notice-c"><Icon name="info" size={18} /><span>You never pay more than your budget. Any change too small for another ticket isn't charged.</span></div>

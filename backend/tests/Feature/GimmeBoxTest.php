@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\RefusedException;
 use App\Models\BundleTier;
 use App\Models\Competition;
 use App\Models\GimmeBox;
@@ -77,7 +78,8 @@ class GimmeBoxTest extends TestCase
         $this->actingAs($u)->postJson('/api/checkout', ['lines' => [['competitionId' => $full->id, 'quantity' => 96]], 'payWith' => 'wallet', 'useWallet' => true, 'requestId' => 'r-full'])->assertCreated();
         $soon = $this->draw(10, 10000, ['closes_at' => now()->addMinutes(50)]);
         $off = $this->draw(10, 10000, ['gimme_box_enabled' => false]);
-        $instant = $this->competition('instant');
+        $instant = $this->competition('instant'); // instant-win games start out of the box
+        $this->assertFalse($instant->gimme_box_enabled);
         $ok = [$this->draw(59, 1000)->id, $this->draw(79, 1000)->id];
         $used = collect($this->packer()->eligible('surprise'))->map(fn ($d) => $d['c']->id)->all();
         $this->assertEqualsCanonicalizing($ok, $used);
@@ -237,9 +239,115 @@ class GimmeBoxTest extends TestCase
             try {
                 $b = $boxes->build(1000, 'surprise', null, null, $seed);
                 $held += ($b->lineFor($tight->id)['paid'] ?? 0) + ($b->lineFor($tight->id)['free'] ?? 0) + ($b->lineFor($tight->id)['bonus'] ?? 0);
-            } catch (\App\Exceptions\RefusedException) {
+            } catch (RefusedException) {
             }
         }
         $this->assertLessThanOrEqual(40, $held, 'boxes never hold more than the draw has');
+    }
+
+    /** An instant-win game switched into the box: 10p a ticket, every ticket wins 50p credit. */
+    private function instant(array $attrs = [], array $prizes = [['50p Credit', 50, 2000, 'site_credit']]): Competition
+    {
+        return $this->competition('instant', $attrs + ['max_tickets' => 2000, 'max_per_person' => 2000, 'price_pence' => 10, 'gimme_box_enabled' => true], $prizes)->refresh();
+    }
+
+    public function test_instant_wins_go_in_a_box_only_when_switched_on_with_paid_tickets_only_and_always_with_a_live_draw(): void
+    {
+        $this->assertTrue($this->competition('draw')->gimme_box_enabled, 'a new draw starts in the box');
+        $off = $this->competition('instant');
+        $on = $this->instant();
+        $on2 = $this->instant(['price_pence' => 25]);
+        $this->draw(59, 28999);
+        $used = collect($this->packer()->eligible('surprise'))->map(fn ($d) => $d['c']->id)->all();
+        $this->assertContains($on->id, $used);
+        $this->assertNotContains($off->id, $used);
+
+        $sawInstant = false;
+        foreach (['surprise', 'big', 'most'] as $mode) {
+            foreach ([500, 1000, 2000, 5000, 10000] as $budget) {
+                foreach (range(1, 8) as $seed) {
+                    $box = $this->packer()->pack($budget, $mode, null, $seed);
+                    $this->assertLessThanOrEqual($budget, $box['totalPence']);
+                    $this->assertSame($box['totalPence'], array_sum(array_column($box['lines'], 'linePence')));
+                    $types = array_map(fn ($l) => $l['competition']->type, $box['lines']);
+                    $this->assertContains('draw', $types, "{$mode} £{$budget} seed {$seed}: every box has a live draw");
+                    foreach ($box['lines'] as $l) {
+                        $this->assertSame($l['paid'] * $l['competition']->price_pence, $l['linePence']);
+                        if ($l['competition']->type === 'instant') {
+                            $sawInstant = true;
+                            $this->assertSame([null, 0, 0], [$l['bundle'], $l['free'], $l['bonus']], 'instant-win lines: paid singles only');
+                        }
+                    }
+                }
+            }
+        }
+        $this->assertTrue($sawInstant);
+        $this->assertCount(2, [$on, $on2]);
+    }
+
+    public function test_a_box_needs_a_live_draw_and_big_prizes_counts_an_instant_wins_whole_prize_list(): void
+    {
+        $this->instant();
+        $this->instant();
+        $this->assertFalse(app(GimmeBoxPacker::class)->available(), 'two instant wins and no draw: no box');
+        $this->assertSame([], $this->packer()->pack(2000, 'surprise', null, 1)['lines']);
+        $this->getJson('/api/site')->assertJsonPath('gimmeBox.available', false);
+
+        $draw = $this->draw(10, 10000); // £100 prize
+        $big = $this->instant([], [['£50 Credit', 5000, 20, 'site_credit'], ['50p Credit', 50, 100, 'site_credit']]); // £1,050 list
+        $this->assertTrue(app(GimmeBoxPacker::class)->available());
+        $w = collect($this->packer()->eligible('big'))->mapWithKeys(fn ($d) => [$d['c']->id => $d['weight']]);
+        $this->assertGreaterThan($w[$draw->id] * 10, $w[$big->id]);
+    }
+
+    public function test_a_box_with_an_instant_win_is_paid_for_and_played_like_any_basket(): void
+    {
+        $draw = $this->draw(10, 10000);
+        $iw = $this->instant();
+        $box = $this->postJson('/api/gimme-box', ['budgetPence' => 1000, 'mode' => 'surprise'])->assertCreated()->json();
+        $types = collect($box['lines'])->pluck('type', 'competitionId');
+        $this->assertSame(['draw', 'instant'], [$types[$draw->id], $types[$iw->id]]);
+        $iwLine = collect($box['lines'])->firstWhere('competitionId', $iw->id);
+        $this->assertSame([0, null], [$iwLine['bonusQuantity'], $iwLine['bundleId']]);
+        $this->postJson('/api/gimme-box/'.$box['id'].'/added')->assertOk();
+
+        $u = $this->player();
+        $this->topUp($u, 5000);
+        $priced = $this->actingAs($u)->postJson('/api/basket/price', ['lines' => $box['basketLines']])->assertOk()->json();
+        $this->assertSame($box['totalPence'], $priced['totalPence']);
+        $this->assertSame($box['tickets'], $priced['ticketCount']);
+        $res = $this->actingAs($u)->postJson('/api/checkout', ['lines' => $box['basketLines'], 'payWith' => 'wallet', 'useWallet' => true, 'requestId' => (string) Str::uuid()])
+            ->assertCreated()->assertJsonPath('next', 'play')->json();
+        $order = Order::query()->latest()->firstOrFail();
+        $this->assertSame('paid', $order->status);
+        $line = $order->lines()->where('competition_id', $iw->id)->firstOrFail();
+        $this->assertSame([$iwLine['paidQuantity'], 0], [(int) $line->quantity, (int) $line->bonus_quantity]);
+        $this->assertCount($iwLine['paidQuantity'], $line->tickets, 'instant-win tickets issued by Verity');
+
+        $play = $this->postJson('/api/orders/'.$res['order']['number'].'/play')->assertOk()->json();
+        $this->assertSame($iwLine['paidQuantity'] * 50, $play['outcome']['totalWonPence'], 'every instant ticket wins its 50p');
+        $this->assertTrue($play['context'][$iw->id]['isInstantWin']);
+    }
+
+    public function test_a_box_record_can_never_give_bonus_tickets_on_an_instant_win(): void
+    {
+        $this->draw(10, 10000);
+        $iw = $this->instant();
+        $box = $this->postJson('/api/gimme-box', ['budgetPence' => 1000, 'mode' => 'surprise'])->assertCreated()->json();
+        // Even if a stored box said otherwise, pricing gives an instant-win line no bonus.
+        $model = GimmeBox::query()->findOrFail($box['id']);
+        $model->lines = array_map(fn ($l) => $l['competition_id'] === $iw->id ? ['bonus' => 5] + $l : $l, $model->lines);
+        $model->save();
+        $priced = $this->postJson('/api/basket/price', ['lines' => $box['basketLines']])->assertOk()->json();
+        $this->assertSame(0, collect($priced['lines'])->firstWhere('competitionId', $iw->id)['bonusQuantity']);
+    }
+
+    public function test_existing_instant_wins_start_out_of_the_box(): void
+    {
+        $iw = $this->competition('instant', ['gimme_box_enabled' => true]);
+        $draw = $this->competition('draw');
+        (include database_path('migrations/2026_11_22_220000_gimme_box_instant_wins.php'))->up();
+        $this->assertFalse($iw->refresh()->gimme_box_enabled);
+        $this->assertTrue($draw->refresh()->gimme_box_enabled);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\Games;
 use App\Filament\Pages\PostalEntries;
 use App\Filament\Pages\SiteSettings;
 use App\Filament\Resources\Competitions\Pages\CreateCompetition;
@@ -22,13 +23,16 @@ use App\Models\Page;
 use App\Models\PostalEntry;
 use App\Models\Setting;
 use App\Models\Withdrawal;
+use App\Notifications\TestEmail;
 use App\Services\CompetitionState;
 use App\Services\PlayCheck;
 use App\Services\Postal;
 use App\Services\Settings;
+use Database\Seeders\DemoSeeder;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -63,7 +67,7 @@ class AdminTest extends TestCase
 
     public function test_every_admin_screen_opens_with_demo_data(): void
     {
-        $this->seed(\Database\Seeders\DemoSeeder::class);
+        $this->seed(DemoSeeder::class);
         Setting::put('feature_gimme_box', '1');
         Setting::put('feature_referrals', '1');
         $admin = $this->admin();
@@ -109,10 +113,22 @@ class AdminTest extends TestCase
         Livewire::test(EditCompetition::class, ['record' => $c->getKey()])->fillForm(['max_per_person' => 9000])->call('save')->assertHasFormErrors(['max_per_person']);
     }
 
+    public function test_the_gimme_box_switch_starts_off_for_an_instant_win_and_on_for_a_draw(): void
+    {
+        // Owner, 22 Nov 2026: instant-win games can go in a Gimme Box once an admin switches them on.
+        $this->signInAdmin();
+        Livewire::test(CreateCompetition::class)->fillForm(['type' => 'instant'])->assertFormSet(['gimme_box_enabled' => false])->assertFormFieldExists('gimme_box_weight')
+            ->fillForm(['type' => 'draw'])->assertFormSet(['gimme_box_enabled' => true]);
+        $iw = $this->competition('instant');
+        Livewire::test(EditCompetition::class, ['record' => $iw->getKey()])->assertFormSet(['gimme_box_enabled' => false])->assertFormFieldExists('gimme_box_enabled');
+        $iw->update(['gimme_box_enabled' => true]);
+        $this->assertTrue($iw->refresh()->gimme_box_enabled, 'switched on after publishing: not a locked term');
+    }
+
     public function test_the_games_page_lists_every_game_in_every_look(): void
     {
         $this->signInAdmin();
-        $page = Livewire::test(\App\Filament\Pages\Games::class)->assertOk();
+        $page = Livewire::test(Games::class)->assertOk();
         $games = $page->instance()->games();
         $this->assertSame(['scratch_card', 'spin_wheel', 'bingo_card', 'balloon_pop', 'hook_a_duck', 'claw_machine', 'coin_drop', 'slots', 'gems', 'whack_a_mole', 'pinata'], array_column($games, 'id'));
         $looks = collect($games)->mapWithKeys(fn ($g) => [$g['id'] => array_column($g['looks'], 'label')]);
@@ -129,7 +145,7 @@ class AdminTest extends TestCase
         $open = $this->competition('instant');
         $draw = $this->competition('draw');
 
-        Livewire::test(\App\Filament\Resources\Competitions\Pages\ListCompetitions::class)
+        Livewire::test(ListCompetitions::class)
             ->assertTableActionVisible('openNow', $later)->assertTableActionHidden('openNow', $open)
             ->assertTableActionVisible('previewGame', $later)->assertTableActionHidden('previewGame', $draw)
             ->assertTableActionHasUrl('previewGame', '/demo/slots?skin=christmas', $later)
@@ -324,11 +340,11 @@ class AdminTest extends TestCase
         config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 2]);
         Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('The email was not sent');
 
-        \Illuminate\Support\Facades\Notification::fake();
+        Notification::fake();
         Livewire::test(SiteSettings::class)->callAction('testEmail', ['to' => 'me@example.com'])->assertNotified('Sent');
         $this->assertSame(1, AdminAction::query()->where('action', 'email.test_sent')->count());
         // It's the branded email, not plain text.
-        \Illuminate\Support\Facades\Notification::assertSentOnDemand(\App\Notifications\TestEmail::class,
+        Notification::assertSentOnDemand(TestEmail::class,
             fn ($n, $channels, $notifiable) => $notifiable->routes['mail'] === 'me@example.com');
     }
 

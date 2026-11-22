@@ -171,7 +171,7 @@ export default function GimmeBoxBuilder({ chipsPence, minPence, maxPence, bonusP
             {!available ? "Opening Soon" : shaking ? "Packing…" : `Open My £${pounds} Box`}
           </button>
         )}
-        <p className="hint" style={{ margin: 0 }}>Live draws only · 18+ UK · <a href="/free-entry">Free postal entry</a> for every draw</p>
+        <p className="hint" style={{ margin: 0 }}>Live draws and instant wins · 18+ UK · <a href="/free-entry">Free postal entry</a> for every draw</p>
       </div>
 
       <div className="gbx-result" ref={panel}>
@@ -180,7 +180,7 @@ export default function GimmeBoxBuilder({ chipsPence, minPence, maxPence, bonusP
             <button type="button" className="gbx-boxbtn" onClick={() => (shaking ? skip.current?.() : !busy && available && shake())} aria-label={shaking ? "Skip the shake" : "Open the box"} disabled={!available || (busy && !shaking)}>
               <BoxArt shaking={shaking} />
             </button>
-            <span className="hint" aria-live="polite">{!available ? "The box opens once there are at least two live draws to pack." : shaking ? "Packing your box… tap to skip" : "Pick a budget and open the box to see what's inside."}</span>
+            <span className="hint" aria-live="polite">{!available ? "The box opens once there are at least two competitions to pack, one of them a live draw." : shaking ? "Packing your box… tap to skip" : "Pick a budget and open the box to see what's inside."}</span>
           </div>
         ) : (
           <div className="stack g12" data-testid="gb-reveal" aria-live="polite">
@@ -193,7 +193,7 @@ export default function GimmeBoxBuilder({ chipsPence, minPence, maxPence, bonusP
                 <img src={l.imageSmall} alt="" width={48} height={48} loading="lazy" />
                 <div className="gbx-line-txt">
                   <a href={`/competitions/${l.slug}`}>{l.title}</a>
-                  <span className="hint">{l.tickets.toLocaleString("en-GB")} tickets{l.bundleLabel ? ` · ${l.bundleLabel}` : ""}{l.bonusQuantity > 0 ? ` · +${l.bonusQuantity} bonus` : ""} · {l.soldPercent}% sold</span>
+                  <span className="hint">{l.type === "instant" ? "Instant Win · " : ""}{l.tickets.toLocaleString("en-GB")} tickets{l.bundleLabel ? ` · ${l.bundleLabel}` : ""}{l.bonusQuantity > 0 ? ` · +${l.bonusQuantity} bonus` : ""} · {l.soldPercent}% sold</span>
                   {l.notice && <span className="hint" style={{ color: "#FFF23A" }}>{l.notice}</span>}
                 </div>
                 <b>{formatMoney(l.linePence)}</b>
