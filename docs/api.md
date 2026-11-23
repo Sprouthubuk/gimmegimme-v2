@@ -42,11 +42,16 @@ against it; the Laravel feature tests must cover the same behaviour.
 | GET | `/api/archive/{slug}/instant-wins?page=` | `{ data: ArchiveWinnerRow[], hasMore }` (50 a page, newest first) |
 | GET | `/api/archive/{slug}/entries?q=&page=` | `{ data: EntryRow[], hasMore }` (no total, 100 a page; `q` is a ticket number); masked names as the old site showed them; `prizeName` on a ticket that won an instant prize |
 | GET | `/api/competitions/{slug}/winning-numbers?show=all\|won\|left&q=&prize=&page=` | `WinningNumbersPage` (`prize` = one prize's name). A paid win isn't named (here, in `/api/winners/instant` or as an entry list's `prizeName`) until its player has played the reveal, or for an hour: every instant prize's winning ticket number, public from publish, biggest prize first, 100 a page; `404` for draws |
+| GET | `/api/competitions/{slug}/prize-boost` | A competition's prize boost record (docs/prize-boosts.md): batch, reason, `addedAt`, drand `beacon`, `maxTickets`, the `excludedNumbers` and their hash, and every added prize `{slot, name, valuePence, ticket}`, so anyone can re-run GG-BOOST-1; `404` when none |
 | GET | `/api/pages/{slug}` | `{ title, updatedAt, version, html, headings }` (terms, privacy, rules, cookies, free-entry) |
 | POST | `/api/contact` | `{ name, email, topic, message }` → `204`; rate limited |
 
 `CompetitionDetail.prizes` lists the prize *tiers* and how many of each are won. Which ticket number
 wins each prize is public from publish (owner's decision, 18 Nov 2026) through `/winning-numbers`.
+Prize boosts (owner, 23 Nov 2026): extra instant prizes added after launch are in `CompetitionDetail.prizes` (with
+`addedAt`), counted in `prizeCount` / `topPrizePence`, summed in `CompetitionSummary.boost` (`{addedCount, addedPence,
+addedAt}` or null), listed in `/winning-numbers` (`addedAt` on each row, null for Verity's), and described by
+`CompetitionDetail.boostRecord`.
 That is safe only because Verity gives each buyer random unsold numbers at payment (it refuses
 in-order numbering with instant wins); never publish with `ticket_allocation` other than `random`.
 The seed that made the list stays sealed until the competition ends.

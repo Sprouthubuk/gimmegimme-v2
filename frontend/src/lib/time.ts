@@ -24,6 +24,11 @@ export function ukWhen(iso: string, now = Date.now()): string {
   return ukDateTime(iso);
 }
 
+/** "23 Nov" (UK day) */
+export function ukDayMonth(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", { timeZone: TZ, day: "numeric", month: "short" });
+}
+
 /** "Sat 8pm" */
 export function ukShortDay(iso: string): string {
   const d = new Date(iso);

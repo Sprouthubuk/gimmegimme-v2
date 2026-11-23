@@ -3,7 +3,7 @@ import Layout from "../../../layouts/Layout.astro";
 import Icon from "../../../components/Icon.astro";
 import type { WinningNumbersPage } from "../../../lib/types";
 import { formatCount, formatPence } from "../../../lib/money";
-import { ukDateTime } from "../../../lib/time";
+import { ukDateTime, ukDayMonth } from "../../../lib/time";
 
 // Every instant prize's winning ticket number, public from publish. Tickets are given out at random,
 // so a public number gives nobody an edge. A prize is won once its ticket is sold.
@@ -33,7 +33,7 @@ const { competition: c, data: rows, total, won, matching, hasMore } = res;
           {rows.map((r) => (
             <tr>
               <td><span class="tn">#{r.ticket}</span></td>
-              <td><b style="display:block">{formatPence(r.valuePence)}</b><span class="hint">{r.prizeName}</span></td>
+              <td><b style="display:block">{formatPence(r.valuePence)}</b><span class="hint">{r.prizeName}</span>{r.addedAt && <span class="tag-added" data-testid="added-label">Added {ukDayMonth(r.addedAt)}</span>}</td>
               <td>{r.won ? <><span class="tag tag-p">Won</span><span class="hint" style="display:block;margin-top:4px">{r.winnerName ?? "Named once they've played"}{r.wonAt && ` · ${ukDateTime(r.wonAt)}`}</span></> : <span class="hint">Still to win</span>}</td>
             </tr>
           ))}

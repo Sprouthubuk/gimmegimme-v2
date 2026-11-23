@@ -2,15 +2,17 @@
 
 namespace App\Http\Presenters;
 
-use App\Tracking\MetaEvents;
 use App\Models\Competition;
+use App\Models\IdCheck;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\User;
 use App\Services\CompetitionState;
 use App\Services\PlayCheck;
+use App\Services\PrizeBoosts;
 use App\Services\Wallet;
+use App\Tracking\MetaEvents;
 use Sprouthub\Verity\Models\Winner;
 
 /** Me, WalletTransaction, TicketGroup, OrderView, Limits. */
@@ -185,7 +187,8 @@ final class AccountPresenter
             $out[(int) $r->number] = ['name' => $r->prize_name, 'value' => (int) $r->prize_value_pence, 'key' => $r->prize_key];
         }
 
-        return $out;
+        // Added (prize boost) instant prizes won on these tickets.
+        return $out + PrizeBoosts::winsByTicket($c, $numbers);
     }
 
     public function order(Order $o): array
@@ -227,12 +230,12 @@ final class AccountPresenter
     }
 
     /** Where the player's ID check stands: verified, pending (we're looking), rejected (send again) or needed. */
-    private function idCheck(\App\Models\User $u): array
+    private function idCheck(User $u): array
     {
         if ($u->id_verified_at) {
             return ['idCheck' => 'verified', 'idCheckNote' => null];
         }
-        $last = \App\Models\IdCheck::query()->where('user_id', $u->id)->latest()->first();
+        $last = IdCheck::query()->where('user_id', $u->id)->latest()->first();
 
         return match ($last?->status) {
             'pending' => ['idCheck' => 'pending', 'idCheckNote' => null],

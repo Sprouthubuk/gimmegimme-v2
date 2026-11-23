@@ -68,7 +68,8 @@ final class Reports
     /** Total value of everything this player has won (cash, credit and prizes), from Verity's winners. */
     public static function wonPence(int $userId): int
     {
-        return (int) Winner::query()->where('owner_ref', 'user:'.$userId)->where('status', 'active')->sum('prize_value_pence');
+        return (int) Winner::query()->where('owner_ref', 'user:'.$userId)->where('status', 'active')->sum('prize_value_pence')
+            + (int) DB::table('boost_prizes')->where('won_user_id', $userId)->sum('value_pence'); // added (prize boost) wins
     }
 
     /** @return Collection<int, object> the player's wins, newest first (Verity winners, with the competition). */
@@ -96,6 +97,10 @@ final class Reports
         $wins = Winner::query()->where('verity_winners.owner_ref', 'user:'.$u->id)->where('verity_winners.status', 'active')
             ->join('verity_competitions as vc', 'vc.id', '=', 'verity_winners.competition_id')
             ->selectRaw('vc.ref, COUNT(*) AS n')->groupBy('vc.ref')->pluck('n', 'ref');
+        foreach (DB::table('boost_prizes')->join('competitions', 'competitions.id', '=', 'boost_prizes.competition_id')->where('boost_prizes.won_user_id', $u->id)
+            ->selectRaw('competitions.verity_ref AS ref, COUNT(*) AS n')->groupBy('competitions.verity_ref')->get() as $b) {
+            $wins[$b->ref] = (int) ($wins[$b->ref] ?? 0) + (int) $b->n;
+        }
 
         return $groups->map(function ($gs, $ref) use ($local, $numbers, $wins) {
             $c = $local->get($ref);
@@ -114,16 +119,26 @@ final class Reports
 
     // ---- Wins ---------------------------------------------------------------------------------------------------
 
-    /** Every win (Verity winners, active), joined to the competition and, when it's one of ours, the player. */
+    /**
+     * Every win (Verity winners, active, and added prize-boost wins, type 'boost'), joined to the competition and,
+     * when it's one of ours, the player. Columns are read as w.*.
+     */
     public static function winsQuery(): \Illuminate\Database\Query\Builder
     {
-        return DB::table('verity_winners as w')
-            ->join('verity_competitions as vc', 'vc.id', '=', 'w.competition_id')
-            ->leftJoin('users', fn ($j) => $j->whereRaw(self::ownerOf('w.owner_ref')))
-            ->where('w.status', 'active')
-            ->select('w.id', 'w.type', 'w.prize_name', 'w.prize_value_pence', 'w.created_at', 'w.owner_ref', 'vc.title as competition', 'vc.ref as competition_ref',
-                'users.id as user_id', 'users.first_name', 'users.last_name', 'users.email')
-            ->orderByDesc('w.created_at')->orderByDesc('w.id');
+        $verity = DB::table('verity_winners as vw')
+            ->join('verity_competitions as vc', 'vc.id', '=', 'vw.competition_id')
+            ->leftJoin('users', fn ($j) => $j->whereRaw(self::ownerOf('vw.owner_ref')))
+            ->where('vw.status', 'active')
+            ->select('vw.id', 'vw.type', 'vw.prize_name', 'vw.prize_value_pence', 'vw.created_at', 'vw.owner_ref', 'vc.title as competition', 'vc.ref as competition_ref',
+                'users.id as user_id', 'users.first_name', 'users.last_name', 'users.email');
+        $boosts = DB::table('boost_prizes as bp')
+            ->join('competitions as gc', 'gc.id', '=', 'bp.competition_id')
+            ->leftJoin('users', 'users.id', '=', 'bp.won_user_id')
+            ->whereNotNull('bp.won_at')
+            ->select('bp.id', DB::raw("'boost' as type"), 'bp.name as prize_name', 'bp.value_pence as prize_value_pence', 'bp.won_at as created_at', 'bp.won_owner_ref as owner_ref',
+                'gc.title as competition', 'gc.verity_ref as competition_ref', 'users.id as user_id', 'users.first_name', 'users.last_name', 'users.email');
+
+        return DB::query()->fromSub($verity->unionAll($boosts), 'w')->orderByDesc('w.created_at')->orderByDesc('w.id');
     }
 
     /** @return Collection<int, object> wins at or above the big-win line since $since. */
@@ -176,7 +191,8 @@ final class Reports
                     $out[$k]['orders']++;
                 }
             });
-        LedgerEntry::query()->where('bucket', 'winnings')->where('direction', 'credit')->where('reference', 'like', 'verity-winner:%')
+        LedgerEntry::query()->where('bucket', 'winnings')->where('direction', 'credit')
+            ->where(fn ($q) => $q->where('reference', 'like', 'verity-winner:%')->orWhere('reference', 'like', 'boost-prize:%'))
             ->where('created_at', '>=', $from)->get(['created_at', 'amount_pence'])
             ->each(function ($e) use (&$out, $day) {
                 if (isset($out[$k = $day($e->created_at)])) {
@@ -229,10 +245,10 @@ final class Reports
             ->select('competitions.*')
             ->selectSub(fn ($q) => $paidLines($q)->selectRaw('COALESCE(SUM(order_lines.line_pence), 0)'), 'revenue_pence')
             ->selectSub(fn ($q) => $paidLines($q)->selectRaw('COUNT(DISTINCT orders.user_id)'), 'buyers')
-            ->selectSub(fn ($q) => $q->from('verity_winners as w')->join('verity_competitions as vc', 'vc.id', '=', 'w.competition_id')
-                ->whereColumn('vc.ref', 'competitions.verity_ref')->where('w.status', 'active')->selectRaw('COALESCE(SUM(w.prize_value_pence), 0)'), 'won_pence')
-            ->selectSub(fn ($q) => $q->from('verity_instant_prizes as p')->join('verity_competitions as vc', 'vc.id', '=', 'p.competition_id')
-                ->whereColumn('vc.ref', 'competitions.verity_ref')->selectRaw('COALESCE(SUM(p.value_pence * p.quantity), 0)'), 'instant_pool_pence')
+            ->selectRaw('(SELECT COALESCE(SUM(w2.prize_value_pence), 0) FROM verity_winners w2 JOIN verity_competitions vc2 ON vc2.id = w2.competition_id WHERE vc2.ref = competitions.verity_ref AND w2.status = ?)
+                + (SELECT COALESCE(SUM(b2.value_pence), 0) FROM boost_prizes b2 WHERE b2.competition_id = competitions.id AND b2.won_at IS NOT NULL) AS won_pence', ['active'])
+            ->selectRaw('(SELECT COALESCE(SUM(p.value_pence * p.quantity), 0) FROM verity_instant_prizes p JOIN verity_competitions vc3 ON vc3.id = p.competition_id WHERE vc3.ref = competitions.verity_ref)
+                + (SELECT COALESCE(SUM(b3.value_pence), 0) FROM boost_prizes b3 WHERE b3.competition_id = competitions.id) AS instant_pool_pence')
             ->selectSub(fn ($q) => $q->from('verity_competitions as vc')->whereColumn('vc.ref', 'competitions.verity_ref')->select('vc.tickets_sold'), 'tickets_sold');
     }
 

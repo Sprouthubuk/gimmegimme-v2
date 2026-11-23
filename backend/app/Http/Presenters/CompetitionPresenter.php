@@ -2,10 +2,13 @@
 
 namespace App\Http\Presenters;
 
+use App\Models\BoostPrize;
 use App\Models\Competition;
+use App\Models\PrizeBoost;
 use App\Models\User;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
+use Illuminate\Support\Carbon;
 use Sprouthub\Verity\Models\InstantPrize;
 use Sprouthub\Verity\Models\Winner;
 
@@ -18,11 +21,25 @@ final class CompetitionPresenter
         'bingo_card' => 'Bingo Card', 'whack_a_mole' => 'Whack-a-Mole', 'pinata' => 'Piñata', 'classic' => 'Scratch Card',
     ];
 
+    /** @var array<int, object>|null added (prize boost) totals per competition id, read once per request */
+    private ?array $boosts = null;
+
     public function __construct(private CompetitionState $state, private Bundles $bundles) {}
+
+    /** Added (prize boost) instant prizes for a competition: count, value, top prize and when, or null. */
+    public function boost(Competition $c): ?object
+    {
+        $this->boosts ??= BoostPrize::query()->selectRaw('competition_id, COUNT(*) AS n, SUM(value_pence) AS v, MAX(value_pence) AS top, MIN(added_at) AS at')
+            ->groupBy('competition_id')->get()->keyBy('competition_id')->all();
+
+        return $this->boosts[$c->id] ?? null;
+    }
 
     public function summary(Competition $c): array
     {
-        $top = $c->isInstant() ? (int) $c->prizes->max('value_pence') : (int) $c->end_prize_value_pence;
+        $boost = $c->isInstant() ? $this->boost($c) : null;
+        $top = $c->isInstant() ? max((int) $c->prizes->max('value_pence'), (int) ($boost->top ?? 0)) : (int) $c->end_prize_value_pence;
+        $prizeCount = $c->isInstant() ? (int) $c->prizes->sum('quantity') + (int) ($boost->n ?? 0) : null;
         if ($c->isInstant() && $c->end_prize_value_pence) {
             $top = max($top, (int) $c->end_prize_value_pence);
         }
@@ -40,7 +57,7 @@ final class CompetitionPresenter
             ...$c->pictureFields(),
             'pricePence' => $c->price_pence,
             'topPrizePence' => $top ?: null,
-            'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format((int) $c->prizes->sum('quantity')).' instant wins' : null),
+            'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format($prizeCount).' instant wins' : null),
             'soldPercent' => $this->state->soldPercent($c),
             // Shown to players since 22 Nov 2026 (owner): the maximum, how many sold and how many are left.
             'maxTickets' => (int) $c->max_tickets,
@@ -48,7 +65,9 @@ final class CompetitionPresenter
             'ticketsLeft' => $this->state->left($c),
             // Max tickets one person may hold (owner, 22 Nov 2026); null when there's no limit.
             'maxPerPerson' => $c->max_per_person < $c->max_tickets ? (int) $c->max_per_person : null,
-            'prizeCount' => $c->isInstant() ? (int) $c->prizes->sum('quantity') : null,
+            'prizeCount' => $prizeCount,
+            // Extra instant prizes added after launch (prize boost, 23 Nov 2026): the badge on cards and the page banner.
+            'boost' => $boost ? ['addedCount' => (int) $boost->n, 'addedPence' => (int) $boost->v, 'addedAt' => Carbon::parse($boost->at)->toIso8601ZuluString()] : null,
             'endPrize' => $c->isInstant() && $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence, 'count' => $c->endPrizeCount()] : null,
             'opensAt' => $c->opens_at?->toIso8601ZuluString(),
             'closesAt' => $c->closes_at?->toIso8601ZuluString(),
@@ -69,9 +88,13 @@ final class CompetitionPresenter
                 ->selectRaw('prize_key, COUNT(*) AS n')->groupBy('prize_key')->pluck('n', 'prize_key') : collect();
             $keys = $v ? InstantPrize::query()->where('competition_id', $v->id)->orderBy('sort')->get(['key', 'name', 'value_pence', 'quantity', 'meta']) : collect();
             $rows = $keys->isNotEmpty()
-                ? $keys->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->meta['type'] ?? 'site_credit', 'quantity' => (int) $p->quantity, 'won' => (int) ($won[$p->key] ?? 0)])
-                : $c->prizes->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->type, 'quantity' => (int) $p->quantity, 'won' => 0]);
-            $prizes = $rows->sortByDesc('valuePence')->values()->all();
+                ? $keys->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->meta['type'] ?? 'site_credit', 'quantity' => (int) $p->quantity, 'won' => (int) ($won[$p->key] ?? 0), 'addedAt' => null])
+                : $c->prizes->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->type, 'quantity' => (int) $p->quantity, 'won' => 0, 'addedAt' => null]);
+            $added = BoostPrize::query()->where('competition_id', $c->id)
+                ->selectRaw('name, value_pence, type, COUNT(*) AS n, COUNT(won_at) AS w, MIN(added_at) AS at')->groupBy('name', 'value_pence', 'type')->get()
+                ->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->type, 'quantity' => (int) $p->n, 'won' => (int) $p->w,
+                    'addedAt' => Carbon::parse($p->at)->toIso8601ZuluString()]);
+            $prizes = $rows->concat($added)->sortByDesc('valuePence')->values()->all();
         }
 
         return $this->summary($c) + [
@@ -84,6 +107,13 @@ final class CompetitionPresenter
             'verityRef' => $v?->ref,
             'commitment' => $v?->commitment,
             'verifyUrl' => $v ? '/verify/'.$v->ref : null,
+            // How the added prizes' numbers were chosen, so anyone can check them (App\Services\PrizeBoosts).
+            'boostRecord' => ($b = PrizeBoost::query()->where('competition_id', $c->id)->orderBy('id')->first()) ? [
+                'algorithm' => $b->algorithm, 'reason' => $b->reason, 'addedAt' => $b->added_at->toIso8601ZuluString(),
+                'beaconSource' => $b->beacon_source, 'beaconRound' => $b->beacon_round, 'beaconRandomness' => $b->beacon_randomness,
+                'issuedCount' => (int) $b->issued_count, 'issuedHash' => $b->issued_hash, 'excludedCount' => (int) $b->excluded_count, 'excludedHash' => $b->excluded_hash,
+                'prizeCount' => (int) $b->prize_count, 'valuePence' => (int) $b->value_pence,
+            ] : null,
             'presets' => $c->presetList(),
             'popularPreset' => $c->popularPreset(),
             'minTickets' => (int) ($c->min_tickets ?: 1),

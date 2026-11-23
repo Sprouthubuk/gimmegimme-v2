@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\CompetitionPresenter;
+use App\Models\BoostPrize;
 use App\Models\Competition;
 use App\Models\ContactMessage;
 use App\Models\Page;
+use App\Models\PrizeBoost;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Bundles;
@@ -104,10 +106,15 @@ class PublicController extends Controller
             $refs = $hosts->where('game', $game)->keys();
             $q->whereHas('competition', fn ($w) => $w->whereIn('ref', $refs));
         }
-        $total = (clone $q)->count();
-        $rows = $q->skip(($page - 1) * $limit)->take($limit)->get();
-
-        return response()->json(['total' => $total, 'data' => $rows->map(function (Winner $w) use ($hosts) {
+        // Added (prize boost) wins join the feed too, newest first across both.
+        $boost = BoostPrize::query()->whereNotNull('won_at')->with('competition:id,title,game')->orderByDesc('won_at')->orderByDesc('id')
+            ->where($this->seenOnly('boost_prizes.won_group_id'));
+        if ($game ?? null) {
+            $boost->whereHas('competition', fn ($w) => $w->where('game', $game));
+        }
+        $total = (clone $q)->count() + (clone $boost)->count();
+        $window = $page * $limit;
+        $rows = $q->take($window)->get()->map(function (Winner $w) use ($hosts) {
             $h = $hosts->get($w->competition->ref);
 
             return [
@@ -115,7 +122,33 @@ class PublicController extends Controller
                 'game' => $h?->game, 'gameLabel' => CompetitionPresenter::GAME_LABELS[$h?->game] ?? null,
                 'competitionTitle' => $h?->title ?? $w->competition->title, 'at' => $w->created_at->toIso8601ZuluString(),
             ];
-        })->values()]);
+        })->concat($boost->take($window)->get()->map(fn (BoostPrize $p) => [
+            'id' => 'b'.$p->id, 'name' => $this->publicName((string) $p->won_owner_ref), 'prizeName' => $p->name, 'valuePence' => (int) $p->value_pence,
+            'game' => $p->competition?->game, 'gameLabel' => CompetitionPresenter::GAME_LABELS[$p->competition?->game] ?? null,
+            'competitionTitle' => $p->competition?->title, 'at' => $p->won_at->toIso8601ZuluString(),
+        ]))->sortByDesc('at')->values()->slice(($page - 1) * $limit, $limit);
+
+        return response()->json(['total' => $total, 'data' => $rows->values()]);
+    }
+
+    /**
+     * A competition's prize boost, in full: the record, every added prize and its number, and the numbers that were
+     * left out, so anyone can re-run GG-BOOST-1 (docs/prize-boosts.md) and get the same numbers.
+     */
+    public function prizeBoost(string $slug): JsonResponse
+    {
+        $c = Competition::query()->published()->where('slug', $slug)->firstOrFail();
+        $boosts = PrizeBoost::query()->where('competition_id', $c->id)->with('prizes')->orderBy('id')->get();
+        abort_if($boosts->isEmpty(), 404);
+
+        return response()->json(['competition' => ['slug' => $c->slug, 'title' => $c->title, 'verityRef' => $c->verity_ref], 'data' => $boosts->map(fn ($b) => [
+            'batch' => $b->batch, 'reason' => $b->reason, 'algorithm' => $b->algorithm, 'addedAt' => $b->added_at->toIso8601ZuluString(),
+            'beacon' => ['source' => $b->beacon_source, 'round' => $b->beacon_round, 'randomness' => $b->beacon_randomness, 'signature' => $b->beacon_signature],
+            'maxTickets' => (int) $b->max_tickets, 'issuedCount' => (int) $b->issued_count, 'issuedHash' => $b->issued_hash,
+            'excludedHash' => $b->excluded_hash, 'excludedNumbers' => $b->excluded_numbers === '' ? [] : array_map('intval', explode(',', $b->excluded_numbers)),
+            'verityTableHash' => $b->verity_table_hash,
+            'prizes' => $b->prizes->map(fn ($p) => ['slot' => $p->slot, 'name' => $p->name, 'valuePence' => (int) $p->value_pence, 'ticket' => (int) $p->ticket_number])->values(),
+        ])->values()]);
     }
 
     public function drawWinners(): JsonResponse
@@ -158,12 +191,14 @@ class PublicController extends Controller
             ->join('verity_entry_groups', 'verity_entry_groups.id', '=', 'verity_entries.entry_group_id')
             ->leftJoin('verity_instant_tickets', 'verity_instant_tickets.id', '=', 'verity_entries.instant_ticket_id')
             ->leftJoin('verity_instant_prizes', 'verity_instant_prizes.id', '=', 'verity_instant_tickets.instant_prize_id')
+            ->leftJoin('boost_prizes', fn ($j) => $j->on('boost_prizes.ticket_number', '=', 'verity_entries.number')->where('boost_prizes.competition_id', '=', $c->id))
             ->whereNull('verity_entry_groups.withdrawn_at')->orderBy('verity_entries.number');
         if (ctype_digit((string) $r->query('q'))) {
             $q->where('verity_entries.number', (int) $r->query('q'));
         }
         $rows = $q->skip(($page - 1) * $per)->take($per + 1)
-            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entries.entry_group_id', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name']);
+            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entries.entry_group_id', 'verity_entry_groups.owner_ref',
+                DB::raw('COALESCE(verity_instant_prizes.name, boost_prizes.name) as prize_name')]);
         $names = $this->names($rows->take($per)->pluck('owner_ref'));
         $unseen = $this->unseenGroups($rows->take($per)->whereNotNull('prize_name')->pluck('entry_group_id'));
 
@@ -194,29 +229,35 @@ class PublicController extends Controller
         $page = max(1, min(10000, (int) $r->query('page', 1)));
         $sold = fn ($j) => $j->on('verity_entries.competition_id', '=', 'verity_instant_tickets.competition_id')
             ->on('verity_entries.number', '=', 'verity_instant_tickets.ticket_number');
-        $base = DB::table('verity_instant_tickets')->where('verity_instant_tickets.competition_id', $v->id)
+        $verityRows = DB::table('verity_instant_tickets')->where('verity_instant_tickets.competition_id', $v->id)
             ->join('verity_instant_prizes', 'verity_instant_prizes.id', '=', 'verity_instant_tickets.instant_prize_id')
             ->leftJoin('verity_entries', $sold)
-            ->leftJoin('verity_entry_groups', fn ($j) => $j->on('verity_entry_groups.id', '=', 'verity_entries.entry_group_id')->whereNull('verity_entry_groups.withdrawn_at'));
+            ->leftJoin('verity_entry_groups', fn ($j) => $j->on('verity_entry_groups.id', '=', 'verity_entries.entry_group_id')->whereNull('verity_entry_groups.withdrawn_at'))
+            ->select(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
+                'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at', DB::raw('NULL as added_at')]);
+        // Added (prize boost) prizes, listed with Verity's from the moment they're added, labelled with when.
+        $boostRows = DB::table('boost_prizes')->where('boost_prizes.competition_id', $c->id)
+            ->select(['boost_prizes.ticket_number', 'boost_prizes.name', 'boost_prizes.value_pence', DB::raw("'{\"type\":\"site_credit\"}' as meta"),
+                'boost_prizes.won_group_id as group_id', 'boost_prizes.won_owner_ref as owner_ref', 'boost_prizes.won_at', 'boost_prizes.added_at']);
+        $base = DB::query()->fromSub($verityRows->unionAll($boostRows), 'p');
         $total = (clone $base)->count();
-        $won = (clone $base)->whereNotNull('verity_entry_groups.id')->count();
+        $won = (clone $base)->whereNotNull('p.group_id')->count();
         $q = clone $base;
         match ($r->query('show')) {
-            'won' => $q->whereNotNull('verity_entry_groups.id'),
-            'left' => $q->whereNull('verity_entry_groups.id'),
+            'won' => $q->whereNotNull('p.group_id'),
+            'left' => $q->whereNull('p.group_id'),
             default => null,
         };
         if (ctype_digit((string) $r->query('q'))) {
-            $q->where('verity_instant_tickets.ticket_number', (int) $r->query('q'));
+            $q->where('p.ticket_number', (int) $r->query('q'));
         }
         if (is_string($r->query('prize')) && $r->query('prize') !== '') {
-            $q->where('verity_instant_prizes.name', mb_substr($r->query('prize'), 0, 191));
+            $q->where('p.name', mb_substr($r->query('prize'), 0, 191));
         }
         $matching = (clone $q)->count();
-        $rows = $q->orderByDesc('verity_instant_prizes.value_pence')->orderBy('verity_instant_tickets.ticket_number')
+        $rows = $q->orderByDesc('p.value_pence')->orderBy('p.ticket_number')
             ->skip(($page - 1) * $per)->take($per + 1)
-            ->get(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
-                'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at']);
+            ->get(['p.ticket_number', 'p.name', 'p.value_pence', 'p.meta', 'p.group_id', 'p.owner_ref', 'p.won_at', 'p.added_at']);
         $names = $this->names($rows->take($per)->pluck('owner_ref')->filter());
         $unseen = $this->unseenGroups($rows->take($per)->pluck('group_id'));
 
@@ -228,6 +269,7 @@ class PublicController extends Controller
                 'won' => $t->group_id !== null,
                 'winnerName' => $t->group_id !== null && ! isset($unseen[(int) $t->group_id]) ? ($names[$t->owner_ref] ?? 'Postal entrant') : null,
                 'wonAt' => $t->won_at ? Carbon::parse($t->won_at)->toIso8601ZuluString() : null,
+                'addedAt' => $t->added_at ? Carbon::parse($t->added_at)->toIso8601ZuluString() : null,
             ])->values(),
             'total' => $total,
             'won' => $won,

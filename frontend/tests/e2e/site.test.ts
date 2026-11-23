@@ -119,6 +119,22 @@ describe("site-wide rules", () => {
     // A competition with no per-person limit doesn't mention one.
     expect(text((await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial")).html)).not.toMatch(/per person/i);
   });
+  it("a prize boost shows on the card, the page and the winning numbers (owner, 23 Nov 2026)", async () => {
+    const cards = (await new Browser(site.origin).page("/competitions")).html;
+    expect(cards).toContain('data-testid="boost-badge"');
+    expect(text(cards)).toMatch(/🔥 Prize Boost[\s\S]*£2,600 extra instant wins added/);
+    expect(text(cards)).toMatch(/2,716/);
+    const { html } = await new Browser(site.origin).page("/competitions/demis-diamond-dosh");
+    const t = text(html);
+    expect(html).toContain('data-testid="boost-banner"');
+    expect(t).toMatch(/🔥 Prize Boost – £2,600 extra instant wins added: 200 more prizes since \d+ \w{3}/);
+    expect(t).toMatch(/Mega Gem\s*Added \d+ \w{3}/);
+    expect(t).toMatch(/how the extra numbers were chosen[\s\S]*round 23456789[\s\S]*GG-BOOST-1/);
+    const wn = (await new Browser(site.origin).page("/competitions/demis-diamond-dosh/winning-numbers?prize=Mega+Gem")).html;
+    expect(wn).toContain('data-testid="added-label"');
+    // Games without a boost show none of it.
+    expect((await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial")).html).not.toContain("boost-banner");
+  });
   it("the competition page: prize cards, one information box, no demo link", async () => {
     const { html } = await new Browser(site.origin).page("/competitions/bush-bucks-jungle-trial");
     const t = text(html);
