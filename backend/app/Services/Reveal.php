@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Http\Presenters\AccountPresenter;
+use App\Models\BoostPrize;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\User;
+use Sprouthub\Verity\Models\EntryGroup;
 use Sprouthub\Verity\Models\InstantPrize;
 
 /**
@@ -29,6 +31,9 @@ final class Reveal
             // A safety net: settle anything not yet played (e.g. a fulfilment interrupted after entry).
             if ($line->entry_group_ref) {
                 $this->fulfilment->playAll($line->entry_group_ref);
+                if ($group = EntryGroup::query()->where('reference', $line->entry_group_ref)->first()) {
+                    app(PrizeBoosts::class)->settle($c, (int) $group->id, $group->owner_ref, (string) $order->id);
+                }
             }
             $wins = $this->present->winsByTicket($c, $line->tickets);
             $types = InstantPrize::query()->whereHas('competition', fn ($q) => $q->where('ref', $c->verity_ref))->get(['key', 'meta'])
@@ -47,7 +52,9 @@ final class Reveal
             }
             $context[$c->id] = [
                 'game' => $c->game, 'isInstantWin' => true, 'skin' => $c->skin ?? 'classic',
-                'prizeLabels' => $c->prizes->sortByDesc('value_pence')->pluck('name')->unique()->values()->all(),
+                'prizeLabels' => $c->prizes->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence])
+                    ->concat(BoostPrize::query()->where('competition_id', $c->id)->get(['name', 'value_pence'])->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence]))
+                    ->sortByDesc('v')->pluck('n')->unique()->values()->all(),
                 'inLiveDraw' => $c->end_prize_name !== null, 'endPrizeName' => $c->end_prize_name,
             ];
             if (! $line->revealed_at) {

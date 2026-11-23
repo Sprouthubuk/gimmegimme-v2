@@ -4,11 +4,11 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FakePayController;
-use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\GimmeBoxController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\PublicController;
+use App\Http\Controllers\Api\ReferralController;
 use Illuminate\Support\Facades\Route;
 
 // The contract is docs/api.md. Everything here is under /api.
@@ -19,6 +19,7 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('competitions', [PublicController::class, 'competitions']);
     Route::get('competitions/{slug}', [PublicController::class, 'competition']);
     Route::get('competitions/{slug}/winning-numbers', [PublicController::class, 'winningNumbers']);
+    Route::get('competitions/{slug}/prize-boost', [PublicController::class, 'prizeBoost']);
     Route::get('winners/instant', [PublicController::class, 'instantWinners']);
     Route::get('winners/draws', [PublicController::class, 'drawWinners']);
     Route::get('entry-lists', [PublicController::class, 'entryLists']);

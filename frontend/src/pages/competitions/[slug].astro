@@ -8,7 +8,7 @@ import Icon from "../../components/Icon.astro";
 import TicketPicker from "../../islands/TicketPicker";
 import type { CompetitionDetail, CompetitionSummary, WinningNumbersPage } from "../../lib/types";
 import { formatPence, formatCount } from "../../lib/money";
-import { ukDateTime, ukShortDay } from "../../lib/time";
+import { ukDateTime, ukDayMonth, ukShortDay } from "../../lib/time";
 import { breadcrumbLd, competitionDescription, competitionTitle, pageTitle } from "../../lib/seo";
 
 const { api, site, me } = Astro.locals;
@@ -62,6 +62,7 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
             <span class="tag tag-w">Closes {ukDateTime(c.closesAt)}</span>
           </div>
         </div>
+        {!isDraw && c.boost && <div class="boost-banner" data-testid="boost-banner">🔥 Prize Boost – {formatPence(c.boost.addedPence, { short: false })} extra instant wins added: {formatCount(c.boost.addedCount)} more prizes since {ukDayMonth(c.boost.addedAt)}. <a class="tap" href="#prize-boost" style="white-space:nowrap">How they were added</a></div>}
         <div class={`card card-p stack g12 gg-rise gg-d3 ${isDraw ? "card-cy" : ""}`}>
           {opensLater && <span class="eyebrow">Entries open in</span>}
           {isDraw && !opensLater && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
@@ -96,7 +97,7 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
               <img src={c.imageSmall} alt="" loading="lazy" decoding="async" width="80" height="80" />
               <div class="iw-b">
                 <span class="row between g8" style="align-items:flex-start">
-                  <span style="min-width:0"><b class={`d iw-v ${done ? "" : glow[i % 3]}`}>{formatPence(p.valuePence, { short: false })}</b><span class="iw-n">{p.name}</span></span>
+                  <span style="min-width:0"><b class={`d iw-v ${done ? "" : glow[i % 3]}`}>{formatPence(p.valuePence, { short: false })}</b><span class="iw-n">{p.name}{p.addedAt && <span class="tag-added">Added {ukDayMonth(p.addedAt)}</span>}</span></span>
                   {done
                     ? <span class="iw-c"><b class="d">All Found</b><small>{formatCount(p.won)} won</small></span>
                     : <span class="iw-c"><b class="d nc">{formatCount(left)}</b><small>Left to win</small></span>}
@@ -108,6 +109,14 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
           );
         })}
       </div>
+      {c.boostRecord && (
+        <details id="prize-boost" class="card card-p stack g8" style="font-size:14px">
+          <summary style="cursor:pointer;font-weight:900;min-height:44px;display:flex;align-items:center">🔥 Prize Boost: how the extra numbers were chosen</summary>
+          <p class="p" style="margin:8px 0 0;font-size:14px">On {ukDateTime(c.boostRecord.addedAt)} we added {formatCount(c.boostRecord.prizeCount)} instant prizes worth {formatPence(c.boostRecord.valuePence, { short: false })} ({c.boostRecord.reason}). Every original prize and winning number stayed exactly as it was. Ticket sales were paused for a few seconds while the numbers were chosen, and only ticket numbers nobody had yet ({formatCount(c.boostRecord.excludedCount)} left out: {formatCount(c.boostRecord.issuedCount)} already sold plus the original winning numbers) could be picked.</p>
+          <p class="p" style="margin:0;font-size:14px">The numbers come from {c.boostRecord.beaconRound ? <>public drand randomness, round <b>{c.boostRecord.beaconRound}</b>, which didn't exist yet when sales were paused</> : "local test randomness"}, using method {c.boostRecord.algorithm}. Anyone can recheck them.</p>
+          <div class="hint" style="word-break:break-all;font-size:12px">Randomness {c.boostRecord.beaconRandomness}<br>Sold numbers fingerprint {c.boostRecord.issuedHash}<br>Left-out numbers fingerprint {c.boostRecord.excludedHash}</div>
+        </details>
+      )}
       {c.endPrize && (
         <div class="card card-cy card-p row g12 gg-reveal" data-testid="end-prize">
           <span class="d nc" style="font-size:22px;white-space:nowrap">{endPrizeLine}</span>
