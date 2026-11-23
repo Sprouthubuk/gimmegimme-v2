@@ -95,4 +95,16 @@ class PrizeDisplayNamesTest extends TestCase
         $this->assertSame([], $d['renamedPrizes']);
         $this->assertStringContainsString('3,982', $d['description'], 'only the named games are touched');
     }
+
+    public function test_launch_prize_names_with_the_amount_in_them_are_renamed_too(): void
+    {
+        $this->competition('instant', ['slug' => 'liams-humbug-heist', 'price_pence' => 10, 'max_tickets' => 40, 'max_per_person' => 40],
+            [['£5 Bah Humbug Bonus', 500, 2, 'site_credit'], ['£2 Tiny Tim\'s Tip', 200, 2, 'site_credit']]);
+        (require database_path('migrations/2026_11_23_160000_prize_display_names_with_amounts.php'))->up();
+        (require database_path('migrations/2026_11_23_160000_prize_display_names_with_amounts.php'))->up();
+        $d = $this->getJson('/api/competitions/liams-humbug-heist')->assertOk()->json();
+        $this->assertSame(['£5 Bah Humbug Handout', '£2 Tiny Tim\'s Tip'], collect($d['prizes'])->pluck('name')->all());
+        $this->assertSame([['from' => '£5 Bah Humbug Bonus', 'to' => '£5 Bah Humbug Handout']], $d['renamedPrizes']);
+        $this->assertSame(['£5 Bah Humbug Bonus', '£2 Tiny Tim\'s Tip'], DB::table('verity_instant_prizes')->orderByDesc('value_pence')->pluck('name')->all());
+    }
 }
