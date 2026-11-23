@@ -6,6 +6,7 @@ use App\Models\Competition;
 use App\Models\User;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
+use App\Support\PrizeNames;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Sprouthub\Verity\Models\InstantPrize;
@@ -90,9 +91,10 @@ final class CompetitionPresenter
             // Verity's prizes: the ones fixed at launch and any it added later (spec §17, labelled with when).
             $added = $v ? DB::table('verity_instant_additions')->where('competition_id', $v->id)->where('status', 'sealed')->pluck('sealed_at', 'id') : collect();
             $keys = $v ? InstantPrize::query()->where('competition_id', $v->id)->orderBy('sort')->get(['key', 'name', 'value_pence', 'quantity', 'meta', 'addition_id']) : collect();
+            $shown = $v ? PrizeNames::map($v->id) : [];
             $rows = $keys->isNotEmpty()
                 ? $keys->filter(fn ($p) => $p->addition_id === null || isset($added[$p->addition_id]))
-                    ->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->meta['type'] ?? 'site_credit', 'quantity' => (int) $p->quantity, 'won' => (int) ($won[$p->key] ?? 0),
+                    ->map(fn ($p) => ['name' => PrizeNames::shown($shown, $v->id, $p->key, $p->name), 'valuePence' => (int) $p->value_pence, 'type' => $p->meta['type'] ?? 'site_credit', 'quantity' => (int) $p->quantity, 'won' => (int) ($won[$p->key] ?? 0),
                         'addedAt' => $p->addition_id ? Carbon::parse($added[$p->addition_id])->toIso8601ZuluString() : null])
                 : $c->prizes->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->type, 'quantity' => (int) $p->quantity, 'won' => 0, 'addedAt' => null]);
             $prizes = $rows->sortByDesc('valuePence')->values()->all();
@@ -100,6 +102,8 @@ final class CompetitionPresenter
 
         return $this->summary($c) + [
             'description' => (string) $c->description,
+            // Prizes shown under a different name from the one in Verity's record (App\Support\PrizeNames).
+            'renamedPrizes' => $v ? PrizeNames::renamed($v->id) : [],
             'howToPlay' => $c->how_to_play,
             'heldByMe' => $user ? $this->state->held($c, $user->ownerRef()) : 0,
             'cashAlternativePence' => $c->cash_alternative_pence,

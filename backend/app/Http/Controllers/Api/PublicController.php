@@ -14,6 +14,7 @@ use App\Services\CompetitionState;
 use App\Services\Fulfilment;
 use App\Services\GimmeBoxPacker;
 use App\Services\Settings;
+use App\Support\PrizeNames;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -107,11 +108,13 @@ class PublicController extends Controller
         $total = (clone $q)->count();
         $rows = $q->skip(($page - 1) * $limit)->take($limit)->get();
 
-        return response()->json(['total' => $total, 'data' => $rows->map(function (Winner $w) use ($hosts) {
+        $shown = PrizeNames::map();
+
+        return response()->json(['total' => $total, 'data' => $rows->map(function (Winner $w) use ($hosts, $shown) {
             $h = $hosts->get($w->competition->ref);
 
             return [
-                'id' => (string) $w->id, 'name' => $this->publicName($w->owner_ref), 'prizeName' => $w->prize_name, 'valuePence' => (int) $w->prize_value_pence,
+                'id' => (string) $w->id, 'name' => $this->publicName($w->owner_ref), 'prizeName' => PrizeNames::shown($shown, (int) $w->competition_id, $w->prize_key, $w->prize_name), 'valuePence' => (int) $w->prize_value_pence,
                 'game' => $h?->game, 'gameLabel' => CompetitionPresenter::GAME_LABELS[$h?->game] ?? null,
                 'competitionTitle' => $h?->title ?? $w->competition->title, 'at' => $w->created_at->toIso8601ZuluString(),
             ];
@@ -124,7 +127,7 @@ class PublicController extends Controller
         $rows = Winner::query()->where('type', 'main')->where('status', 'active')->with(['competition', 'entry'])->orderByDesc('id')->limit(100)->get();
 
         return response()->json(['data' => $rows->map(fn (Winner $w) => [
-            'id' => (string) $w->id, 'name' => $this->publicName($w->owner_ref), 'prizeName' => $w->prize_name,
+            'id' => (string) $w->id, 'name' => $this->publicName($w->owner_ref), 'prizeName' => PrizeNames::forWinner($w),
             'competitionTitle' => $hosts->get($w->competition->ref)?->title ?? $w->competition->title,
             'ticketNumber' => $w->entry ? (int) $w->entry->number : null, 'at' => $w->created_at->toIso8601ZuluString(),
             'videoUrl' => null, 'verifyUrl' => '/verify/'.$w->competition->ref,
@@ -163,8 +166,9 @@ class PublicController extends Controller
             $q->where('verity_entries.number', (int) $r->query('q'));
         }
         $rows = $q->skip(($page - 1) * $per)->take($per + 1)
-            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entries.entry_group_id', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name']);
+            ->get(['verity_entries.number', 'verity_entries.source', 'verity_entries.entry_group_id', 'verity_entry_groups.owner_ref', 'verity_instant_prizes.name as prize_name', 'verity_instant_prizes.key as prize_key']);
         $names = $this->names($rows->take($per)->pluck('owner_ref'));
+        $shown = PrizeNames::map($v->id);
         $unseen = $this->unseenGroups($rows->take($per)->whereNotNull('prize_name')->pluck('entry_group_id'));
 
         return response()->json([
@@ -172,7 +176,7 @@ class PublicController extends Controller
             'data' => $rows->take($per)->map(fn ($e) => [
                 'ticket' => (int) $e->number, 'name' => $this->mask($names[$e->owner_ref] ?? 'Postal entrant'),
                 'source' => in_array($e->source, ['postal', 'free'], true) ? $e->source : 'paid',
-                'prizeName' => isset($unseen[(int) $e->entry_group_id]) ? null : $e->prize_name,
+                'prizeName' => isset($unseen[(int) $e->entry_group_id]) ? null : PrizeNames::shown($shown, $v->id, $e->prize_key, $e->prize_name),
             ])->values(),
             // No total: players see % sold only, never a count of tickets.
             'hasMore' => $rows->count() > $per,
@@ -212,20 +216,21 @@ class PublicController extends Controller
             $q->where('verity_instant_tickets.ticket_number', (int) $r->query('q'));
         }
         if (is_string($r->query('prize')) && $r->query('prize') !== '') {
-            $q->where('verity_instant_prizes.name', mb_substr($r->query('prize'), 0, 191));
+            $q->whereIn('verity_instant_prizes.key', PrizeNames::keysShownAs($v->id, mb_substr($r->query('prize'), 0, 191)));
         }
         $matching = (clone $q)->count();
         $rows = $q->orderByDesc('verity_instant_prizes.value_pence')->orderBy('verity_instant_tickets.ticket_number')
             ->skip(($page - 1) * $per)->take($per + 1)
-            ->get(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
+            ->get(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.key', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
                 'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at', 'verity_instant_additions.sealed_at as added_at']);
         $names = $this->names($rows->take($per)->pluck('owner_ref')->filter());
         $unseen = $this->unseenGroups($rows->take($per)->pluck('group_id'));
+        $shown = PrizeNames::map($v->id);
 
         return response()->json([
             'competition' => $this->present()->summary($c),
             'data' => $rows->take($per)->map(fn ($t) => [
-                'ticket' => (int) $t->ticket_number, 'prizeName' => $t->name, 'valuePence' => (int) $t->value_pence,
+                'ticket' => (int) $t->ticket_number, 'prizeName' => PrizeNames::shown($shown, $v->id, $t->key, $t->name), 'valuePence' => (int) $t->value_pence,
                 'type' => json_decode((string) $t->meta, true)['type'] ?? 'site_credit',
                 'won' => $t->group_id !== null,
                 'winnerName' => $t->group_id !== null && ! isset($unseen[(int) $t->group_id]) ? ($names[$t->owner_ref] ?? 'Postal entrant') : null,

@@ -120,8 +120,10 @@ final class Reports
         return DB::table('verity_winners as w')
             ->join('verity_competitions as vc', 'vc.id', '=', 'w.competition_id')
             ->leftJoin('users', fn ($j) => $j->whereRaw(self::ownerOf('w.owner_ref')))
+            // The name the site shows (App\Support\PrizeNames), Verity's own where there's no rename.
+            ->leftJoin('prize_display_names as pdn', fn ($j) => $j->on('pdn.verity_competition_id', '=', 'w.competition_id')->on('pdn.prize_key', '=', 'w.prize_key'))
             ->where('w.status', 'active')
-            ->select('w.id', 'w.type', 'w.prize_name', 'w.prize_value_pence', 'w.created_at', 'w.owner_ref', 'vc.title as competition', 'vc.ref as competition_ref',
+            ->select('w.id', 'w.type', DB::raw('COALESCE(pdn.display_name, w.prize_name) as prize_name'), 'w.prize_value_pence', 'w.created_at', 'w.owner_ref', 'vc.title as competition', 'vc.ref as competition_ref',
                 'users.id as user_id', 'users.first_name', 'users.last_name', 'users.email')
             ->orderByDesc('w.created_at')->orderByDesc('w.id');
     }

@@ -51,6 +51,11 @@ Prize boosts (owner, 23 Nov 2026): instant prizes Verity added after launch (spe
 (with `addedAt`), counted in `prizeCount` / `topPrizePence`, summed in `CompetitionSummary.boost` (`{addedCount,
 addedPence, addedAt}` or null), listed in `/winning-numbers` (`addedAt` on each row, null for the launch prizes), and
 summarised per addition in `CompetitionDetail.boostRecord[]` (from Verity's own record).
+
+Shown prize names (owner, 23 Nov 2026): a prize can be shown on the site under a different name from the one Verity
+committed to (`prize_display_names`, `App\Support\PrizeNames`). Every `prizeName` / prize `name` in the API is the shown
+name; `?prize=` on `/winning-numbers` takes the shown name. `CompetitionDetail.renamedPrizes[]` (`{from, to}`, `from`
+being Verity's name) lets a player match the page to the fair-play record, which keeps Verity's names.
 That is safe only because Verity gives each buyer random unsold numbers at payment (it refuses
 in-order numbering with instant wins); never publish with `ticket_allocation` other than `random`.
 The seed that made the list stays sealed until the competition ends.

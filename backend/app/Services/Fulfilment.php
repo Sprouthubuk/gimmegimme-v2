@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\AdminAlert;
 use App\Notifications\PrizeWon;
 use App\Support\BigWinAlert;
+use App\Support\PrizeNames;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Sprouthub\Verity\Engine\VerityException;
@@ -107,7 +108,7 @@ final class Fulfilment
             return;
         }
         if ($w->prize_value_pence > 0) {
-            $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'Instant win · '.$w->prize_name, 'verity-winner:'.$w->id);
+            $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'Instant win · '.PrizeNames::forWinner($w), 'verity-winner:'.$w->id);
             BigWinAlert::check($w, $userId);
         }
     }
@@ -127,7 +128,7 @@ final class Fulfilment
             $competition = Competition::query()->where('verity_ref', $w->competition->ref)->first();
             if ($competition?->end_prize_type === 'site_credit' && $w->prize_value_pence > 0 && User::query()->whereKey($userId)->exists()) {
                 DB::transaction(function () use ($w, $userId) {
-                    $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'End prize · '.$w->prize_name, 'verity-winner:'.$w->id);
+                    $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'End prize · '.PrizeNames::forWinner($w), 'verity-winner:'.$w->id);
                     $this->claim($w, $userId, 'draw', 'fulfilled');
                 });
             } else {
@@ -157,7 +158,7 @@ final class Fulfilment
             return;
         }
         $claim = PrizeClaim::query()->firstOrCreate(['verity_winner_id' => $w->id], [
-            'user_id' => $userId, 'competition_id' => $competition->id, 'prize_name' => $w->prize_name,
+            'user_id' => $userId, 'competition_id' => $competition->id, 'prize_name' => PrizeNames::forWinner($w),
             'value_pence' => (int) $w->prize_value_pence, 'kind' => $kind, 'status' => $status,
         ]);
         if ($claim->wasRecentlyCreated) {
