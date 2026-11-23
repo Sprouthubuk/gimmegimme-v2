@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Http\Presenters\AccountPresenter;
+use App\Models\Competition;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\User;
+use App\Support\PrizeNames;
 use Sprouthub\Verity\Models\InstantPrize;
 
 /**
@@ -48,10 +50,7 @@ final class Reveal
             $context[$c->id] = [
                 'game' => $c->game, 'isInstantWin' => true, 'skin' => $c->skin ?? 'classic',
                 // The prize names a board may show: the launch prizes and any Verity added later (prize boost).
-                'prizeLabels' => $c->prizes->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence])
-                    ->concat(InstantPrize::query()->whereNotNull('addition_id')->whereHas('competition', fn ($q) => $q->where('ref', $c->verity_ref))->get(['name', 'value_pence'])
-                        ->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence]))
-                    ->sortByDesc('v')->pluck('n')->unique()->values()->all(),
+                'prizeLabels' => $this->prizeLabels($c),
                 'inLiveDraw' => $c->end_prize_name !== null, 'endPrizeName' => $c->end_prize_name,
             ];
             if (! $line->revealed_at) {
@@ -63,5 +62,17 @@ final class Reveal
             'outcome' => ['purchaseId' => $order->number, 'tickets' => $tickets, 'totalWonPence' => $total, 'creditedPence' => $credited, 'balanceAfterPence' => $this->wallet->total($user)],
             'context' => (object) $context,
         ];
+    }
+
+    /** The prize names a board may show, as the site shows them: Verity's prizes (launch and added), or the admin's list before publish. */
+    private function prizeLabels(Competition $c): array
+    {
+        $verity = InstantPrize::query()->whereHas('competition', fn ($q) => $q->where('ref', $c->verity_ref))->get(['competition_id', 'key', 'name', 'value_pence']);
+        $shown = $verity->isNotEmpty() ? PrizeNames::map((int) $verity->first()->competition_id) : [];
+        $rows = $verity->isNotEmpty()
+            ? $verity->map(fn ($p) => ['n' => PrizeNames::shown($shown, (int) $p->competition_id, $p->key, $p->name), 'v' => (int) $p->value_pence])
+            : $c->prizes->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence]);
+
+        return $rows->sortByDesc('v')->pluck('n')->unique()->values()->all();
     }
 }

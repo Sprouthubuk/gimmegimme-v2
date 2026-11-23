@@ -80,6 +80,7 @@ function detail(c, user) {
     boostRecord: c.boost ? [{ addition: 1, reason: "Prize boost – 23 Nov 2026", addedAt: c.boost.addedAt, beaconSource: "drand-quicknet", beaconRound: 23456789,
       beaconRandomness: crypto.createHash("sha256").update("r" + c.id).digest("hex"), excludedCount: 3800, excludedHash: crypto.createHash("sha256").update("e" + c.id).digest("hex"),
       windowCount: 2, tableHash: crypto.createHash("sha256").update("t" + c.id).digest("hex"), prizeCount: c.boost.addedCount, valuePence: c.boost.addedPence }] : [],
+    renamedPrizes: c.boost ? [{ from: "Gem Bonus", to: "Gem Fiver" }] : [],
   };
 }
 

@@ -106,6 +106,8 @@ export interface CompetitionDetail extends CompetitionSummary {
   verifyUrl: string | null;
   /** Each time Verity added instant prizes after launch (prize boost), oldest first. Empty when none. */
   boostRecord: BoostRecord[];
+  /** Prizes the site shows under a different name from Verity's record (`from` is Verity's name). Empty when none. */
+  renamedPrizes: { from: string; to: string }[];
 }
 
 export interface SiteInfo {

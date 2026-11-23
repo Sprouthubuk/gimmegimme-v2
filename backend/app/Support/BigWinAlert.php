@@ -28,9 +28,10 @@ final class BigWinAlert
             }
             $u = User::query()->find($userId);
             $title = (string) ($w->competition?->title ?? 'a competition');
+            $prize = PrizeNames::forWinner($w);
             $to = array_values(array_filter(array_map('trim', explode(',', (string) Setting::get('big_win_alert_emails')))));
-            AdminAlert::send('Big Win: '.Money::show($value).' · '.$w->prize_name, [
-                ($u ? trim($u->first_name.' '.$u->last_name).' ('.$u->email.')' : 'A player').' has just won '.$w->prize_name.' ('.Money::show($value).')',
+            AdminAlert::send('Big Win: '.Money::show($value).' · '.$prize, [
+                ($u ? trim($u->first_name.' '.$u->last_name).' ('.$u->email.')' : 'A player').' has just won '.$prize.' ('.Money::show($value).')',
                 'Competition: '.$title.' · '.($w->type === 'instant' ? 'instant win' : 'draw'),
                 'Won at '.now('Europe/London')->format('j M Y, H:i').' (UK time)',
             ], $u ? '/admin/users/'.$u->id : '/admin/wins-report', $to ?: null);

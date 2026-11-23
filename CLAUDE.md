@@ -46,6 +46,10 @@ Read before every task. If a request conflicts with this, stop and ask.
   (`App\Services\PrizeBoosts`, lists in `resources/boosts/`, one Verity addition per competition per batch reason).
   They are ordinary Verity instant prizes on numbers nobody held, so Fulfilment pays them as usual; never add prizes
   any other way.
+- Prize names on the site (owner, 23 Nov 2026): no "Jackpot" or "Bonus", and no two prizes in a game with the same name.
+  Verity's record keeps the names it committed to; a different shown name lives in `prize_display_names` and every
+  place a player sees a prize name goes through `App\Support\PrizeNames` (page, winning numbers, entry lists, winners,
+  reveal, account, wallet line, emails, reports). The competition page lists each rename next to the fair-play link.
 - Bundles ("Buy X Get Y Free", live draws only): priced and sized only by `App\Services\Bundles` /
   `Pricing` from the bundle id; free tickets go to Verity in the same entry as the paid ones (no flag).
   A bundle bigger than what's left or than `max_bundle_share_pct` is never offered or sold. The featured

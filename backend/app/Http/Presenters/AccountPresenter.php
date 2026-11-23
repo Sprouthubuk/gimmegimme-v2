@@ -2,7 +2,6 @@
 
 namespace App\Http\Presenters;
 
-use App\Tracking\MetaEvents;
 use App\Models\Competition;
 use App\Models\LedgerEntry;
 use App\Models\Order;
@@ -11,6 +10,8 @@ use App\Models\User;
 use App\Services\CompetitionState;
 use App\Services\PlayCheck;
 use App\Services\Wallet;
+use App\Support\PrizeNames;
+use App\Tracking\MetaEvents;
 use Sprouthub\Verity\Models\Winner;
 
 /** Me, WalletTransaction, TicketGroup, OrderView, Limits. */
@@ -181,8 +182,9 @@ final class AccountPresenter
         $rows = Winner::query()->where('verity_winners.competition_id', $v->id)->where('type', 'instant')
             ->join('verity_entries', 'verity_entries.id', '=', 'verity_winners.entry_id')
             ->whereIn('verity_entries.number', $numbers)->get(['verity_entries.number', 'verity_winners.prize_name', 'verity_winners.prize_value_pence', 'verity_winners.prize_key']);
+        $shown = PrizeNames::map($v->id);
         foreach ($rows as $r) {
-            $out[(int) $r->number] = ['name' => $r->prize_name, 'value' => (int) $r->prize_value_pence, 'key' => $r->prize_key];
+            $out[(int) $r->number] = ['name' => PrizeNames::shown($shown, $v->id, $r->prize_key, $r->prize_name), 'value' => (int) $r->prize_value_pence, 'key' => $r->prize_key];
         }
 
         return $out;

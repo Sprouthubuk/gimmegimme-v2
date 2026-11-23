@@ -155,6 +155,7 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
           {c.verifyUrl && <a class="tap" href={c.verifyUrl}>Fair play record {c.verityRef}</a>}
           <a class="tap" href="/legal/terms">T&amp;Cs</a>
         </span>
+        {(c.renamedPrizes ?? []).length > 0 && <span data-testid="renamed-prizes">Renamed prizes: {c.renamedPrizes.map((r) => `${r.to} (${r.from} in the fair play record)`).join(", ")}.</span>}
         {c.commitment && <span style="word-break:break-all;font-size:12px">Seed fingerprint <code style="color:#22E6FF">{c.commitment}</code></span>}
       </div>
     </div>
