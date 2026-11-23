@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\LedgerEntry;
 use App\Models\PrizeClaim;
 use App\Models\User;
-use App\Services\EndPrizeRules;
 use App\Services\Fulfilment;
 use App\Services\Publishing;
 use Illuminate\Support\Carbon;
@@ -17,7 +16,7 @@ use Sprouthub\Verity\Models\Redraw;
 use Sprouthub\Verity\Models\Winner;
 use Tests\TestCase;
 
-/** Several end-prize winners, one end prize per person, site-credit end prizes, ticket buttons and minimums. */
+/** Several end-prize winners (one person can win more than one), site-credit end prizes, ticket buttons and minimums. */
 class EndPrizesTest extends TestCase
 {
     private function buy(User $u, $c, int $qty)
@@ -94,33 +93,27 @@ class EndPrizesTest extends TestCase
         $this->assertSame(2, LedgerEntry::query()->where('reason', 'like', 'End prize%')->count());
     }
 
-    public function test_a_second_end_prize_for_the_same_person_is_not_paid_and_is_redrawn(): void
+    public function test_one_person_can_win_every_end_prize_they_are_drawn_for(): void
     {
+        // Owner, 22 Nov 2026: more tickets, more chances. Every place drawn is paid, with no redraw.
         $a = $this->player();
         $this->topUp($a, 1000);
         $c = $this->instantWithEndPrizes(2);
         $this->buy($a, $c, 4)->assertCreated(); // every ticket is A's: both places go to A
         $v = $this->closeAndDraw($c);
 
-        $this->assertSame(1, LedgerEntry::query()->where('user_id', $a->id)->where('reason', 'like', 'End prize%')->count(), 'one end prize per person');
-        $this->assertSame(1, PrizeClaim::query()->where('user_id', $a->id)->count());
-        $repeat = Winner::query()->where('competition_id', $v->id)->where('type', 'main')->orderByDesc('id')->first();
-        $this->assertSame('forfeited', $repeat->status);
-        $r = Redraw::query()->where('competition_id', $v->id)->firstOrFail();
-        $this->assertSame('scheduled', $r->status);
-        $this->assertStringContainsString(EndPrizeRules::REASON, json_encode(AuditEvent::query()->where('type', 'draw.winner_forfeited')->value('payload')));
-
-        // The replacement (A again: A holds every ticket) is also a repeat, so it goes round until
-        // Verity's redraw limit, then the place is forfeited. A is never paid twice.
-        for ($i = 0; $i < 6; $i++) {
-            Carbon::setTestNow(now()->addMinutes(5));
-            foreach (Redraw::query()->where('status', 'scheduled')->get() as $pending) {
-                Verity::runRedraw($pending);
-            }
-            app(EndPrizeRules::class)->enforceAll();
+        $this->assertSame(2, Winner::query()->where('competition_id', $v->id)->where('type', 'main')->where('status', 'active')->where('owner_ref', 'user:'.$a->id)->count());
+        $this->assertSame(2, LedgerEntry::query()->where('user_id', $a->id)->where('bucket', 'winnings')->where('reason', 'like', 'End prize%')->count());
+        $this->assertSame(20000, (int) LedgerEntry::query()->where('user_id', $a->id)->where('reason', 'like', 'End prize%')->sum('amount_pence'));
+        $this->assertSame(2, PrizeClaim::query()->where('user_id', $a->id)->count());
+        $this->assertSame(0, Redraw::query()->count(), 'no redraw for a repeat winner');
+        $this->assertSame(0, AuditEvent::query()->where('type', 'draw.winner_forfeited')->count());
+        // Handling the same results again pays nothing more.
+        foreach (Winner::query()->where('type', 'main')->get() as $w) {
+            app(Fulfilment::class)->recordDrawWin($w);
         }
-        $this->assertSame(1, LedgerEntry::query()->where('user_id', $a->id)->where('reason', 'like', 'End prize%')->count());
-        $this->assertSame(1, Winner::query()->where('competition_id', $v->id)->where('type', 'main')->where('status', 'active')->count());
+        $this->artisan('schedule:list')->doesntExpectOutputToContain('gimme:end-prize-rules');
+        $this->assertSame(2, LedgerEntry::query()->where('user_id', $a->id)->where('reason', 'like', 'End prize%')->count());
     }
 
     public function test_ticket_buttons_most_popular_and_minimum(): void
@@ -146,5 +139,17 @@ class EndPrizesTest extends TestCase
         $d = $this->getJson('/api/competitions/'.$c->slug)->json();
         $this->assertNull($d['popularPreset']);
         $this->assertSame([5, 10, 25, 50], $d['presets']);
+    }
+
+    public function test_descriptions_that_said_one_end_prize_per_person_are_reworded(): void
+    {
+        $c = $this->instantWithEndPrizes(3);
+        $c->forceFill(['description' => 'Plus 3 x £100 end prizes drawn 23 December from every entry. Instant winners can still win, and each end prize goes to a different person.',
+            'how_to_play' => 'Every ticket plays one go.'])->save();
+        $other = $this->competition('draw', ['description' => 'A different person runs this.']);
+        (include database_path('migrations/2026_11_22_233000_end_prizes_repeat_wins_wording.php'))->up();
+        $this->assertSame('Plus 3 x £100 end prizes drawn 23 December from every entry. Instant winners can still win, and one person can win more than one end prize.', $c->refresh()->description);
+        $this->assertSame('Every ticket plays one go.', $c->how_to_play);
+        $this->assertSame('A different person runs this.', $other->refresh()->description);
     }
 }

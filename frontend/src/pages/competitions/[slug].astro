@@ -111,7 +111,7 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
       {c.endPrize && (
         <div class="card card-cy card-p row g12 gg-reveal" data-testid="end-prize">
           <span class="d nc" style="font-size:22px;white-space:nowrap">{endPrizeLine}</span>
-          <div style="flex:1;min-width:0"><div style="font-weight:900">{endCount > 1 ? "End Prizes" : "End Prize"}: {c.endPrize.name}</div><div class="hint" style="font-size:13px">Drawn {c.drawAt ? ukDateTime(c.drawAt) : "at the close"} from every entry, instant winners included{endCount > 1 ? ". One end prize per person" : ""}.</div></div>
+          <div style="flex:1;min-width:0"><div style="font-weight:900">{endCount > 1 ? "End Prizes" : "End Prize"}: {c.endPrize.name}</div><div class="hint" style="font-size:13px">Drawn {c.drawAt ? ukDateTime(c.drawAt) : "at the close"} from every entry, instant winners included{endCount > 1 ? ". You can win more than one" : ""}.</div></div>
         </div>
       )}
     </div></section>

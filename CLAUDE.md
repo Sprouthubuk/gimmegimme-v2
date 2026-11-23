@@ -37,8 +37,8 @@ Read before every task. If a request conflicts with this, stop and ask.
 - At fulfilment only WINNING entries are played through Verity (`Fulfilment::playAll`: entries with an
   `instant_ticket_id`), so an order's cost doesn't grow with its ticket count; never go back to
   `Verity::playGroup` per ticket at checkout (`tests/Feature/BigOrdersTest` holds a query budget).
-- End prizes: `end_prize_count` places, one per person. A repeat win isn't paid and is redrawn through
-  Verity (`EndPrizeRules`, also every minute via `gimme:end-prize-rules`). `end_prize_type` site_credit
+- End prizes: `end_prize_count` places. One person can win more than one, and every place is paid: there is no
+  redraw for a repeat winner (owner, 22 Nov 2026; Terms 7.6). `end_prize_type` site_credit
   pays winnings once (reference `verity-winner:{id}`); physical opens a claim for a person.
 - A paid order that couldn't get all its tickets is flagged for a person, never auto-refunded.
 - Bundles ("Buy X Get Y Free", live draws only): priced and sized only by `App\Services\Bundles` /
