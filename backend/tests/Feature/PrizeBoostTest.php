@@ -9,8 +9,10 @@ use App\Services\Postal;
 use App\Services\PrizeBoosts;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Sprouthub\Verity\Facades\Verity;
 use Sprouthub\Verity\Models\AuditEvent;
 use Sprouthub\Verity\Models\Competition as VerityCompetition;
@@ -182,5 +184,30 @@ class PrizeBoostTest extends TestCase
         $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
         $this->actingAs($admin->refresh(), 'web');
         $this->get('/admin/prize-boosts')->assertOk()->assertSee('Prize Boosts')->assertSee('Mega Smash')->assertSee('ADDED by Verity: addition 1');
+    }
+
+    public function test_the_old_boost_tables_are_removed_only_when_empty(): void
+    {
+        $old = require database_path('migrations/2026_11_23_100000_prize_boosts.php');
+        $remove = require database_path('migrations/2026_11_23_130000_remove_old_prize_boost_tables.php');
+        $c = $this->game();
+
+        $old->up();
+        DB::table('prize_boosts')->insert(['competition_id' => $c->id, 'batch' => 'x', 'reason' => 'x', 'algorithm' => 'x', 'beacon_source' => 'x',
+            'beacon_randomness' => 'x', 'max_tickets' => 40, 'issued_count' => 0, 'issued_hash' => 'x', 'excluded_count' => 0, 'excluded_hash' => 'x',
+            'excluded_numbers' => '', 'verity_table_hash' => 'x', 'prize_count' => 0, 'value_pence' => 0, 'added_at' => now()]);
+        try {
+            $remove->up();
+            $this->fail('removed a table holding a record');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('prize_boosts has rows', $e->getMessage());
+        }
+        $this->assertTrue(Schema::hasTable('prize_boosts'));
+
+        DB::unprepared('DROP TRIGGER IF EXISTS prize_boosts_no_delete');
+        DB::table('prize_boosts')->delete();
+        $remove->up();
+        $this->assertFalse(Schema::hasTable('prize_boosts'));
+        $this->assertFalse(Schema::hasTable('boost_prizes'));
     }
 }
