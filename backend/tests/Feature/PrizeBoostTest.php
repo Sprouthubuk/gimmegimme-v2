@@ -188,14 +188,20 @@ class PrizeBoostTest extends TestCase
 
     public function test_the_old_boost_tables_are_removed_only_when_empty(): void
     {
+        // What the failed #56 deploy left on the live site: a prize_boosts table, and no record of its migration.
+        $create = function () {
+            Schema::create('prize_boosts', function ($t) {
+                $t->id();
+                $t->string('batch', 40);
+            });
+            DB::unprepared('CREATE TRIGGER prize_boosts_no_delete BEFORE DELETE ON prize_boosts BEGIN SELECT RAISE(ABORT, \'append-only\'); END');
+        };
         $old = require database_path('migrations/2026_11_23_100000_prize_boosts.php');
         $remove = require database_path('migrations/2026_11_23_130000_remove_old_prize_boost_tables.php');
-        $c = $this->game();
 
-        $old->up();
-        DB::table('prize_boosts')->insert(['competition_id' => $c->id, 'batch' => 'x', 'reason' => 'x', 'algorithm' => 'x', 'beacon_source' => 'x',
-            'beacon_randomness' => 'x', 'max_tickets' => 40, 'issued_count' => 0, 'issued_hash' => 'x', 'excluded_count' => 0, 'excluded_hash' => 'x',
-            'excluded_numbers' => '', 'verity_table_hash' => 'x', 'prize_count' => 0, 'value_pence' => 0, 'added_at' => now()]);
+        $create();
+        $old->up(); // runs again on deploy: must not trip over the table that is already there
+        DB::table('prize_boosts')->insert(['batch' => 'x']);
         try {
             $remove->up();
             $this->fail('removed a table holding a record');
@@ -204,10 +210,12 @@ class PrizeBoostTest extends TestCase
         }
         $this->assertTrue(Schema::hasTable('prize_boosts'));
 
-        DB::unprepared('DROP TRIGGER IF EXISTS prize_boosts_no_delete');
+        DB::unprepared('DROP TRIGGER prize_boosts_no_delete');
         DB::table('prize_boosts')->delete();
         $remove->up();
         $this->assertFalse(Schema::hasTable('prize_boosts'));
         $this->assertFalse(Schema::hasTable('boost_prizes'));
+
+        $remove->up(); // and nothing left to do is fine
     }
 }
