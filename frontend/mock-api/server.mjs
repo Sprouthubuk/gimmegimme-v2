@@ -25,7 +25,7 @@ const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Sc
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {
-  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, maxTickets: 50000, ticketsSold: sold * 500, ticketsLeft: 50000 - sold * 500, maxPerPerson: null, prizeCount: type === "instant" ? 2516 : null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, ...extra };
+  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, maxTickets: 50000, ticketsSold: sold * 500, ticketsLeft: 50000 - sold * 500, maxPerPerson: null, prizeCount: type === "instant" ? 2516 : null, boost: null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, ...extra };
 }
 const COMPS = [
   comp("c-bush", "bush-bucks-jungle-trial", "Bush Bucks – Jungle Trial", "instant", "claw_machine", "classic", "bush-lg", 25, 75000, 2, "2,516 wins", { featured: true }),
@@ -33,7 +33,7 @@ const COMPS = [
   comp("c-scratch", "gimme-a-scratch", "Gimme A Scratch", "instant", "scratch_card", "classic", "scratch", 10, 50000, 3, "Instant wins"),
   comp("c-penny", "penny-pusher-payday", "Penny Pusher Payday", "instant", "coin_drop", "classic", "penny", 2, 50000, 1, "Instant wins"),
   comp("c-pop", "pop-for-pennies", "Pop For Pennies", "instant", "balloon_pop", "classic", "pop", 1, 33333, 3, "Instant wins", { presets: [100, 200, 300, 400, 500, 1000, 2000], popularPreset: 200, minTickets: 100, endPrize: { name: "The Big Pop", valuePence: 15000, count: 2 } }),
-  comp("c-gems", "demis-diamond-dosh", "Demi’s Diamond Dosh", "instant", "gems", "classic", "diamond", 39, 11111, 3, "Every gem wins"),
+  comp("c-gems", "demis-diamond-dosh", "Demi’s Diamond Dosh", "instant", "gems", "classic", "diamond", 39, 11111, 3, "Every gem wins", { prizeCount: 2716, boost: { addedCount: 200, addedPence: 260000, addedAt: iso(now - 2 * 36e5) } }),
   comp("c-ducks", "liams-lucky-ducks", "Liam’s Lucky Ducks", "instant", "hook_a_duck", "classic", "ducks", 25, 25000, 8, "Every duck wins"),
   comp("c-dasher", "dashers-dosh-drop", "Dasher’s Dosh Drop", "instant", "spin_wheel", "christmas", "dasher", 25, 44444, 7, "Instant wins"),
   comp("c-bingo", "jingle-bell-bingo-bonanza", "Jingle Bell Bingo Bonanza", "instant", "bingo_card", "christmas", "bingo", 10, 33333, 7, "Instant wins"),
@@ -65,7 +65,11 @@ function detail(c, user) {
     heldByMe: held,
     bundles: c.bundles ?? [],
     cashAlternativePence: c.cashAlternativePence ?? null,
-    prizes: c.type === "instant" ? LADDER.map(([name, v, q], i) => ({ name, valuePence: v, type: "site_credit", quantity: q, won: i > 3 ? Math.floor(q * 0.03) : 0 })) : [],
+    prizes: c.type === "instant" ? [
+      ...LADDER.map(([name, v, q], i) => ({ name, valuePence: v, type: "site_credit", quantity: q, won: i > 3 ? Math.floor(q * 0.03) : 0, addedAt: null })),
+      // A prize boost (extra prizes added after launch), on the boosted game only.
+      ...(c.boost ? [{ name: "Mega Gem", valuePence: 25000, type: "site_credit", quantity: 4, won: 0, addedAt: c.boost.addedAt }, { name: "Gem Fiver", valuePence: 500, type: "site_credit", quantity: 196, won: 3, addedAt: c.boost.addedAt }] : []),
+    ].sort((a, b) => b.valuePence - a.valuePence) : [],
     endPrize: c.endPrize ?? (c.type === "draw" ? { name: c.title, valuePence: c.topPrizePence, count: 1 } : null),
     presets: c.presets ?? (c.type === "draw" ? [1, 5, 10, 25] : [5, 10, 25, 50]),
     popularPreset: c.popularPreset ?? null,
@@ -73,6 +77,9 @@ function detail(c, user) {
     verityRef: `VTY-${c.id.slice(2, 8).toUpperCase()}`,
     commitment: crypto.createHash("sha256").update(c.id).digest("hex"),
     verifyUrl: `/verify/VTY-${c.id.slice(2, 8).toUpperCase()}`,
+    boostRecord: c.boost ? [{ addition: 1, reason: "Prize boost – 23 Nov 2026", addedAt: c.boost.addedAt, beaconSource: "drand-quicknet", beaconRound: 23456789,
+      beaconRandomness: crypto.createHash("sha256").update("r" + c.id).digest("hex"), excludedCount: 3800, excludedHash: crypto.createHash("sha256").update("e" + c.id).digest("hex"),
+      windowCount: 2, tableHash: crypto.createHash("sha256").update("t" + c.id).digest("hex"), prizeCount: c.boost.addedCount, valuePence: c.boost.addedPence }] : [],
   };
 }
 
@@ -261,8 +268,8 @@ function winningNumbers(c) {
   };
   return LADDER.flatMap(([name, valuePence, q], i) => Array.from({ length: q }, (_, k) => {
     const won = i > 3 && k < Math.floor(q * 0.03);
-    return { ticket: next(), prizeName: name, valuePence, type: "site_credit", won, winnerName: won ? "Emmie A." : null, wonAt: won ? iso(now - (k + 1) * 36e5) : null };
-  })).sort((a, b) => b.valuePence - a.valuePence || a.ticket - b.ticket);
+    return { ticket: next(), prizeName: name, valuePence, type: "site_credit", won, winnerName: won ? "Emmie A." : null, wonAt: won ? iso(now - (k + 1) * 36e5) : null, addedAt: null };
+  })).concat(c.boost ? Array.from({ length: 4 }, () => ({ ticket: next(), prizeName: "Mega Gem", valuePence: 25000, type: "site_credit", won: false, winnerName: null, wonAt: null, addedAt: c.boost.addedAt })) : []).sort((a, b) => b.valuePence - a.valuePence || a.ticket - b.ticket);
 }
 route("GET", "/api/competitions/:slug/winning-numbers", (req, res, { params, query }) => {
   const c = bySlug.get(params.slug);

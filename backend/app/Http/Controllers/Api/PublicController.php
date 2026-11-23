@@ -196,6 +196,8 @@ class PublicController extends Controller
             ->on('verity_entries.number', '=', 'verity_instant_tickets.ticket_number');
         $base = DB::table('verity_instant_tickets')->where('verity_instant_tickets.competition_id', $v->id)
             ->join('verity_instant_prizes', 'verity_instant_prizes.id', '=', 'verity_instant_tickets.instant_prize_id')
+            // Prizes Verity added after launch (spec §17) are listed with the rest, labelled with when.
+            ->leftJoin('verity_instant_additions', 'verity_instant_additions.id', '=', 'verity_instant_tickets.addition_id')
             ->leftJoin('verity_entries', $sold)
             ->leftJoin('verity_entry_groups', fn ($j) => $j->on('verity_entry_groups.id', '=', 'verity_entries.entry_group_id')->whereNull('verity_entry_groups.withdrawn_at'));
         $total = (clone $base)->count();
@@ -216,7 +218,7 @@ class PublicController extends Controller
         $rows = $q->orderByDesc('verity_instant_prizes.value_pence')->orderBy('verity_instant_tickets.ticket_number')
             ->skip(($page - 1) * $per)->take($per + 1)
             ->get(['verity_instant_tickets.ticket_number', 'verity_instant_prizes.name', 'verity_instant_prizes.value_pence', 'verity_instant_prizes.meta',
-                'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at']);
+                'verity_entry_groups.id as group_id', 'verity_entry_groups.owner_ref', 'verity_entry_groups.created_at as won_at', 'verity_instant_additions.sealed_at as added_at']);
         $names = $this->names($rows->take($per)->pluck('owner_ref')->filter());
         $unseen = $this->unseenGroups($rows->take($per)->pluck('group_id'));
 
@@ -228,6 +230,7 @@ class PublicController extends Controller
                 'won' => $t->group_id !== null,
                 'winnerName' => $t->group_id !== null && ! isset($unseen[(int) $t->group_id]) ? ($names[$t->owner_ref] ?? 'Postal entrant') : null,
                 'wonAt' => $t->won_at ? Carbon::parse($t->won_at)->toIso8601ZuluString() : null,
+                'addedAt' => $t->added_at ? Carbon::parse($t->added_at)->toIso8601ZuluString() : null,
             ])->values(),
             'total' => $total,
             'won' => $won,

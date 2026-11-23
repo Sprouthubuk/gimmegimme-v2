@@ -47,6 +47,10 @@ against it; the Laravel feature tests must cover the same behaviour.
 
 `CompetitionDetail.prizes` lists the prize *tiers* and how many of each are won. Which ticket number
 wins each prize is public from publish (owner's decision, 18 Nov 2026) through `/winning-numbers`.
+Prize boosts (owner, 23 Nov 2026): instant prizes Verity added after launch (spec §17) are in `CompetitionDetail.prizes`
+(with `addedAt`), counted in `prizeCount` / `topPrizePence`, summed in `CompetitionSummary.boost` (`{addedCount,
+addedPence, addedAt}` or null), listed in `/winning-numbers` (`addedAt` on each row, null for the launch prizes), and
+summarised per addition in `CompetitionDetail.boostRecord[]` (from Verity's own record).
 That is safe only because Verity gives each buyer random unsold numbers at payment (it refuses
 in-order numbering with instant wins); never publish with `ticket_allocation` other than `random`.
 The seed that made the list stays sealed until the competition ends.

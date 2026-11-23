@@ -40,6 +40,8 @@ export interface CompetitionSummary {
   maxPerPerson: number | null;
   /** Instant wins: how many instant prizes there are in total. Null for draws. */
   prizeCount: number | null;
+  /** Instant wins with extra prizes added after launch (prize boost): how many, their value and when. Null otherwise. */
+  boost: { addedCount: number; addedPence: Pence; addedAt: string } | null;
   /** Instant wins with an end prize: what is drawn at the close, and for how many winners. Null otherwise. */
   endPrize: { name: string; valuePence: Pence; count: number } | null;
   /** When entries open (status is "scheduled" until then), or null when it opened on publish. */
@@ -58,6 +60,26 @@ export interface PrizeTier {
   type: "cash" | "site_credit" | "physical";
   quantity: number;
   won: number;
+  /** Prizes added after launch (prize boost): when they were added. Null for the original prizes. */
+  addedAt: string | null;
+}
+
+/** One time Verity added instant prizes after launch (spec §17, VERITY-ADD-1): the public summary from its record. */
+export interface BoostRecord {
+  addition: number;
+  reason: string;
+  addedAt: string;
+  beaconSource: string;
+  beaconRound: number | null;
+  beaconRandomness: string;
+  /** Numbers left out: every ticket sold and every winning number when Verity committed to the round. */
+  excludedCount: number;
+  excludedHash: string;
+  /** Tickets sold between the commit and the draw of the new numbers (left out too). */
+  windowCount: number;
+  tableHash: string;
+  prizeCount: number;
+  valuePence: Pence;
 }
 
 export interface CompetitionDetail extends CompetitionSummary {
@@ -82,6 +104,8 @@ export interface CompetitionDetail extends CompetitionSummary {
   verityRef: string | null;
   commitment: string | null;
   verifyUrl: string | null;
+  /** Each time Verity added instant prizes after launch (prize boost), oldest first. Empty when none. */
+  boostRecord: BoostRecord[];
 }
 
 export interface SiteInfo {
@@ -373,6 +397,8 @@ export interface WinningNumberRow {
   /** "Amy B." (or "Postal entrant" / "Anonymous") once won; null until then, and for a paid win its player hasn't played yet (up to an hour). */
   winnerName: string | null;
   wonAt: string | null;
+  /** Prizes added after launch (prize boost): when. Null for the original prizes. */
+  addedAt: string | null;
 }
 
 /** GET /api/competitions/{slug}/winning-numbers?show=all|won|left&q=&prize=&page= (100 a page, biggest prize first). */

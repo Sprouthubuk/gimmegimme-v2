@@ -84,6 +84,10 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
 .cc .im img{width:100%;height:100%;object-fit:cover;display:block}
 .cc .gt{position:absolute;top:8px;left:8px;background:rgba(7,5,11,.88);color:#FFF23A;border:1px solid rgba(255,242,58,.55);border-radius:999px;padding:3px 8px;font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px}
 .cc .gt.cy{color:#22E6FF;border-color:rgba(34,230,255,.6)}
+.cc .gt.pb{color:#fff;background:linear-gradient(90deg,#C8104F,#FF2DAA);border-color:rgba(255,255,255,.35)}
+.cc .pbl{font-size:12px;font-weight:800;color:#FF7AC8;line-height:1.3}
+.boost-banner{border:1px solid rgba(255,45,170,.55);background:linear-gradient(135deg,rgba(200,16,79,.28),rgba(255,45,170,.12));border-radius:16px;padding:12px 14px;font-weight:800;line-height:1.4}
+.tag-added{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:900;background:rgba(255,45,170,.18);color:#FF7AC8;border:1px solid rgba(255,45,170,.4);white-space:nowrap}
 .cc .st{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;background:rgba(7,5,11,.88);font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#E9E3F2;white-space:nowrap;overflow:hidden}
 .cc .st span{overflow:hidden;text-overflow:ellipsis}
 .cc .st.hot{background:linear-gradient(90deg,#C8104F,#F0245F 50%,#C8104F);color:#fff}

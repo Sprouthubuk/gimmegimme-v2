@@ -47,7 +47,11 @@ final class Reveal
             }
             $context[$c->id] = [
                 'game' => $c->game, 'isInstantWin' => true, 'skin' => $c->skin ?? 'classic',
-                'prizeLabels' => $c->prizes->sortByDesc('value_pence')->pluck('name')->unique()->values()->all(),
+                // The prize names a board may show: the launch prizes and any Verity added later (prize boost).
+                'prizeLabels' => $c->prizes->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence])
+                    ->concat(InstantPrize::query()->whereNotNull('addition_id')->whereHas('competition', fn ($q) => $q->where('ref', $c->verity_ref))->get(['name', 'value_pence'])
+                        ->map(fn ($p) => ['n' => $p->name, 'v' => (int) $p->value_pence]))
+                    ->sortByDesc('v')->pluck('n')->unique()->values()->all(),
                 'inLiveDraw' => $c->end_prize_name !== null, 'endPrizeName' => $c->end_prize_name,
             ];
             if (! $line->revealed_at) {

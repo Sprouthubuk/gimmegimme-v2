@@ -31,6 +31,7 @@ const whenLine: [string, string] = (live || c.endPrize) && (c.drawAt ?? c.closes
   <div class="im">
     <img src={c.imageSmall} srcset={c.imageSrcset ?? undefined} sizes="(min-width:1024px) 300px, (min-width:640px) 33vw, 50vw" alt={c.title} loading="lazy" decoding="async" width="400" height="400">
     {live && <span class="gt cy"><Icon name="live" size={11} stroke={2.6} />Live Draw</span>}
+    {!live && c.boost && <span class="gt pb" data-testid="boost-badge">🔥 Prize Boost</span>}
     {strip && <div class={`st ${hot && !soon ? "hot" : ""}`}><Icon name="clock" size={12} stroke={2.6} /><span>{strip}</span></div>}
   </div>
   <div class="bd">
@@ -40,6 +41,7 @@ const whenLine: [string, string] = (live || c.endPrize) && (c.drawAt ?? c.closes
     </div>
     <div class="tt">{c.title}</div>
     {highlight && <div class={`hl ${live ? "nc" : ""}`}><span aria-hidden="true">★</span>{highlight}</div>}
+    {!live && c.boost && <div class="pbl">{money(c.boost.addedPence)} extra instant wins added</div>}
     <div class="wh"><span>{whenLine[0]}</span>{" "}<b>{whenLine[1]}</b></div>
     {open && <div class="en"><span class="dt"></span><b data-ends={c.closesAt}>{endsIn(c.closesAt)}</b></div>}
     <div class={`bar ${live ? "cy" : ""}`}><div class="gg-shine" style={`width:${sold > 0 ? Math.max(sold, 2) : 0}%`}></div></div>
