@@ -62,7 +62,6 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
             <span class="tag tag-w">Closes {ukDateTime(c.closesAt)}</span>
           </div>
         </div>
-        {!isDraw && c.boost && <div class="boost-banner" data-testid="boost-banner">🔥 Prize Boost – {formatPence(c.boost.addedPence, { short: false })} extra instant wins added: {formatCount(c.boost.addedCount)} more prizes since {ukDayMonth(c.boost.addedAt)}. <a class="tap" href="#prize-boost" style="white-space:nowrap">How they were added</a></div>}
         <div class={`card card-p stack g12 gg-rise gg-d3 ${isDraw ? "card-cy" : ""}`}>
           {opensLater && <span class="eyebrow">Entries open in</span>}
           {isDraw && !opensLater && <div class="row between"><span class="eyebrow">Draw starts in</span><span class="eyebrow" style="color:#22E6FF">Winner picked at random</span></div>}
@@ -109,10 +108,10 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
           );
         })}
       </div>
-      {(c.boostRecord ?? []).length > 0 && (
-        <details id="prize-boost" class="card card-p stack g8" style="font-size:14px">
-          <summary style="cursor:pointer;font-weight:900;min-height:44px;display:flex;align-items:center">🔥 Prize Boost: how the extra prizes were added</summary>
-          {c.boostRecord.map((b) => (
+      {!isDraw && c.boost && (
+        <details id="prize-boost" class="boost-banner stack g8" data-testid="boost-banner">
+          <summary style="cursor:pointer;min-height:44px">🔥 Prize Boost – {formatPence(c.boost.addedPence, { short: false })} extra instant wins added: {formatCount(c.boost.addedCount)} more prizes since {ukDayMonth(c.boost.addedAt)}.{" "}<span class="boost-how">How they were added</span></summary>
+          {(c.boostRecord ?? []).map((b) => (
             <div class="stack g8">
               <p class="p" style="margin:8px 0 0;font-size:14px">On {ukDateTime(b.addedAt)} our draw engine, Verity, added {formatCount(b.prizeCount)} instant prizes worth {formatPence(b.valuePence, { short: false })} ({b.reason}). Every original prize and winning number stayed exactly as it was, and the new prizes went only on ticket numbers nobody had: the {formatCount(b.excludedCount)} tickets already sold or already winning were left out, and so were {formatCount(b.windowCount)} sold while it ran.</p>
               <p class="p" style="margin:0;font-size:14px">The new numbers come from {b.beaconRound ? <>public drand randomness, round <b>{b.beaconRound}</b>, which Verity committed to before it existed</> : "local test randomness"}. It's all on Verity's audit chain and checked on the <a href={c.verifyUrl ?? "#"}>fair-play record</a>.</p>
