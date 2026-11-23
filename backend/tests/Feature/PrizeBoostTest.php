@@ -194,7 +194,9 @@ class PrizeBoostTest extends TestCase
                 $t->id();
                 $t->string('batch', 40);
             });
-            DB::unprepared('CREATE TRIGGER prize_boosts_no_delete BEFORE DELETE ON prize_boosts BEGIN SELECT RAISE(ABORT, \'append-only\'); END');
+            DB::unprepared(DB::getDriverName() === 'sqlite'
+                ? "CREATE TRIGGER prize_boosts_no_delete BEFORE DELETE ON prize_boosts BEGIN SELECT RAISE(ABORT, 'append-only'); END"
+                : "CREATE TRIGGER prize_boosts_no_delete BEFORE DELETE ON prize_boosts FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'append-only'");
         };
         $old = require database_path('migrations/2026_11_23_100000_prize_boosts.php');
         $remove = require database_path('migrations/2026_11_23_130000_remove_old_prize_boost_tables.php');
