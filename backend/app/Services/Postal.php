@@ -7,13 +7,10 @@ use App\Models\AdminAction;
 use App\Models\Competition;
 use App\Models\PostalEntry;
 use App\Models\User;
-use App\Notifications\PostalEntryEntered;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Sprouthub\Verity\Engine\VerityException;
 use Sprouthub\Verity\Facades\Verity;
-use Sprouthub\Verity\Models\Entry;
 
 /**
  * The free postal route: one envelope, one entry, with the same chance as a paid ticket. The same
@@ -55,16 +52,15 @@ final class Postal
             }
             if ($c->isInstant()) {
                 $this->fulfilment->playAll($group->reference);
-                app(PrizeBoosts::class)->settle($c, (int) $group->id, $user->ownerRef());
             }
 
             $entry = $this->record($c, $user, $receivedAt, $admin, 'entered', null, $group->reference);
-            $tickets = Entry::query()->where('entry_group_id', $group->id)->orderBy('number')->pluck('number')->map(fn ($n) => (int) $n)->all();
+            $tickets = \Sprouthub\Verity\Models\Entry::query()->where('entry_group_id', $group->id)->orderBy('number')->pluck('number')->map(fn ($n) => (int) $n)->all();
             DB::afterCommit(function () use ($user, $c, $tickets) {
                 try {
-                    $user->notify(new PostalEntryEntered($c, $tickets));
+                    $user->notify(new \App\Notifications\PostalEntryEntered($c, $tickets));
                 } catch (\Throwable $e) {
-                    Log::warning('Postal entry email not sent', ['user' => $user->id]);
+                    \Illuminate\Support\Facades\Log::warning('Postal entry email not sent', ['user' => $user->id]);
                 }
             });
 

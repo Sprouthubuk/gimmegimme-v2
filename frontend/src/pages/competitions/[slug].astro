@@ -109,12 +109,16 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
           );
         })}
       </div>
-      {c.boostRecord && (
+      {(c.boostRecord ?? []).length > 0 && (
         <details id="prize-boost" class="card card-p stack g8" style="font-size:14px">
-          <summary style="cursor:pointer;font-weight:900;min-height:44px;display:flex;align-items:center">🔥 Prize Boost: how the extra numbers were chosen</summary>
-          <p class="p" style="margin:8px 0 0;font-size:14px">On {ukDateTime(c.boostRecord.addedAt)} we added {formatCount(c.boostRecord.prizeCount)} instant prizes worth {formatPence(c.boostRecord.valuePence, { short: false })} ({c.boostRecord.reason}). Every original prize and winning number stayed exactly as it was. Ticket sales were paused for a few seconds while the numbers were chosen, and only ticket numbers nobody had yet ({formatCount(c.boostRecord.excludedCount)} left out: {formatCount(c.boostRecord.issuedCount)} already sold plus the original winning numbers) could be picked.</p>
-          <p class="p" style="margin:0;font-size:14px">The numbers come from {c.boostRecord.beaconRound ? <>public drand randomness, round <b>{c.boostRecord.beaconRound}</b>, which didn't exist yet when sales were paused</> : "local test randomness"}, using method {c.boostRecord.algorithm}. Anyone can recheck them.</p>
-          <div class="hint" style="word-break:break-all;font-size:12px">Randomness {c.boostRecord.beaconRandomness}<br>Sold numbers fingerprint {c.boostRecord.issuedHash}<br>Left-out numbers fingerprint {c.boostRecord.excludedHash}</div>
+          <summary style="cursor:pointer;font-weight:900;min-height:44px;display:flex;align-items:center">🔥 Prize Boost: how the extra prizes were added</summary>
+          {c.boostRecord.map((b) => (
+            <div class="stack g8">
+              <p class="p" style="margin:8px 0 0;font-size:14px">On {ukDateTime(b.addedAt)} our draw engine, Verity, added {formatCount(b.prizeCount)} instant prizes worth {formatPence(b.valuePence, { short: false })} ({b.reason}). Every original prize and winning number stayed exactly as it was, and the new prizes went only on ticket numbers nobody had: the {formatCount(b.excludedCount)} tickets already sold or already winning were left out, and so were {formatCount(b.windowCount)} sold while it ran.</p>
+              <p class="p" style="margin:0;font-size:14px">The new numbers come from {b.beaconRound ? <>public drand randomness, round <b>{b.beaconRound}</b>, which Verity committed to before it existed</> : "local test randomness"}. It's all on Verity's audit chain and checked on the <a href={c.verifyUrl ?? "#"}>fair-play record</a>.</p>
+              <div class="hint" style="word-break:break-all;font-size:12px">Randomness {b.beaconRandomness}<br>Left-out numbers fingerprint {b.excludedHash}<br>Added table fingerprint {b.tableHash}</div>
+            </div>
+          ))}
         </details>
       )}
       {c.endPrize && (

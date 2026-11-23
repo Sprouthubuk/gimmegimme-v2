@@ -2,13 +2,12 @@
 
 namespace App\Http\Presenters;
 
-use App\Models\BoostPrize;
 use App\Models\Competition;
-use App\Models\PrizeBoost;
 use App\Models\User;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Sprouthub\Verity\Models\InstantPrize;
 use Sprouthub\Verity\Models\Winner;
 
@@ -21,18 +20,20 @@ final class CompetitionPresenter
         'bingo_card' => 'Bingo Card', 'whack_a_mole' => 'Whack-a-Mole', 'pinata' => 'Piñata', 'classic' => 'Scratch Card',
     ];
 
-    /** @var array<int, object>|null added (prize boost) totals per competition id, read once per request */
+    /** @var array<string, object>|null instant prizes Verity added after launch, totals per Verity competition ref, read once per request */
     private ?array $boosts = null;
 
     public function __construct(private CompetitionState $state, private Bundles $bundles) {}
 
-    /** Added (prize boost) instant prizes for a competition: count, value, top prize and when, or null. */
+    /** Instant prizes Verity added to a competition after launch (prize boost, spec §17): count, value, top prize, when; or null. */
     public function boost(Competition $c): ?object
     {
-        $this->boosts ??= BoostPrize::query()->selectRaw('competition_id, COUNT(*) AS n, SUM(value_pence) AS v, MAX(value_pence) AS top, MIN(added_at) AS at')
-            ->groupBy('competition_id')->get()->keyBy('competition_id')->all();
+        $this->boosts ??= DB::table('verity_instant_prizes as p')->join('verity_instant_additions as a', 'a.id', '=', 'p.addition_id')
+            ->join('verity_competitions as vc', 'vc.id', '=', 'p.competition_id')->where('a.status', 'sealed')
+            ->selectRaw('vc.ref, SUM(p.quantity) AS n, SUM(p.quantity * p.value_pence) AS v, MAX(p.value_pence) AS top, MIN(a.sealed_at) AS at')
+            ->groupBy('vc.ref')->get()->keyBy('ref')->all();
 
-        return $this->boosts[$c->id] ?? null;
+        return $c->verity_ref ? ($this->boosts[$c->verity_ref] ?? null) : null;
     }
 
     public function summary(Competition $c): array
@@ -66,7 +67,7 @@ final class CompetitionPresenter
             // Max tickets one person may hold (owner, 22 Nov 2026); null when there's no limit.
             'maxPerPerson' => $c->max_per_person < $c->max_tickets ? (int) $c->max_per_person : null,
             'prizeCount' => $prizeCount,
-            // Extra instant prizes added after launch (prize boost, 23 Nov 2026): the badge on cards and the page banner.
+            // Extra instant prizes Verity added after launch (prize boost, 23 Nov 2026): the card badge and the page banner.
             'boost' => $boost ? ['addedCount' => (int) $boost->n, 'addedPence' => (int) $boost->v, 'addedAt' => Carbon::parse($boost->at)->toIso8601ZuluString()] : null,
             'endPrize' => $c->isInstant() && $c->end_prize_name ? ['name' => $c->end_prize_name, 'valuePence' => (int) $c->end_prize_value_pence, 'count' => $c->endPrizeCount()] : null,
             'opensAt' => $c->opens_at?->toIso8601ZuluString(),
@@ -86,15 +87,15 @@ final class CompetitionPresenter
         if ($c->isInstant()) {
             $won = $v ? Winner::query()->where('competition_id', $v->id)->where('type', 'instant')
                 ->selectRaw('prize_key, COUNT(*) AS n')->groupBy('prize_key')->pluck('n', 'prize_key') : collect();
-            $keys = $v ? InstantPrize::query()->where('competition_id', $v->id)->orderBy('sort')->get(['key', 'name', 'value_pence', 'quantity', 'meta']) : collect();
+            // Verity's prizes: the ones fixed at launch and any it added later (spec §17, labelled with when).
+            $added = $v ? DB::table('verity_instant_additions')->where('competition_id', $v->id)->where('status', 'sealed')->pluck('sealed_at', 'id') : collect();
+            $keys = $v ? InstantPrize::query()->where('competition_id', $v->id)->orderBy('sort')->get(['key', 'name', 'value_pence', 'quantity', 'meta', 'addition_id']) : collect();
             $rows = $keys->isNotEmpty()
-                ? $keys->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->meta['type'] ?? 'site_credit', 'quantity' => (int) $p->quantity, 'won' => (int) ($won[$p->key] ?? 0), 'addedAt' => null])
+                ? $keys->filter(fn ($p) => $p->addition_id === null || isset($added[$p->addition_id]))
+                    ->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->meta['type'] ?? 'site_credit', 'quantity' => (int) $p->quantity, 'won' => (int) ($won[$p->key] ?? 0),
+                        'addedAt' => $p->addition_id ? Carbon::parse($added[$p->addition_id])->toIso8601ZuluString() : null])
                 : $c->prizes->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->type, 'quantity' => (int) $p->quantity, 'won' => 0, 'addedAt' => null]);
-            $added = BoostPrize::query()->where('competition_id', $c->id)
-                ->selectRaw('name, value_pence, type, COUNT(*) AS n, COUNT(won_at) AS w, MIN(added_at) AS at')->groupBy('name', 'value_pence', 'type')->get()
-                ->map(fn ($p) => ['name' => $p->name, 'valuePence' => (int) $p->value_pence, 'type' => $p->type, 'quantity' => (int) $p->n, 'won' => (int) $p->w,
-                    'addedAt' => Carbon::parse($p->at)->toIso8601ZuluString()]);
-            $prizes = $rows->concat($added)->sortByDesc('valuePence')->values()->all();
+            $prizes = $rows->sortByDesc('valuePence')->values()->all();
         }
 
         return $this->summary($c) + [
@@ -107,13 +108,13 @@ final class CompetitionPresenter
             'verityRef' => $v?->ref,
             'commitment' => $v?->commitment,
             'verifyUrl' => $v ? '/verify/'.$v->ref : null,
-            // How the added prizes' numbers were chosen, so anyone can check them (App\Services\PrizeBoosts).
-            'boostRecord' => ($b = PrizeBoost::query()->where('competition_id', $c->id)->orderBy('id')->first()) ? [
-                'algorithm' => $b->algorithm, 'reason' => $b->reason, 'addedAt' => $b->added_at->toIso8601ZuluString(),
-                'beaconSource' => $b->beacon_source, 'beaconRound' => $b->beacon_round, 'beaconRandomness' => $b->beacon_randomness,
-                'issuedCount' => (int) $b->issued_count, 'issuedHash' => $b->issued_hash, 'excludedCount' => (int) $b->excluded_count, 'excludedHash' => $b->excluded_hash,
-                'prizeCount' => (int) $b->prize_count, 'valuePence' => (int) $b->value_pence,
-            ] : null,
+            // How Verity added any later prizes (spec §17), from its own record: the public summary of each addition.
+            'boostRecord' => $v ? DB::table('verity_instant_additions')->where('competition_id', $v->id)->where('status', 'sealed')->orderBy('number')->get()
+                ->map(fn ($a) => ['addition' => (int) $a->number, 'reason' => $a->reason, 'addedAt' => Carbon::parse($a->sealed_at)->toIso8601ZuluString(),
+                    'beaconSource' => $a->beacon_source, 'beaconRound' => $a->beacon_round !== null ? (int) $a->beacon_round : null, 'beaconRandomness' => $a->beacon_randomness,
+                    'excludedCount' => (int) $a->excluded_count, 'excludedHash' => $a->excluded_hash, 'windowCount' => (int) $a->window_count, 'tableHash' => $a->table_hash,
+                    'prizeCount' => (int) collect(json_decode((string) $a->prizes, true))->sum('quantity'),
+                    'valuePence' => (int) collect(json_decode((string) $a->prizes, true))->sum(fn ($p) => (int) $p['quantity'] * (int) $p['value_pence'])])->values()->all() : [],
             'presets' => $c->presetList(),
             'popularPreset' => $c->popularPreset(),
             'minTickets' => (int) ($c->min_tickets ?: 1),

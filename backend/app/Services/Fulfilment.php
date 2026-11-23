@@ -59,8 +59,6 @@ final class Fulfilment
             $line->forceFill(['entry_group_ref' => $group->reference, 'owner_tag' => $group->owner_tag, 'tickets' => $numbers])->save();
             if ($c->isInstant()) {
                 $this->playAll($group->reference);
-                // Added (prize boost) instant prizes on these tickets: paid now, in this transaction.
-                app(PrizeBoosts::class)->settle($c, (int) $group->id, $owner, (string) $order->id);
             }
         }
         $order->forceFill(['fulfilled_at' => now()])->save();

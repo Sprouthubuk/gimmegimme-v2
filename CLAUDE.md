@@ -42,12 +42,10 @@ Read before every task. If a request conflicts with this, stop and ask.
   pays winnings once (reference `verity-winner:{id}`); physical opens a claim for a person.
 - A paid order that couldn't get all its tickets is flagged for a person, never auto-refunded.
 - Prize boosts (owner, 23 Nov 2026; docs/prize-boosts.md): extra instant prizes for a live instant-win competition are
-  added only by `competitions:boost-prizes` (`App\Services\PrizeBoosts`, lists in `resources/boosts/`), beside Verity's
-  table, never in it, on numbers chosen under Verity's allocation lock from unissued, non-Verity numbers with a future
-  drand round (GG-BOOST-1). They are paid by `PrizeBoosts::settle` in the ticket-issuing transaction (Fulfilment, Postal),
-  once (reference `boost-prize:{id}`), and appear in the winning numbers ("Added …"), entry lists, reveal, winners
-  feed and reports. `boost_prizes` / `prize_boosts` are never deleted or changed (triggers). This is the one exception to
-  "instant-win results come only from Verity"; its public record is `GET /api/competitions/{slug}/prize-boost`.
+  added only by Verity (`Verity::addInstantPrizes`, verity-v3.2.0, spec §17), run by `competitions:boost-prizes`
+  (`App\Services\PrizeBoosts`, lists in `resources/boosts/`, one Verity addition per competition per batch reason).
+  They are ordinary Verity instant prizes on numbers nobody held, so Fulfilment pays them as usual; never add prizes
+  any other way.
 - Bundles ("Buy X Get Y Free", live draws only): priced and sized only by `App\Services\Bundles` /
   `Pricing` from the bundle id; free tickets go to Verity in the same entry as the paid ones (no flag).
   A bundle bigger than what's left or than `max_bundle_share_pct` is never offered or sold. The featured

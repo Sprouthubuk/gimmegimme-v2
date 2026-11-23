@@ -6,14 +6,14 @@ use App\Models\ArchiveCompetition;
 use App\Models\BundleTier;
 use App\Models\Competition;
 use App\Models\Page;
-use App\Models\PrizeBoost;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\PrizeBoosts;
 use App\Services\Publishing;
 use App\Services\Wallet;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
+use Sprouthub\Verity\Facades\Verity;
+use Sprouthub\Verity\Models\InstantAddition;
 
 /**
  * Sample data for a developer's machine and the full-stack tests. Refuses to run in production:
@@ -63,10 +63,11 @@ class DemoSeeder extends Seeder
         $make(['slug' => 'lush-snow-fairy-wonderland', 'title' => 'Lush Snow Fairy Wonderland', 'type' => 'draw', 'image' => 'competitions/lush.webp', 'price_pence' => 49,
             'end_prize_name' => 'Lush Snow Fairy Gift Set', 'end_prize_value_pence' => 6000, 'cash_alternative_pence' => 5000, 'max_tickets' => 999, 'max_per_person' => 999, 'bundles_enabled' => true, 'max_bundle_share_pct' => 10, 'prize_cost_pence' => 4000]);
 
-        // A prize boost on Cash Bang, so the pages and the reveal show added prizes (docs/prize-boosts.md).
+        // A prize boost on Cash Bang (Verity adds the prizes, spec §17), so the pages and the reveal show added prizes.
         $bang = Competition::query()->where('slug', 'cash-bang')->first();
-        if ($bang && ! PrizeBoost::query()->where('competition_id', $bang->id)->exists()) {
-            app(PrizeBoosts::class)->apply($bang, [[2, 2500, 'Bang Bonus'], [1500, 10, 'Mini Bang']], '2026-11-23', 'Prize boost – 23 Nov 2026');
+        if ($bang && ! InstantAddition::query()->whereHas('competition', fn ($q) => $q->where('ref', $bang->verity_ref))->exists()) {
+            Verity::addInstantPrizes($bang->verity_ref, [['name' => 'Bang Bonus', 'quantity' => 2, 'value_pence' => 2500, 'meta' => ['type' => 'site_credit']],
+                ['name' => 'Mini Bang', 'quantity' => 1500, 'value_pence' => 10, 'meta' => ['type' => 'site_credit']]], 'Prize boost – 23 Nov 2026', 'demo');
         }
 
         // A small sample of the old site's archive (the real one comes from resources/archive on deploy).

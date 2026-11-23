@@ -77,9 +77,9 @@ function detail(c, user) {
     verityRef: `VTY-${c.id.slice(2, 8).toUpperCase()}`,
     commitment: crypto.createHash("sha256").update(c.id).digest("hex"),
     verifyUrl: `/verify/VTY-${c.id.slice(2, 8).toUpperCase()}`,
-    boostRecord: c.boost ? { algorithm: "GG-BOOST-1", reason: "Prize boost – 23 Nov 2026", addedAt: c.boost.addedAt, beaconSource: "drand-quicknet", beaconRound: 23456789,
-      beaconRandomness: crypto.createHash("sha256").update("r" + c.id).digest("hex"), issuedCount: 1200, issuedHash: crypto.createHash("sha256").update("i" + c.id).digest("hex"),
-      excludedCount: 3800, excludedHash: crypto.createHash("sha256").update("e" + c.id).digest("hex"), prizeCount: c.boost.addedCount, valuePence: c.boost.addedPence } : null,
+    boostRecord: c.boost ? [{ addition: 1, reason: "Prize boost – 23 Nov 2026", addedAt: c.boost.addedAt, beaconSource: "drand-quicknet", beaconRound: 23456789,
+      beaconRandomness: crypto.createHash("sha256").update("r" + c.id).digest("hex"), excludedCount: 3800, excludedHash: crypto.createHash("sha256").update("e" + c.id).digest("hex"),
+      windowCount: 2, tableHash: crypto.createHash("sha256").update("t" + c.id).digest("hex"), prizeCount: c.boost.addedCount, valuePence: c.boost.addedPence }] : [],
   };
 }
 

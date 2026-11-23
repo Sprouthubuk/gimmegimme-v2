@@ -64,18 +64,20 @@ export interface PrizeTier {
   addedAt: string | null;
 }
 
-/** How a prize boost's ticket numbers were chosen (GG-BOOST-1, docs/prize-boosts.md), so anyone can check them. */
+/** One time Verity added instant prizes after launch (spec §17, VERITY-ADD-1): the public summary from its record. */
 export interface BoostRecord {
-  algorithm: string;
+  addition: number;
   reason: string;
   addedAt: string;
   beaconSource: string;
   beaconRound: number | null;
   beaconRandomness: string;
-  issuedCount: number;
-  issuedHash: string;
+  /** Numbers left out: every ticket sold and every winning number when Verity committed to the round. */
   excludedCount: number;
   excludedHash: string;
+  /** Tickets sold between the commit and the draw of the new numbers (left out too). */
+  windowCount: number;
+  tableHash: string;
   prizeCount: number;
   valuePence: Pence;
 }
@@ -102,8 +104,8 @@ export interface CompetitionDetail extends CompetitionSummary {
   verityRef: string | null;
   commitment: string | null;
   verifyUrl: string | null;
-  /** The prize boost record, or null when no prizes were added. */
-  boostRecord: BoostRecord | null;
+  /** Each time Verity added instant prizes after launch (prize boost), oldest first. Empty when none. */
+  boostRecord: BoostRecord[];
 }
 
 export interface SiteInfo {
