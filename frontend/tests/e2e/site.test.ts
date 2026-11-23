@@ -129,7 +129,10 @@ describe("site-wide rules", () => {
     expect(html).toContain('data-testid="boost-banner"');
     expect(t).toMatch(/🔥 Prize Boost – £2,600 extra instant wins added: 200 more prizes since \d+ \w{3}/);
     expect(t).toMatch(/Mega Gem\s*Added \d+ \w{3}/);
-    expect(t).toMatch(/how the extra prizes were added[\s\S]*Verity, added 200 instant prizes[\s\S]*round 23456789/);
+    expect(t).toMatch(/How they were added[\s\S]*Verity, added 200 instant prizes[\s\S]*round 23456789/);
+    // At the bottom, under the prize list, not at the top of the page.
+    expect(html.indexOf('data-testid="boost-banner"')).toBeGreaterThan(html.indexOf("Mega Gem"));
+    expect(html.indexOf('data-testid="boost-banner"')).toBeGreaterThan(html.indexOf("Per ticket"));
     const wn = (await new Browser(site.origin).page("/competitions/demis-diamond-dosh/winning-numbers?prize=Mega+Gem")).html;
     expect(wn).toContain('data-testid="added-label"');
     // Games without a boost show none of it.
