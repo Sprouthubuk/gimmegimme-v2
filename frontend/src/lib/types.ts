@@ -448,6 +448,10 @@ export interface LiveDraw {
   /** Empty until Verity has drawn. */
   winners: LiveDrawWinner[];
   drawnAt: string | null;
+  /** The result has been published: shown everywhere, winners told and paid. Until then only the presenter sees it. */
+  published: boolean;
+  /** Asked with a valid presenter key (the admin's Live Draw Screen button): sees a held result and can publish it. */
+  presenter: boolean;
   verifyUrl: string;
   serverTime: string;
 }

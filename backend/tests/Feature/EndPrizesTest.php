@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\DrawResults;
 use App\Models\LedgerEntry;
 use App\Models\PrizeClaim;
 use App\Models\User;
@@ -32,6 +33,7 @@ class EndPrizesTest extends TestCase
         Verity::close($c->verity_ref);
         Carbon::setTestNow(now()->addMinutes(5));
         Verity::draw($c->verity_ref);
+        app(DrawResults::class)->publish($c, null, 'auto'); // after the live reveal
 
         return VerityCompetition::query()->where('ref', $c->verity_ref)->firstOrFail();
     }

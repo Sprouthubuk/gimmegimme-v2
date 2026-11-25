@@ -57,6 +57,41 @@ describe("live draw screen", () => {
     await page.close();
   }, 60000);
 
+  it("holds a result from the public, and the presenter reveals then publishes it", async () => {
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+    const errs: string[] = [];
+    page.on("console", (m) => { if (m.type() === "error" && !m.text().includes("/media/")) errs.push(m.text()); });
+    page.on("pageerror", (e) => errs.push(e.message));
+    // A viewer without the key: still "drawing".
+    await page.goto(`${site.origin}/live-draw/250-tax-free-cash`, { waitUntil: "networkidle" });
+    await expect(page.locator('[data-testid="live-draw"]').getAttribute("data-phase")).resolves.toBe("waiting");
+    expect(await page.locator('[data-testid="reveal"]').count()).toBe(0);
+    expect(await page.content()).not.toContain("Sam P.");
+    // The presenter (opened from the admin): sees it, and the key leaves the address bar.
+    await page.goto(`${site.origin}/live-draw/250-tax-free-cash?key=test-key`, { waitUntil: "networkidle" });
+    await expect(page.locator('[data-testid="live-draw"]').getAttribute("data-phase")).resolves.toBe("drawn");
+    expect(new URL(page.url()).search).toBe("");
+    expect(await page.locator(".ld-pres").innerText()).toMatch(/presenter/i);
+    expect(await page.locator('[data-testid="publish"]').count()).toBe(0); // only after the reveal
+    await page.click('[data-testid="reveal"]', { force: true });
+    await page.waitForSelector('[data-stage="landed"]', { timeout: 10000 });
+    expect(await page.locator(".ld-msg").innerText()).toContain("Sam P.");
+    await page.click('[data-testid="publish"]', { force: true });
+    expect(await page.locator('[data-testid="publish"]').innerText()).toMatch(/tap again/i); // a second press confirms
+    await page.screenshot({ path: path.join(OUT, "7-publish-confirm.png") });
+    await page.click('[data-testid="publish"]', { force: true });
+    await page.waitForSelector('[data-testid="published"]');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(OUT, "8-published.png") });
+    // Now a viewer without the key sees it too.
+    const viewer = await browser.newPage();
+    await viewer.goto(`${site.origin}/live-draw/250-tax-free-cash`, { waitUntil: "networkidle" });
+    await expect(viewer.locator('[data-testid="live-draw"]').getAttribute("data-phase")).resolves.toBe("drawn");
+    await viewer.close();
+    expect(errs).toEqual([]);
+    await page.close();
+  }, 60000);
+
   it("counts down before the close, on a phone too, and 404s for an instant game", async () => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto(`${site.origin}/live-draw/lush-snow-fairy-wonderland`, { waitUntil: "networkidle" });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HoldDrawRecord;
 use Sprouthub\Verity\Engine\Drand;
 
 /*
@@ -146,7 +147,8 @@ return [
     'routes' => [
         'enabled' => filter_var(env('VERITY_ROUTES', false), FILTER_VALIDATE_BOOLEAN),
         'prefix' => env('VERITY_ROUTE_PREFIX', 'verity'),
-        'middleware' => ['api', 'throttle:60,1'],
+        // HoldDrawRecord: a draw's record waits while its result is held for the live reveal (App\Services\DrawResults).
+        'middleware' => ['api', 'throttle:60,1', HoldDrawRecord::class],
     ],
 
 ];

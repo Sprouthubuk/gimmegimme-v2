@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Payments\CashflowsGateway;
 use App\Payments\FakeGateway;
 use App\Payments\PaymentGateway;
+use App\Services\DrawResults;
 use App\Services\Fulfilment;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -48,7 +49,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Instant wins are paid in the order's own transaction; this catches any played elsewhere. Idempotent.
         Event::listen(InstantWinRevealed::class, fn (InstantWinRevealed $e) => app(Fulfilment::class)->awardInstantWin($e->winner));
-        Event::listen(WinnerDrawn::class, fn (WinnerDrawn $e) => app(Fulfilment::class)->recordDrawWin($e->winner));
+        // A drawn winner is paid and emailed only once the draw's result is published (DrawResults: held until the live reveal).
+        Event::listen(WinnerDrawn::class, fn (WinnerDrawn $e) => app(DrawResults::class)->winnerDrawn($e->winner));
 
         $site = rtrim((string) config('app.frontend_url'), '/');
         ResetPassword::createUrlUsing(fn ($user, string $token) => $site.'/reset-password?token='.urlencode($token).'&email='.urlencode($user->email));

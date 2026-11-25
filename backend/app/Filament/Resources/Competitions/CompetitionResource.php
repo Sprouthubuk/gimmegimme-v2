@@ -10,9 +10,11 @@ use App\Models\BundleTier;
 use App\Models\Competition;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
+use App\Services\DrawResults;
 use App\Services\PromoCap;
 use App\Services\Publishing;
 use App\Support\GameIds;
+use App\Support\PresenterKey;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -210,6 +212,7 @@ class CompetitionResource extends Resource
                 self::openNowAction(),
                 self::previewGameAction(),
                 self::liveDrawAction(),
+                self::publishResultAction(),
             ]);
     }
 
@@ -266,7 +269,23 @@ class CompetitionResource extends Resource
     {
         return Action::make('liveDraw')->label('Live Draw Screen')->icon(Heroicon::OutlinedVideoCamera)->color('danger')
             ->visible(fn (Competition $record) => $record->verity_ref !== null && $record->hasDraw())
-            ->url(fn (Competition $record) => '/live-draw/'.$record->slug, shouldOpenInNewTab: true);
+            // The presenter key lets this screen see a held result and publish it (PresenterKey, two days).
+            ->url(fn (Competition $record) => '/live-draw/'.$record->slug.'?key='.PresenterKey::make($record, auth()->user()), shouldOpenInNewTab: true);
+    }
+
+    /** Publish a held draw result: shown everywhere, winners paid and emailed (DrawResults). The screen can do the same. */
+    public static function publishResultAction(): Action
+    {
+        return Action::make('publishResult')->label('Publish Result')->icon(Heroicon::OutlinedMegaphone)->color('success')
+            ->visible(fn (Competition $record) => DrawResults::held($record))
+            ->requiresConfirmation()
+            ->modalHeading('Publish this draw’s result?')
+            ->modalDescription('The winner is shown on the site and in their account, emailed, and paid if the prize is site credit. Do this once the live reveal is done. It can’t be undone.')
+            ->action(function (Competition $record) {
+                $done = app(DrawResults::class)->publish($record, auth()->user(), 'admin');
+                $done ? Notification::make()->success()->title('Result published')->body($record->title.': winners told.')->send()
+                    : Notification::make()->warning()->title('Nothing to publish')->body('It isn’t drawn yet, or it’s already published.')->send();
+            });
     }
 
     public static function getPages(): array

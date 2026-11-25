@@ -51,7 +51,7 @@ function Confetti() {
   );
 }
 
-export default function LiveDrawScreen({ initial, slug }: { initial: LiveDraw; slug: string }) {
+export default function LiveDrawScreen({ initial, slug, presenterKey }: { initial: LiveDraw; slug: string; presenterKey: string | null }) {
   const [data, setData] = useState<LiveDraw>(initial);
   // The page is drawn on the server first, so the first render uses the server's clock and no browser-only values.
   const [skew, setSkew] = useState(0);
@@ -62,24 +62,28 @@ export default function LiveDrawScreen({ initial, slug }: { initial: LiveDraw; s
   const [stage, setStage] = useState<Stage>("idle");
   const [count, setCount] = useState(0);
   const timers = useRef<number[]>([]);
+  const [pub, setPub] = useState<"idle" | "confirm" | "busy" | "error">("idle");
+  const keyQuery = presenterKey ? `?key=${encodeURIComponent(presenterKey)}` : "";
 
   // Keep the state fresh (every 4s) until every winner has been drawn.
   useEffect(() => {
-    if (data.phase === "drawn" && data.winners.length >= data.places) return;
+    if (data.phase === "drawn" && data.winners.length >= data.places && (data.published || !data.presenter)) return;
     if (data.phase === "void") return;
     const t = window.setInterval(async () => {
       try {
-        const next = await api<LiveDraw>(`/api/competitions/${encodeURIComponent(slug)}/live-draw`);
+        const next = await api<LiveDraw>(`/api/competitions/${encodeURIComponent(slug)}/live-draw${keyQuery}`);
         setSkew(new Date(next.serverTime).getTime() - Date.now());
         setData(next);
       } catch { /* keep the last state; try again next tick */ }
     }, 4000);
     return () => window.clearInterval(t);
-  }, [slug, data.phase, data.winners.length, data.places]);
+  }, [slug, keyQuery, data.phase, data.winners.length, data.places, data.published, data.presenter]);
   useEffect(() => {
     setSkew(new Date(initial.serverTime).getTime() - Date.now());
     setNow(Date.now());
     setHost(window.location.host);
+    // The presenter key stays in this tab's memory only: off the address bar, so it never shows on the stream.
+    if (window.location.search.includes("key=")) window.history.replaceState(null, "", window.location.pathname);
     setReduce(!!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
     const t = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(t);
@@ -109,6 +113,20 @@ export default function LiveDrawScreen({ initial, slug }: { initial: LiveDraw; s
 
   const next = () => { setShown((s) => s + 1); setStage("idle"); };
 
+  // Publishing tells and pays the winners and shows the result everywhere: a second press confirms it.
+  async function publish() {
+    if (!presenterKey) return;
+    if (pub !== "confirm") return setPub("confirm");
+    setPub("busy");
+    try {
+      setData(await api<LiveDraw>(`/api/competitions/${encodeURIComponent(slug)}/live-draw/publish`, { method: "POST", json: { key: presenterKey } }));
+      setPub("idle");
+    } catch {
+      setPub("error");
+    }
+  }
+  const allShown = data.phase === "drawn" && stage === "landed" && shown + 1 >= data.winners.length;
+
   // Space or Enter reveals (handy with a clicker); F goes full screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -137,6 +155,7 @@ export default function LiveDrawScreen({ initial, slug }: { initial: LiveDraw; s
       <header className="ld-top">
         <img src="/logo-sm.webp" alt="Gimme Gimme Prizes" width="96" height="64" className="ld-logo" />
         <span className="ld-live"><i /> Live Draw</span>
+        {data.presenter && !data.published && <span className="ld-pres" title="Only this screen can see and publish the result">Presenter</span>}
         <button type="button" className="ld-full" onClick={toggleFull} aria-label="Full screen">⛶</button>
       </header>
 
@@ -198,6 +217,15 @@ export default function LiveDrawScreen({ initial, slug }: { initial: LiveDraw; s
                   )}
                   {canReveal && <button type="button" className="ld-btn d" onClick={reveal} data-testid="reveal">{shown === 0 ? "Reveal Winner" : "Reveal Next Winner"}</button>}
                   {stage === "landed" && shown + 1 < data.winners.length && <button type="button" className="ld-btn ld-btn-2 d" onClick={next}>Next Winner</button>}
+                  {allShown && data.presenter && !data.published && (
+                    <div className="ld-pub">
+                      <button type="button" className="ld-btn ld-btn-2 d" onClick={publish} disabled={pub === "busy"} data-testid="publish">
+                        {pub === "confirm" ? `Tap Again: Publish & Email ${data.winners.length > 1 ? "Winners" : "Winner"}` : pub === "busy" ? "Publishing…" : "Publish Results"}
+                      </button>
+                      {pub === "error" && <span className="ld-pub-err">Couldn’t publish. Try again, or use Publish Result in the admin.</span>}
+                    </div>
+                  )}
+                  {allShown && data.presenter && data.published && <div className="ld-pub-ok" data-testid="published">✓ Published · {data.winners.length > 1 ? "winners" : "winner"} notified</div>}
                 </>
               )}
             </div>

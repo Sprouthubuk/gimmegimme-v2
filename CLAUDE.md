@@ -41,6 +41,12 @@ Read before every task. If a request conflicts with this, stop and ask.
   livestream. Verity still draws at the closing time from its committed drand round; the screen polls
   `/api/competitions/{slug}/live-draw` and "Reveal Winner" only animates the winners Verity drew (masked names, as /winners).
   Never let the screen pick, re-roll or reorder a winner, and never make it the way a draw happens.
+- Draw results are held until published (owner, 25 Nov 2026; `App\Services\DrawResults`): after Verity draws, the
+  winner isn't emailed or paid, the result is left out of /winners, accounts and the competition's status (`closed`), and
+  Verity's record answers 423 (`HoldDrawRecord`), until it's published: the presenter's "Publish Results" on the live
+  draw screen (its admin `?key=`, `App\Support\PresenterKey`), Admin → Competitions → Publish Result, or the safety net
+  `competitions:publish-draw-results` after `HOLD_MAX_MINUTES`. Publishing pays and emails through `Fulfilment` once.
+  Never pay, email or list a drawn winner any other way; a held result is only ever delayed, never changed.
 - End prizes: `end_prize_count` places. One person can win more than one, and every place is paid: there is no
   redraw for a repeat winner (owner, 22 Nov 2026; Terms 7.6). `end_prize_type` site_credit
   pays winnings once (reference `verity-winner:{id}`); physical opens a claim for a person.

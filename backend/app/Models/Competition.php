@@ -14,7 +14,7 @@ class Competition extends Model
 {
     use HasUlids;
 
-    protected $guarded = ['id', 'verity_ref', 'published_at'];
+    protected $guarded = ['id', 'verity_ref', 'published_at', 'result_published_at', 'result_published_how'];
 
     /** Once published, these are Verity's terms and never change. */
     public const LOCKED_WHEN_PUBLISHED = ['type', 'price_pence', 'max_tickets', 'max_per_person', 'min_tickets', 'closes_at', 'end_prize_count', 'end_prize_type'];
@@ -35,6 +35,7 @@ class Competition extends Model
             'closes_at' => 'datetime',
             'published_at' => 'datetime',
             'ended_at' => 'datetime',
+            'result_published_at' => 'datetime',
         ];
     }
 

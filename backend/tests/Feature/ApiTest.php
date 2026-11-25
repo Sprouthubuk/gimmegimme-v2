@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\DrawResults;
 use App\Models\ContactMessage;
 use App\Models\Order;
 use App\Models\PrizeClaim;
@@ -357,6 +358,11 @@ class ApiTest extends TestCase
         Verity::close($c->verity_ref);
         Carbon::setTestNow(now()->addMinutes(5));
         Verity::draw($c->verity_ref);
+        // Held for the live reveal (owner, 25 Nov 2026): nobody is told until it's published.
+        $this->assertSame([], $this->getJson('/api/winners/draws')->json('data'));
+        $this->assertSame(0, PrizeClaim::query()->count());
+        $this->assertSame('closed', $this->actingAs($u)->getJson('/api/me/tickets?tab=past')->json('data.0.competition.status'));
+        $this->assertTrue(app(DrawResults::class)->publish($c, null, 'auto'));
 
         $d = $this->getJson('/api/winners/draws')->assertOk()->json('data.0');
         $this->assertSame('Liam O.', $d['name']);
@@ -481,6 +487,8 @@ class ApiTest extends TestCase
         Verity::close($c->verity_ref);
         Carbon::setTestNow(now()->addMinutes(5));
         Verity::draw($c->verity_ref);
+        Notification::assertNotSentTo($u, PrizeWon::class); // held until the result is published
+        app(DrawResults::class)->publish($c, null, 'auto');
         Notification::assertSentTo($u, PrizeWon::class);
     }
 
