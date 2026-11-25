@@ -10,7 +10,9 @@ class SalesChart extends ChartWidget
 {
     protected static ?int $sort = 3;
 
-    protected ?string $heading = 'Takings, Last 30 Days';
+    protected ?string $heading = 'Card Money In, Last 30 Days';
+
+    protected ?string $description = 'Card payments for tickets plus wallet top ups: the money Cashflows pays out. Tickets bought from wallet balances are not new money, so they are not counted.';
 
     protected int|string|array $columnSpan = 'full';
 
@@ -18,14 +20,13 @@ class SalesChart extends ChartWidget
 
     protected function getData(): array
     {
-        $tickets = Daily::takings(30);
-        $topUps = Daily::takings(30, 'deposit');
+        $days = Daily::cardIn(30);
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Ticket sales (£)',
-                    'data' => array_map(fn ($p) => round($p / 100, 2), array_values($tickets)),
+                    'label' => 'Card money in (£)',
+                    'data' => array_map(fn ($d) => round($d['pence'] / 100, 2), array_values($days)),
                     'borderColor' => '#ff2daa',
                     'backgroundColor' => 'rgba(255, 45, 170, 0.18)',
                     'fill' => true,
@@ -34,8 +35,8 @@ class SalesChart extends ChartWidget
                     'borderWidth' => 3,
                 ],
                 [
-                    'label' => 'Top ups (£)',
-                    'data' => array_map(fn ($p) => round($p / 100, 2), array_values($topUps)),
+                    'label' => 'After Cashflows fees (£)',
+                    'data' => array_map(fn ($d) => round(($d['pence'] - $d['fees']) / 100, 2), array_values($days)),
                     'borderColor' => '#22e6ff',
                     'backgroundColor' => 'rgba(34, 230, 255, 0.08)',
                     'fill' => true,
@@ -44,7 +45,7 @@ class SalesChart extends ChartWidget
                     'borderWidth' => 2,
                 ],
             ],
-            'labels' => array_map(fn ($d) => Carbon::parse($d)->format('j M'), array_keys($tickets)),
+            'labels' => array_map(fn ($d) => Carbon::parse($d)->format('j M'), array_keys($days)),
         ];
     }
 

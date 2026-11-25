@@ -8,12 +8,20 @@ use App\Filament\Pages\SiteSettings;
 use App\Filament\Pages\WinsReport;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\Pages\ViewUser;
+use App\Filament\Support\Daily;
+use App\Filament\Widgets\BigWins;
+use App\Filament\Widgets\MoneyStats;
+use App\Filament\Widgets\Overview;
+use App\Filament\Widgets\SalesChart;
+use App\Filament\Widgets\TopBuyers;
 use App\Models\Competition;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\AdminAlert;
+use App\Services\Bundles;
 use App\Services\Fulfilment;
+use App\Services\Orders;
 use App\Support\Reports;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
@@ -42,6 +50,7 @@ class AdminReportsTest extends TestCase
         $r = $this->actingAs($u)->postJson('/api/checkout', [
             'lines' => [['competitionId' => $c->id, 'quantity' => $quantity]], 'payWith' => 'wallet', 'useWallet' => true, 'requestId' => (string) Str::uuid(),
         ]);
+
         return $r->assertCreated();
     }
 
@@ -165,9 +174,9 @@ class AdminReportsTest extends TestCase
         Livewire::test(MoneyReport::class)->assertOk()->assertSee('£6.00')->assertSee('Winnings (owed)')
             ->callAction('csv')->assertFileDownloaded('money-'.now('Europe/London')->format('Y-m-d').'.csv');
         $this->actingAs($admin, 'web')->get('/admin')->assertOk();
-        Livewire::test(\App\Filament\Widgets\MoneyStats::class)->assertSee('Winnings Owed')->assertSee('£6.00')->assertSee('Big Wins Today');
-        Livewire::test(\App\Filament\Widgets\TopBuyers::class)->assertSee('Top Buyers Today')->assertSee($a->email)->assertSee('£2.00');
-        Livewire::test(\App\Filament\Widgets\BigWins::class)->assertSee('No big wins in the last 7 days');
+        Livewire::test(MoneyStats::class)->assertSee('Winnings Owed')->assertSee('£6.00')->assertSee('Big Wins Today');
+        Livewire::test(TopBuyers::class)->assertSee('Top Buyers Today')->assertSee($a->email)->assertSee('£2.00');
+        Livewire::test(BigWins::class)->assertSee('No big wins in the last 7 days');
         foreach (['wins-report', 'money-report', 'competition-report'] as $page) {
             $this->get('/admin/'.$page)->assertOk();
         }
@@ -189,5 +198,32 @@ class AdminReportsTest extends TestCase
         Livewire::test(CompetitionReport::class)->assertOk()->assertCanSeeTableRecords([$c])
             ->assertSee('£5.00')->assertSee('£1.00') // takings, takings less prizes won
             ->callTableAction('csv')->assertFileDownloaded('competitions-'.now('Europe/London')->format('Y-m-d').'.csv');
+    }
+
+    public function test_the_dashboard_shows_card_money_in_not_the_value_of_tickets(): void
+    {
+        // Owner, 25 Nov 2026: the dashboard's money is what Cashflows pays out, not tickets bought from balances.
+        $orders = app(Orders::class);
+        $c = $this->competition('draw', ['price_pence' => 25, 'max_tickets' => 1000, 'max_per_person' => 1000]);
+        $a = $this->player();
+        $this->topUp($a, 500); // credit already in the wallet: buying with it brings no new money in
+        $orders->checkout($a, [['competitionId' => $c->id, 'quantity' => 20]], 'wallet', true, null, (string) Str::uuid());
+        $b = $this->player();
+        $this->topUp($b, 100);
+        $r = $orders->checkout($b, [['competitionId' => $c->id, 'quantity' => 20]], 'card', true, null, (string) Str::uuid()); // £5: £1 wallet + £4 card
+        $this->gateway()->settle($r['order']->gateway_ref, 'paid');
+        $orders->syncWithGateway($r['order']);
+
+        $today = collect(Daily::cardIn(1))->last();
+        $this->assertSame(400, $today['pence'], 'only the card part is money in');
+        $this->assertSame(Bundles::cardFee(400), $today['fees']);
+        $this->assertSame(21, Bundles::cardFee(400)); // 1.6% + 15p
+        $this->assertSame(1000, (int) collect(Daily::takings(1))->last(), 'tickets bought, all ways of paying');
+
+        $this->actingAs($this->admin());
+        Filament::setCurrentPanel('admin');
+        Livewire::test(Overview::class)->assertSee('Card Money In Today')->assertSee('£4.00')->assertSee('£3.79 after Cashflows fees')
+            ->assertSee('£10.00 of tickets bought today')->assertDontSee('Ticket Sales Today');
+        Livewire::test(SalesChart::class)->assertSee('Card Money In, Last 30 Days');
     }
 }

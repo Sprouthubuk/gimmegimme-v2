@@ -27,9 +27,12 @@ class Overview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $sales = Daily::takings(7);
-        $today = (int) end($sales);
-        $week = array_sum($sales);
+        // Real money in (card payments and top ups), not the value of tickets: tickets bought from wallet balances,
+        // bonus or winnings brought no new money in.
+        $money = Daily::cardIn(7);
+        $today = end($money);
+        $week = array_sum(array_column($money, 'pence'));
+        $ticketsToday = (int) collect(Daily::takings(1))->last();
         $signUps = Daily::signUps(7);
         $players = User::query()->where('is_staff', false)->count();
         $open = Setting::bool('sales_open');
@@ -40,16 +43,16 @@ class Overview extends StatsOverviewWidget
         $todo = $attention + $withdrawals + $prizes + $messages;
 
         return [
-            Stat::make('Ticket Sales Today', Money::show($today))
-                ->description(Money::show($week).' in the last 7 days')
-                ->descriptionIcon(Heroicon::ArrowTrendingUp)
-                ->chart(array_values($sales))->color('primary'),
+            Stat::make('Card Money In Today', Money::show($today['pence']))
+                ->description('About '.Money::show($today['pence'] - $today['fees']).' after Cashflows fees · '.Money::show($week).' in 7 days')
+                ->descriptionIcon(Heroicon::Banknotes)
+                ->chart(array_column($money, 'pence'))->color('primary'),
             Stat::make('Players', number_format($players))
                 ->description('+'.array_sum($signUps).' joined this week')
                 ->descriptionIcon(Heroicon::UserPlus)
                 ->chart(array_values($signUps))->color('info'),
             Stat::make('Sales', $open ? 'Open' : 'Closed')
-                ->description($open ? 'Players can buy and play' : 'Turn on in Settings when ready')
+                ->description($open ? Money::show($ticketsToday).' of tickets bought today, all ways of paying' : 'Turn on in Settings when ready')
                 ->descriptionIcon($open ? Heroicon::CheckCircle : Heroicon::PauseCircle)
                 ->color($open ? 'success' : 'danger'),
             Stat::make('To Do', (string) $todo)
