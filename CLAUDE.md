@@ -37,6 +37,10 @@ Read before every task. If a request conflicts with this, stop and ask.
 - At fulfilment only WINNING entries are played through Verity (`Fulfilment::playAll`: entries with an
   `instant_ticket_id`), so an order's cost doesn't grow with its ticket count; never go back to
   `Verity::playGroup` per ticket at checkout (`tests/Feature/BigOrdersTest` holds a query budget).
+- Live draw screen (owner, 25 Nov 2026): `/live-draw/{slug}` (Admin → Competitions → Live Draw Screen) is shared on the
+  livestream. Verity still draws at the closing time from its committed drand round; the screen polls
+  `/api/competitions/{slug}/live-draw` and "Reveal Winner" only animates the winners Verity drew (masked names, as /winners).
+  Never let the screen pick, re-roll or reorder a winner, and never make it the way a draw happens.
 - End prizes: `end_prize_count` places. One person can win more than one, and every place is paid: there is no
   redraw for a repeat winner (owner, 22 Nov 2026; Terms 7.6). `end_prize_type` site_credit
   pays winnings once (reference `verity-winner:{id}`); physical opens a claim for a person.

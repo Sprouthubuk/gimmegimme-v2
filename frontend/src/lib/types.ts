@@ -428,3 +428,26 @@ export interface ApiError {
   errors?: Record<string, string[]>;
   code?: string;
 }
+
+/** GET /api/competitions/{slug}/live-draw: the live-stream draw screen. Verity draws; the screen only reveals. */
+export interface LiveDrawWinner {
+  place: number;
+  ticketNumber: number | null;
+  /** The same masked name as /winners ("Liam O."), or "Postal entrant". */
+  name: string;
+  prizeName: string;
+}
+export interface LiveDraw {
+  competition: CompetitionSummary;
+  /** not_open → open (selling) → waiting (closed, waiting for the drand round) → drawn; or void (no entries). */
+  phase: "not_open" | "open" | "waiting" | "drawn" | "void";
+  places: number;
+  prizeName: string;
+  /** The random number Verity committed to (null before one is planned, or off drand). */
+  beacon: { source: string; round: number; at: string | null } | null;
+  /** Empty until Verity has drawn. */
+  winners: LiveDrawWinner[];
+  drawnAt: string | null;
+  verifyUrl: string;
+  serverTime: string;
+}

@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Sprouthub\Verity\Models\Entry;
 use Sprouthub\Verity\Models\Winner;
+use Sprouthub\Verity\Services\Beacon;
 
 class PublicController extends Controller
 {
@@ -132,6 +133,56 @@ class PublicController extends Controller
             'ticketNumber' => $w->entry ? (int) $w->entry->number : null, 'at' => $w->created_at->toIso8601ZuluString(),
             'videoUrl' => null, 'verifyUrl' => '/verify/'.$w->competition->ref,
         ])->values()]);
+    }
+
+    /**
+     * The live-stream draw screen (/live-draw/{slug}): where the draw is up to and, once Verity has drawn it,
+     * the winners. Nothing here picks or changes a winner: Verity draws at the closing time from the drand round
+     * it committed to, and the screen only reveals what it drew. Names are the same masked ones as /winners.
+     */
+    public function liveDraw(string $slug): JsonResponse
+    {
+        $c = Competition::query()->published()->where('slug', $slug)->firstOrFail();
+        $v = $this->state()->verity($c);
+        abort_unless($v !== null && $c->hasDraw(), 404);
+        $winners = Winner::query()->where('competition_id', $v->id)->where('type', 'main')->where('status', 'active')
+            ->with('entry')->orderBy('position')->orderBy('id')->get();
+        $status = $this->state()->status($c);
+        $phase = match (true) {
+            $winners->isNotEmpty() => 'drawn',
+            $v->status === 'void' => 'void',
+            $status === 'scheduled' => 'not_open',
+            in_array($status, ['live', 'sold_out'], true) && $v->closes_at->isFuture() && $v->status !== 'closed' => 'open',
+            default => 'waiting',
+        };
+        $round = $v->beacon_round ?? $v->beacon_planned_round;
+        $at = null;
+        if ($round && $v->beacon_source === 'drand') {
+            try {
+                $at = Carbon::createFromTimestamp(app(Beacon::class)->roundTime((int) $round))->toIso8601ZuluString();
+            } catch (\Throwable) {
+                $at = null;
+            }
+        }
+        $names = $this->names($winners->pluck('owner_ref'));
+        $shown = PrizeNames::map($v->id);
+
+        return response()->json([
+            'competition' => $this->present()->summary($c),
+            'phase' => $phase,
+            'places' => $c->endPrizeCount(),
+            'prizeName' => (string) ($c->end_prize_name ?? $c->title),
+            'beacon' => $round ? ['source' => (string) $v->beacon_source, 'round' => (int) $round, 'at' => $at] : null,
+            'winners' => $winners->values()->map(fn (Winner $w, int $i) => [
+                'place' => (int) ($w->position ?? $i + 1),
+                'ticketNumber' => $w->entry ? (int) $w->entry->number : null,
+                'name' => $names[$w->owner_ref] ?? 'Postal entrant',
+                'prizeName' => (string) PrizeNames::shown($shown, $v->id, $w->prize_key, $w->prize_name),
+            ])->all(),
+            'drawnAt' => $v->drawn_at?->toIso8601ZuluString(),
+            'verifyUrl' => '/verify/'.$v->ref,
+            'serverTime' => now()->toIso8601ZuluString(),
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**
