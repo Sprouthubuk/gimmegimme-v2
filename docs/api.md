@@ -52,6 +52,12 @@ Prize boosts (owner, 23 Nov 2026): instant prizes Verity added after launch (spe
 addedPence, addedAt}` or null), listed in `/winning-numbers` (`addedAt` on each row, null for the launch prizes), and
 summarised per addition in `CompetitionDetail.boostRecord[]` (from Verity's own record).
 
+Live draw screen (owner, 25 Nov 2026): `GET /api/competitions/{slug}/live-draw` → `LiveDraw` (`no-store`), for
+`/live-draw/{slug}`, the page shared on a livestream. `phase` is `not_open`, `open`, `waiting` (closed, waiting for the
+drand round in `beacon`), `drawn` or `void`; `winners[]` (`place`, `ticketNumber`, masked `name`, `prizeName`) is empty
+until Verity has drawn. Nothing on the screen picks a winner: the "Reveal Winner" button only animates what Verity drew.
+404 for unpublished competitions and those without a draw.
+
 Shown prize names (owner, 23 Nov 2026): a prize can be shown on the site under a different name from the one Verity
 committed to (`prize_display_names`, `App\Support\PrizeNames`). Every `prizeName` / prize `name` in the API is the shown
 name; `?prize=` on `/winning-numbers` takes the shown name. `CompetitionDetail.renamedPrizes[]` (`{from, to}`, `from`

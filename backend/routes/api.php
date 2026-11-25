@@ -19,6 +19,7 @@ Route::middleware('throttle:api')->group(function () {
     Route::get('competitions', [PublicController::class, 'competitions']);
     Route::get('competitions/{slug}', [PublicController::class, 'competition']);
     Route::get('competitions/{slug}/winning-numbers', [PublicController::class, 'winningNumbers']);
+    Route::get('competitions/{slug}/live-draw', [PublicController::class, 'liveDraw']);
     Route::get('winners/instant', [PublicController::class, 'instantWinners']);
     Route::get('winners/draws', [PublicController::class, 'drawWinners']);
     Route::get('entry-lists', [PublicController::class, 'entryLists']);

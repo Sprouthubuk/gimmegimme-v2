@@ -209,6 +209,7 @@ class CompetitionResource extends Resource
                 self::publishAction(),
                 self::openNowAction(),
                 self::previewGameAction(),
+                self::liveDrawAction(),
             ]);
     }
 
@@ -258,6 +259,14 @@ class CompetitionResource extends Resource
         return Action::make('previewGame')->label('Preview Game')->icon(Heroicon::OutlinedPlay)->color('info')
             ->visible(fn (Competition $record) => $record->isInstant() && $record->game)
             ->url(fn (Competition $record) => '/demo/'.$record->game.'?'.http_build_query(['skin' => $record->skin ?? 'classic']), shouldOpenInNewTab: true);
+    }
+
+    /** The live-stream draw screen for a published draw: share that tab on the stream and press "Reveal Winner". */
+    public static function liveDrawAction(): Action
+    {
+        return Action::make('liveDraw')->label('Live Draw Screen')->icon(Heroicon::OutlinedVideoCamera)->color('danger')
+            ->visible(fn (Competition $record) => $record->verity_ref !== null && $record->hasDraw())
+            ->url(fn (Competition $record) => '/live-draw/'.$record->slug, shouldOpenInNewTab: true);
     }
 
     public static function getPages(): array

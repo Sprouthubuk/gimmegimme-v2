@@ -1,0 +1,79 @@
+---
+// The live-stream draw screen: share this tab on the stream and press "Reveal Winner" once Verity has drawn.
+// Not in the sitemap and noindex; anyone with the link sees the same thing (winners are public once drawn).
+import Layout from "../../layouts/Layout.astro";
+import LiveDrawScreen from "../../islands/LiveDrawScreen.tsx";
+import type { LiveDraw } from "../../lib/types";
+const { api } = Astro.locals;
+const slug = Astro.params.slug ?? "";
+let data: LiveDraw | null = null;
+try {
+  data = await api.get<LiveDraw>(`/api/competitions/${encodeURIComponent(slug)}/live-draw`);
+} catch {
+  data = null;
+}
+if (!data) return Astro.rewrite("/404");
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Layout title={`Live Draw: ${data.competition.title}`} description={`Watch the ${data.competition.title} draw live.`} noindex bare bottomNav={false} footer={false}>
+  <LiveDrawScreen client:load initial={data} slug={slug} />
+</Layout>
+
+<style is:global>
+  .ld{position:relative;min-height:100vh;overflow:hidden;display:flex;flex-direction:column;padding:clamp(12px,2.4vw,32px);gap:clamp(10px,2vw,24px);
+    background:radial-gradient(1200px 700px at 15% 10%,rgba(255,45,170,.22),transparent 60%),radial-gradient(1000px 700px at 90% 90%,rgba(34,230,255,.16),transparent 60%),#07050B;color:#fff;font-family:Nunito,system-ui,sans-serif}
+  .ld-top{display:flex;align-items:center;gap:12px}
+  .ld-logo{height:clamp(40px,6vw,72px);width:auto}
+  .ld-live{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;font-size:clamp(12px,1.4vw,18px);
+    border:1px solid rgba(255,45,170,.7);border-radius:999px;padding:8px 16px;box-shadow:inset 0 0 14px rgba(255,45,170,.35)}
+  .ld-live i{width:10px;height:10px;border-radius:50%;background:#FF2D55;box-shadow:0 0 10px #FF2D55;animation:ld-pulse 1.2s infinite}
+  .ld-full{min-width:44px;min-height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:20px;cursor:pointer}
+  .ld-main{flex:1;display:grid;gap:clamp(16px,3vw,48px);align-items:center;grid-template-columns:1fr}
+  @media (min-width:900px){.ld-main{grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr)}}
+  .ld-prize{display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+  .ld-img{width:min(100%,clamp(200px,32vw,460px));aspect-ratio:1;object-fit:cover;border-radius:24px;border:2px solid rgba(255,45,170,.6);box-shadow:0 0 40px rgba(255,45,170,.35)}
+  .ld-title{margin:0;font-size:clamp(26px,3.4vw,52px);line-height:1;text-shadow:0 0 18px rgba(255,45,170,.6)}
+  .ld-facts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;color:#B9AFC6;font-weight:800;font-size:clamp(14px,1.4vw,20px)}
+  .ld-facts b{color:#fff}
+  .ld-stage{position:relative;min-height:clamp(260px,38vw,520px);display:flex;align-items:center;justify-content:center;border-radius:28px;padding:clamp(16px,3vw,40px);
+    background:rgba(16,10,24,.75);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 0 60px rgba(255,45,170,.12)}
+  .ld-msg{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1.6vw,22px);text-align:center;width:100%}
+  .ld-msg p{margin:0;color:#B9AFC6;font-weight:700;font-size:clamp(15px,1.6vw,22px)}
+  .ld-kicker{font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#22E6FF;font-size:clamp(13px,1.5vw,20px)}
+  .ld-big{font-size:clamp(40px,6vw,96px);line-height:1;color:#FFE3F4;text-shadow:0 0 10px #FF2DAA,0 0 30px rgba(255,45,170,.7)}
+  .ld-clock{display:flex;gap:clamp(8px,1.4vw,20px);font-size:clamp(44px,7vw,112px);line-height:1;color:#FFFBD0;text-shadow:0 0 10px #FFF23A,0 0 30px rgba(255,242,58,.5)}
+  .ld-clock small{font-size:.35em;margin-left:2px;color:#B9AFC6;text-shadow:none}
+  .ld-small{font-size:clamp(12px,1.2vw,16px)!important;color:#8E84A0!important}
+  .ld-dots i{font-style:normal;animation:ld-blink 1.2s infinite}.ld-dots i:nth-child(2){animation-delay:.2s}.ld-dots i:nth-child(3){animation-delay:.4s}
+  .ld-count{font-size:clamp(120px,18vw,260px);line-height:1;color:#FFFBD0;text-shadow:0 0 16px #FFF23A,0 0 50px rgba(255,242,58,.6);animation:ld-pop .8s ease-out both}
+  .ld-ticket{display:flex;align-items:center;gap:clamp(4px,.8vw,10px);font-size:clamp(56px,9vw,150px);line-height:1}
+  .ld-hash{color:#FF5CC0;text-shadow:0 0 14px rgba(255,45,170,.8);margin-right:4px}
+  .ld-reel{display:inline-block;height:1.15em;width:.78em;overflow:hidden;border-radius:14px;background:linear-gradient(#1a1024,#0d0814 45%,#0d0814 55%,#1a1024);
+    border:2px solid rgba(255,242,58,.55);box-shadow:0 0 18px rgba(255,242,58,.25),inset 0 0 14px rgba(0,0,0,.6);color:#FFFBD0;text-align:center}
+  .ld-q{line-height:1.15em;color:#8E84A0}
+  .ld-strip{display:flex;flex-direction:column;will-change:transform}
+  .ld-dg{display:block;height:1.15em;line-height:1.15em}
+  .ld-won .ld-reel{border-color:#FFF23A;box-shadow:0 0 28px rgba(255,242,58,.7),inset 0 0 14px rgba(0,0,0,.6);animation:ld-glow 1.4s ease-in-out infinite alternate}
+  .ld-winner{display:flex;flex-direction:column;align-items:center;gap:6px;animation:ld-rise .7s cubic-bezier(.2,.9,.2,1.2) both}
+  .ld-name{font-size:clamp(44px,6.4vw,104px);line-height:1;color:#FFE3F4;text-shadow:0 0 10px #FF2DAA,0 0 34px rgba(255,45,170,.8)}
+  .ld-wins{font-size:clamp(18px,2vw,30px);font-weight:800;color:#B9AFC6}.ld-wins b{color:#fff}
+  .ld-btn{min-height:64px;padding:14px clamp(24px,3vw,44px);border:0;border-radius:999px;cursor:pointer;font-size:clamp(22px,2.4vw,34px);color:#07050B;
+    background:linear-gradient(180deg,#FFF784,#FFE600);box-shadow:0 0 0 3px rgba(255,242,58,.3),0 0 34px rgba(255,242,58,.55);animation:ld-breathe 1.8s ease-in-out infinite}
+  .ld-btn:focus-visible{outline:3px solid #22E6FF;outline-offset:4px}
+  .ld-btn-2{background:linear-gradient(180deg,#7CF3FF,#22E6FF);box-shadow:0 0 0 3px rgba(34,230,255,.3),0 0 30px rgba(34,230,255,.5);animation:none}
+  .ld-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;color:#B9AFC6;font-weight:800;font-size:clamp(14px,1.4vw,20px)}
+  .ld-list b{color:#FFF23A}
+  .ld-foot{text-align:center;color:#8E84A0;font-weight:700;font-size:clamp(12px,1.1vw,16px)}
+  .ld-foot b{color:#B9AFC6}
+  .ld-confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+  .ld-confetti i{position:absolute;top:-24px;border-radius:2px;animation-name:ld-fall;animation-timing-function:cubic-bezier(.3,.6,.5,1);animation-fill-mode:both}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @keyframes ld-fall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(110vh) rotate(720deg);opacity:.9}}
+  @keyframes ld-pop{0%{transform:scale(2.4);opacity:0}40%{transform:scale(1);opacity:1}100%{transform:scale(.9);opacity:0}}
+  @keyframes ld-rise{0%{transform:translateY(30px) scale(.9);opacity:0}100%{transform:none;opacity:1}}
+  @keyframes ld-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  @keyframes ld-glow{from{box-shadow:0 0 18px rgba(255,242,58,.5)}to{box-shadow:0 0 40px rgba(255,242,58,.9)}}
+  @keyframes ld-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes ld-blink{0%,100%{opacity:.2}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.ld *{animation:none!important;transition:none!important}}
+</style>
