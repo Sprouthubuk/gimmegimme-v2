@@ -3,11 +3,13 @@
 namespace App\Http\Presenters;
 
 use App\Models\Competition;
+use App\Models\IdCheck;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\User;
 use App\Services\CompetitionState;
+use App\Services\DrawResults;
 use App\Services\PlayCheck;
 use App\Services\Wallet;
 use App\Support\PrizeNames;
@@ -121,7 +123,7 @@ final class AccountPresenter
         $toPlay = $c->isInstant() && ! $watched ? count($all) : 0;
         $wonPence = array_sum(array_column($wins, 'value'));
         $status = $this->state->status($c);
-        $drawWin = $c->hasDraw() && in_array($status, ['drawn', 'ended'], true)
+        $drawWin = $c->hasDraw() && in_array($status, ['drawn', 'ended'], true) && DrawResults::published($c)
             && Winner::query()->where('owner_ref', $u->ownerRef())->where('type', 'main')->where('status', 'active')
                 ->whereHas('competition', fn ($q) => $q->where('ref', $c->verity_ref))->exists();
 
@@ -229,12 +231,12 @@ final class AccountPresenter
     }
 
     /** Where the player's ID check stands: verified, pending (we're looking), rejected (send again) or needed. */
-    private function idCheck(\App\Models\User $u): array
+    private function idCheck(User $u): array
     {
         if ($u->id_verified_at) {
             return ['idCheck' => 'verified', 'idCheckNote' => null];
         }
-        $last = \App\Models\IdCheck::query()->where('user_id', $u->id)->latest()->first();
+        $last = IdCheck::query()->where('user_id', $u->id)->latest()->first();
 
         return match ($last?->status) {
             'pending' => ['idCheck' => 'pending', 'idCheckNote' => null],

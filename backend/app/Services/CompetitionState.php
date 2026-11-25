@@ -34,6 +34,10 @@ final class CompetitionState
         if (! $v || $v->status === 'draft' || ($c->opens_at && $c->opens_at->isFuture())) {
             return 'scheduled';
         }
+        // A drawn result held for the live reveal still looks closed, so nothing gives the result away (DrawResults).
+        if ($v->status === 'drawn' && $c->hasDraw() && $c->result_published_at === null) {
+            return 'closed';
+        }
         if ($c->ended_at !== null || $v->status === 'void') {
             return 'ended';
         }

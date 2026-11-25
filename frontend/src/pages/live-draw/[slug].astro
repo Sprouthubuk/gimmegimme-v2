@@ -1,22 +1,25 @@
 ---
 // The live-stream draw screen: share this tab on the stream and press "Reveal Winner" once Verity has drawn.
-// Not in the sitemap and noindex; anyone with the link sees the same thing (winners are public once drawn).
+// Not in the sitemap and noindex. Opened from the admin it carries a presenter key (?key=…): only that screen sees a
+// result held for the live reveal, and can publish it. Without the key, a held result shows as "drawing".
 import Layout from "../../layouts/Layout.astro";
 import LiveDrawScreen from "../../islands/LiveDrawScreen.tsx";
 import type { LiveDraw } from "../../lib/types";
 const { api } = Astro.locals;
 const slug = Astro.params.slug ?? "";
+const key = (Astro.url.searchParams.get("key") ?? "").slice(0, 500);
 let data: LiveDraw | null = null;
 try {
-  data = await api.get<LiveDraw>(`/api/competitions/${encodeURIComponent(slug)}/live-draw`);
+  data = await api.get<LiveDraw>(`/api/competitions/${encodeURIComponent(slug)}/live-draw${key ? `?key=${encodeURIComponent(key)}` : ""}`);
 } catch {
   data = null;
 }
 if (!data) return Astro.rewrite("/404");
 Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("Referrer-Policy", "no-referrer");
 ---
 <Layout title={`Live Draw: ${data.competition.title}`} description={`Watch the ${data.competition.title} draw live.`} noindex bare bottomNav={false} footer={false}>
-  <LiveDrawScreen client:load initial={data} slug={slug} />
+  <LiveDrawScreen client:load initial={data} slug={slug} presenterKey={data.presenter ? key : null} />
 </Layout>
 
 <style is:global>
@@ -63,6 +66,11 @@ Astro.response.headers.set("Cache-Control", "no-store");
   .ld-btn-2{background:linear-gradient(180deg,#7CF3FF,#22E6FF);box-shadow:0 0 0 3px rgba(34,230,255,.3),0 0 30px rgba(34,230,255,.5);animation:none}
   .ld-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;color:#B9AFC6;font-weight:800;font-size:clamp(14px,1.4vw,20px)}
   .ld-list b{color:#FFF23A}
+  .ld-pres{font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#07050B;background:#22E6FF;border-radius:999px;padding:6px 12px}
+  .ld-pub{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:6px}
+  .ld-pub .ld-btn{animation:none}
+  .ld-pub-ok{font-weight:900;color:#22E6FF;font-size:clamp(16px,1.6vw,22px)}
+  .ld-pub-err{font-weight:800;color:#FF5CC0}
   .ld-foot{text-align:center;color:#8E84A0;font-weight:700;font-size:clamp(12px,1.1vw,16px)}
   .ld-foot b{color:#B9AFC6}
   .ld-confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}

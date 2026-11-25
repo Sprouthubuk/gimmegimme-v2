@@ -11,9 +11,11 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
+use App\Services\DrawResults;
 use App\Services\Fulfilment;
 use App\Services\GimmeBoxPacker;
 use App\Services\Settings;
+use App\Support\PresenterKey;
 use App\Support\PrizeNames;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -125,7 +127,10 @@ class PublicController extends Controller
     public function drawWinners(): JsonResponse
     {
         $hosts = Competition::query()->published()->get(['id', 'verity_ref', 'title'])->keyBy('verity_ref');
-        $rows = Winner::query()->where('type', 'main')->where('status', 'active')->with(['competition', 'entry'])->orderByDesc('id')->limit(100)->get();
+        // Results held for the live reveal stay off the list until published (DrawResults).
+        $held = DrawResults::heldRefs();
+        $rows = Winner::query()->where('type', 'main')->where('status', 'active')->whereHas('competition', fn ($q) => $q->whereNotIn('ref', $held))
+            ->with(['competition', 'entry'])->orderByDesc('id')->limit(100)->get();
 
         return response()->json(['data' => $rows->map(fn (Winner $w) => [
             'id' => (string) $w->id, 'name' => $this->publicName($w->owner_ref), 'prizeName' => PrizeNames::forWinner($w),
@@ -140,13 +145,17 @@ class PublicController extends Controller
      * the winners. Nothing here picks or changes a winner: Verity draws at the closing time from the drand round
      * it committed to, and the screen only reveals what it drew. Names are the same masked ones as /winners.
      */
-    public function liveDraw(string $slug): JsonResponse
+    public function liveDraw(Request $r, string $slug): JsonResponse
     {
         $c = Competition::query()->published()->where('slug', $slug)->firstOrFail();
         $v = $this->state()->verity($c);
         abort_unless($v !== null && $c->hasDraw(), 404);
-        $winners = Winner::query()->where('competition_id', $v->id)->where('type', 'main')->where('status', 'active')
-            ->with('entry')->orderBy('position')->orderBy('id')->get();
+        // A held result is shown only to the presenter's screen (the admin's key); everyone else sees "drawing".
+        $presenter = PresenterKey::admin($r->input('key'), $c) !== null;
+        $published = DrawResults::published($c);
+        $winners = ($published || $presenter)
+            ? Winner::query()->where('competition_id', $v->id)->where('type', 'main')->where('status', 'active')->with('entry')->orderBy('position')->orderBy('id')->get()
+            : collect();
         $status = $this->state()->status($c);
         $phase = match (true) {
             $winners->isNotEmpty() => 'drawn',
@@ -179,10 +188,26 @@ class PublicController extends Controller
                 'name' => $names[$w->owner_ref] ?? 'Postal entrant',
                 'prizeName' => (string) PrizeNames::shown($shown, $v->id, $w->prize_key, $w->prize_name),
             ])->all(),
-            'drawnAt' => $v->drawn_at?->toIso8601ZuluString(),
+            'drawnAt' => $winners->isNotEmpty() ? $v->drawn_at?->toIso8601ZuluString() : null,
+            'published' => $published && $c->result_published_at !== null,
+            'presenter' => $presenter,
             'verifyUrl' => '/verify/'.$v->ref,
             'serverTime' => now()->toIso8601ZuluString(),
         ])->header('Cache-Control', 'no-store');
+    }
+
+    /** The presenter's "Publish Results": shows the result everywhere and tells and pays the winners (DrawResults). */
+    public function publishLiveDraw(Request $r, string $slug): JsonResponse
+    {
+        $c = Competition::query()->published()->where('slug', $slug)->firstOrFail();
+        $admin = PresenterKey::admin($r->input('key'), $c);
+        abort_if($admin === null, 403, 'This screen can’t publish results. Open it from the admin.');
+        if (! DrawResults::published($c)) {
+            abort_unless(DrawResults::held($c), 409, 'There’s no drawn result to publish yet.');
+            app(DrawResults::class)->publish($c, $admin, 'screen');
+        }
+
+        return $this->liveDraw($r, $slug);
     }
 
     /**

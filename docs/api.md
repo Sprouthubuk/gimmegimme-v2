@@ -58,6 +58,14 @@ drand round in `beacon`), `drawn` or `void`; `winners[]` (`place`, `ticketNumber
 until Verity has drawn. Nothing on the screen picks a winner: the "Reveal Winner" button only animates what Verity drew.
 404 for unpublished competitions and those without a draw.
 
+Draw results are held until published (owner, 25 Nov 2026; `App\Services\DrawResults`): after Verity draws, the result is
+left out of `/winners/draws`, the competition shows `closed`, the account doesn't show the win, Verity's record answers
+423, and the winner isn't emailed or paid, until it is published. Only a request with the presenter `?key=` (made by the
+admin's Live Draw Screen button, `App\Support\PresenterKey`, two days) gets `presenter: true` and the held winners.
+`POST /api/competitions/{slug}/live-draw/publish` `{key}` publishes (403 without a valid key, 409 before the draw) and
+returns the `LiveDraw`; the admin's "Publish Result" does the same, and `competitions:publish-draw-results` publishes
+anything held longer than `DrawResults::HOLD_MAX_MINUTES` (180). `published` is true once out.
+
 Shown prize names (owner, 23 Nov 2026): a prize can be shown on the site under a different name from the one Verity
 committed to (`prize_display_names`, `App\Support\PrizeNames`). Every `prizeName` / prize `name` in the API is the shown
 name; `?prize=` on `/winning-numbers` takes the shown name. `CompetitionDetail.renamedPrizes[]` (`{from, to}`, `from`

@@ -272,15 +272,33 @@ function winningNumbers(c) {
     return { ticket: next(), prizeName: name, valuePence, type: "site_credit", won, winnerName: won ? "Emmie A." : null, wonAt: won ? iso(now - (k + 1) * 36e5) : null, addedAt: null };
   })).concat(c.boost ? Array.from({ length: 4 }, () => ({ ticket: next(), prizeName: "Mega Gem", valuePence: 25000, type: "site_credit", won: false, winnerName: null, wonAt: null, addedAt: c.boost.addedAt })) : []).sort((a, b) => b.valuePence - a.valuePence || a.ticket - b.ticket);
 }
-// The live draw screen: the Ninja draw has been drawn (two places), the others are on sale.
-route("GET", "/api/competitions/:slug/live-draw", (req, res, { params }) => {
+// The live draw screen: the Ninja draw is drawn and published (two places); the £250 cash draw is drawn but held
+// for the live reveal (only a presenter key sees it, and POST …/publish publishes it); the others are on sale.
+const heldPublished = new Set();
+function liveDraw(c, key) {
+  const presenter = typeof key === "string" && key.length > 0;
+  const published = c.slug === "ninja-possiblecooker" || heldPublished.has(c.slug);
+  const drawn = published || c.slug === "250-tax-free-cash";
+  const show = drawn && (published || presenter);
+  return { competition: c, phase: show ? "drawn" : drawn ? "waiting" : "open", places: c.slug === "ninja-possiblecooker" ? 2 : 1, prizeName: c.title,
+    beacon: { source: "drand", round: 23456789, at: c.closesAt },
+    winners: !show ? [] : c.slug === "ninja-possiblecooker"
+      ? [{ place: 1, ticketNumber: 4271, name: "Natalie B.", prizeName: c.title }, { place: 2, ticketNumber: 128, name: "Postal entrant", prizeName: c.title }]
+      : [{ place: 1, ticketNumber: 777, name: "Sam P.", prizeName: c.title }],
+    drawnAt: show ? iso(now - 60000) : null, published, presenter, verifyUrl: `/verify/VTY-${c.id.slice(2, 8).toUpperCase()}`, serverTime: iso(Date.now()) };
+}
+route("GET", "/api/competitions/:slug/live-draw", (req, res, { params, query }) => {
   const c = bySlug.get(params.slug);
   if (!c || c.type !== "draw") return fail(res, 404, "Not found");
-  const drawn = c.slug === "ninja-possiblecooker";
-  send(res, 200, { competition: c, phase: drawn ? "drawn" : "open", places: drawn ? 2 : 1, prizeName: c.title,
-    beacon: { source: "drand", round: 23456789, at: c.closesAt },
-    winners: drawn ? [{ place: 1, ticketNumber: 4271, name: "Natalie B.", prizeName: c.title }, { place: 2, ticketNumber: 128, name: "Postal entrant", prizeName: c.title }] : [],
-    drawnAt: drawn ? iso(now - 60000) : null, verifyUrl: `/verify/VTY-${c.id.slice(2, 8).toUpperCase()}`, serverTime: iso(Date.now()) });
+  send(res, 200, liveDraw(c, query.get("key")));
+});
+route("POST", "/api/competitions/:slug/live-draw/publish", async (req, res, { params }) => {
+  const body = await readJson(req);
+  const c = bySlug.get(params.slug);
+  if (!c || c.type !== "draw") return fail(res, 404, "Not found");
+  if (!body?.key) return fail(res, 403, "This screen can’t publish results. Open it from the admin.");
+  heldPublished.add(c.slug);
+  send(res, 200, liveDraw(c, body.key));
 });
 route("GET", "/api/competitions/:slug/winning-numbers", (req, res, { params, query }) => {
   const c = bySlug.get(params.slug);
