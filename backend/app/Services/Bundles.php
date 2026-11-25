@@ -59,6 +59,12 @@ final class Bundles
         ], $this->available($c));
     }
 
+    /** What Cashflows keeps from one card payment: 1.6% + 15p (also used for the dashboard's "after fees"). */
+    public static function cardFee(int $pence): int
+    {
+        return $pence > 0 ? (int) round($pence * 0.016) + 15 : 0;
+    }
+
     /**
      * The worst-case money picture for the admin (all tickets sold in the biggest bundle, one order
      * each). Cashflows takes 1.6% + 15p per order.
@@ -68,7 +74,7 @@ final class Bundles
     public static function margin(int $pricePence, int $maxTickets, ?int $prizeCostPence, array $tiers): array
     {
         $singles = $pricePence * $maxTickets;
-        $fees = fn (int $revenue, int $orders) => (int) round($revenue * 0.016) + 15 * $orders;
+        $fees = fn (int $revenue, int $orders) => (int) round($revenue * 0.016) + 15 * $orders; // as cardFee(), over many orders
         $biggest = collect($tiers)->sortByDesc(fn ($t) => $t['paid'] + $t['free'])->first();
         if ($biggest) {
             $size = $biggest['paid'] + $biggest['free'];

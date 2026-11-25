@@ -4,6 +4,7 @@ namespace App\Filament\Support;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Bundles;
 use Illuminate\Support\Carbon;
 
 /** Per-day totals for the dashboard, by UK day. Small sums done in PHP so they work on any database. */
@@ -19,6 +20,28 @@ final class Daily
                 $k = $o->paid_at->copy()->setTimezone('Europe/London')->format('Y-m-d');
                 if (isset($out[$k])) {
                     $out[$k] += (int) $o->total_pence;
+                }
+            });
+
+        return $out;
+    }
+
+    /**
+     * Real money in per UK day: card payments on paid orders (the card part of ticket orders, and wallet top ups),
+     * with Cashflows' fees on each payment. Refunded and charged-back orders aren't paid, so they drop out.
+     *
+     * @return array<string, array{pence: int, fees: int}> oldest first
+     */
+    public static function cardIn(int $days): array
+    {
+        $out = array_map(fn () => ['pence' => 0, 'fees' => 0], self::empty($days));
+        Order::query()->where('status', 'paid')->where('card_pence', '>', 0)->where('paid_at', '>=', self::from($days))
+            ->get(['paid_at', 'card_pence'])
+            ->each(function (Order $o) use (&$out) {
+                $k = $o->paid_at->copy()->setTimezone('Europe/London')->format('Y-m-d');
+                if (isset($out[$k])) {
+                    $out[$k]['pence'] += (int) $o->card_pence;
+                    $out[$k]['fees'] += Bundles::cardFee((int) $o->card_pence);
                 }
             });
 
