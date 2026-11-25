@@ -44,7 +44,7 @@ class WalletTest extends TestCase
         $this->assertSame(1000, $this->wallet()->total($u));
     }
 
-    public function test_spending_takes_deposit_then_bonus_then_winnings_and_bonus_pays_at_most_half(): void
+    public function test_spending_takes_deposit_then_bonus_then_winnings_and_bonus_can_pay_the_whole_basket(): void
     {
         $u = $this->player();
         $this->topUp($u, 300);
@@ -53,22 +53,30 @@ class WalletTest extends TestCase
         $order = Order::query()->create(['number' => 'GG-TEST0001', 'user_id' => $u->id, 'order_type' => 'tickets', 'status' => 'created', 'total_pence' => 1000, 'card_pence' => 0]);
         $this->wallet()->spendForOrder($order, 1000, 1000);
         $order->refresh();
-        $this->assertSame([300, 500, 200], [$order->paid_deposit_pence, $order->paid_bonus_pence, $order->paid_winnings_pence]);
-        $this->assertSame(['deposit' => 0, 'bonus' => 4500, 'winnings' => 4800], $this->wallet()->balances($u));
+        // No half-basket cap (owner, 26 Nov 2026): bonus covers everything the deposit doesn't, winnings stay untouched.
+        $this->assertSame([300, 700, 0], [$order->paid_deposit_pence, $order->paid_bonus_pence, $order->paid_winnings_pence]);
+        $this->assertSame(['deposit' => 0, 'bonus' => 4300, 'winnings' => 5000], $this->wallet()->balances($u));
         $this->assertSame(1000, $this->wallet()->spendable($u, 1000));
+
+        $bonusOnly = $this->player();
+        $this->topUp($bonusOnly, 1000, 'bonus');
+        $this->assertSame(1000, $this->wallet()->spendable($bonusOnly, 1000));
+        $whole = Order::query()->create(['number' => 'GG-TEST0009', 'user_id' => $bonusOnly->id, 'order_type' => 'tickets', 'status' => 'created', 'total_pence' => 1000, 'card_pence' => 0]);
+        $this->wallet()->spendForOrder($whole, 1000, 1000);
+        $this->assertSame(1000, $whole->refresh()->paid_bonus_pence);
     }
 
     public function test_spending_is_all_or_nothing(): void
     {
         $u = $this->player();
         $this->topUp($u, 400);
-        $this->topUp($u, 1000, 'bonus'); // only half a £10 basket can be bonus
+        $this->topUp($u, 500, 'bonus'); // £9 between them: not enough for £10
         $order = Order::query()->create(['number' => 'GG-TEST0002', 'user_id' => $u->id, 'order_type' => 'tickets', 'status' => 'created', 'total_pence' => 1000, 'card_pence' => 0]);
         $this->expectException(RefusedException::class);
         try {
             $this->wallet()->spendForOrder($order, 1000, 1000);
         } finally {
-            $this->assertSame(1400, $this->wallet()->total($u));
+            $this->assertSame(900, $this->wallet()->total($u));
         }
     }
 

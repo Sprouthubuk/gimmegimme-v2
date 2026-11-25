@@ -109,9 +109,9 @@ class MetaTrackingTest extends TestCase
     public function test_purchase_value_is_real_money_only_never_bonus_credit(): void
     {
         $u = $this->player();
-        $this->topUp($u, 5000, 'bonus');
+        $this->topUp($u, 200, 'bonus');
         $this->topUp($u, 100);
-        // 20 tickets at 25p: £1 deposit, then bonus up to half the basket, the rest by card.
+        // 20 tickets at 25p: £1 deposit, then £2 bonus, the rest by card.
         $number = $this->buy($u, true, 'card', 20, true)->json('order.number');
         $order = Order::query()->where('number', $number)->firstOrFail();
         $this->gateway()->settle($order->gateway_ref, 'paid');
@@ -130,7 +130,7 @@ class MetaTrackingTest extends TestCase
         $u = $this->player();
         $this->topUp($u, 5000, 'bonus');
         $this->topUp($u, 5000, 'deposit');
-        // Bonus pays at most half, so build the row by hand for an order whose real money is 0.
+        // Build the row by hand for an order whose real money is 0.
         $o = Order::query()->create(['number' => 'GG-TEST1', 'user_id' => $u->id, 'order_type' => 'tickets', 'status' => 'paid', 'total_pence' => 100,
             'card_pence' => 0, 'wallet_pence' => 100, 'paid_bonus_pence' => 100, 'paid_at' => now()]);
         MetaEvent::query()->create(['event_name' => 'Purchase', 'event_id' => $o->number, 'user_id' => $u->id, 'order_id' => $o->id, 'status' => 'ready', 'context' => []]);

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * The player's wallet: three balances (deposit, bonus, winnings), each the sum of append-only
  * ledger rows. Spending takes deposit, then bonus, then winnings, under a per-player lock.
- * Bonus can pay for at most half of any basket. Only winnings can be withdrawn.
+ * Bonus can pay for the whole of a basket (owner, 26 Nov 2026: no half-basket cap). Only winnings can be withdrawn.
  */
 final class Wallet
 {
@@ -34,12 +34,12 @@ final class Wallet
         return array_sum($this->balances($user));
     }
 
-    /** What the wallet could pay towards a basket of $basketPence (bonus capped at half the basket). */
+    /** What the wallet could pay towards a basket of $basketPence: every balance counts in full. */
     public function spendable(User $user, int $basketPence): int
     {
         $b = $this->balances($user);
 
-        return min($basketPence, $b['deposit'] + $b['winnings'] + min($b['bonus'], intdiv($basketPence, 2)));
+        return min($basketPence, $b['deposit'] + $b['bonus'] + $b['winnings']);
     }
 
     /**
@@ -82,7 +82,7 @@ final class Wallet
         $this->lock($order->user_id);
         $b = $this->balances($order->user_id);
         $fromDeposit = min($b['deposit'], $pence);
-        $fromBonus = min($b['bonus'], intdiv($basketPence, 2), $pence - $fromDeposit);
+        $fromBonus = min($b['bonus'], $pence - $fromDeposit);
         $fromWinnings = min($b['winnings'], $pence - $fromDeposit - $fromBonus);
         if ($fromDeposit + $fromBonus + $fromWinnings !== $pence) {
             throw new RefusedException("Your wallet doesn't cover this order.", 'not_enough_wallet');

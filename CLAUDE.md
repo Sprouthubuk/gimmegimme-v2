@@ -19,7 +19,7 @@ Read before every task. If a request conflicts with this, stop and ask.
 ## Money and fairness (carried over from v1 — non-negotiable)
 - Money is whole pence. Prices, totals and outcomes come only from the server.
 - Wallet: deposit / bonus / winnings, an append-only ledger; spend deposit → bonus → winnings;
-  bonus pays at most 50% of a basket. There is no sign-up / deposit-match bonus (removed for launch); the bonus
+  bonus can pay for a whole basket (no 50% cap: owner, 26 Nov 2026). There is no sign-up / deposit-match bonus (removed for launch); the bonus
   bucket holds credit an admin adds and bonus brought over from the old site, until it expires.
 - Wallet part is taken at checkout before any ticket is issued; given back if the card fails.
 - Card payments are confirmed only by asking Cashflows about the job reference stored on the order,
