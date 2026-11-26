@@ -227,6 +227,7 @@ refund within `referral_clawback_days` takes back unused rewards. `/r/{code}` on
 | POST | `/api/me/self-exclude` | `{ months }` → `Limits` (instant) |
 | PATCH | `/api/me/profile` | `{ phone }` → `Me` (name, date of birth fill-once) |
 | PATCH | `/api/me/address` | `{ line1, line2, city, postcode }` → `Me` (fill-once) |
+| PATCH | `/api/me/date-of-birth` | `{ dateOfBirth: "YYYY-MM-DD" }` → `Me`; only when none is on file (fill-once, `422` `fill_once` after), 18 or over (`422` on `dateOfBirth`) |
 | PATCH | `/api/me/preferences` | `{ email, sms, winNotifications }` → `Me` |
 | POST | `/api/me/password` | `{ currentPassword, password }` → `204` |
 | POST | `/api/me/deposits` | `{ amountPence }` → `{ redirectUrl, orderNumber }` (min £5, max setting, play check) |

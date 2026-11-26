@@ -28,7 +28,10 @@ export default function SettingsForms({ me }: { me: Me }) {
   const [addr, setAddr] = useState({ line1: me.address.line1 ?? "", line2: me.address.line2 ?? "", city: me.address.city ?? "", postcode: me.address.postcode ?? "" });
   const [mk, setMk] = useState(me.marketing);
   const [pw, setPw] = useState({ current: "", password: "" });
-  const details = useSave(), address = useSave(), prefs = useSave(), security = useSave();
+  const details = useSave(), address = useSave(), prefs = useSave(), security = useSave(), birth = useSave();
+  const [dob, setDob] = useState("");
+  const [dobSet, setDobSet] = useState(me.dobVerified);
+  const latestDob = new Date(Date.now() - 18 * 365.25 * 864e5).toISOString().slice(0, 10);
   const addressLocked = !!me.address.line1;
 
   return (
@@ -38,11 +41,20 @@ export default function SettingsForms({ me }: { me: Me }) {
         <div className="r2"><div className="field"><label htmlFor="fn">First name</label><input className="inp" id="fn" value={me.firstName} disabled /></div><div className="field"><label htmlFor="ln">Last name</label><input className="inp" id="ln" value={me.lastName} disabled /></div></div>
         <div className="field"><label htmlFor="em">Email</label><input className="inp" id="em" type="email" value={me.email} disabled /></div>
         <div className="field"><label htmlFor="ph">Mobile</label><input className="inp" id="ph" type="tel" autoComplete="tel" placeholder="07…" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-        <div className="field"><span className="lbl">Date of birth</span><div style={{ fontWeight: 700, padding: "6px 0" }}>{me.dobVerified ? "Confirmed" : "Not set"}</div><span className="hint">Contact us to change your name, email or date of birth.</span></div>
+        <div className="field"><span className="lbl">Date of birth</span><div style={{ fontWeight: 700, padding: "6px 0" }}>{dobSet ? "Confirmed" : "Not set yet: add it below"}</div><span className="hint">Contact us to change your name, email or date of birth.</span></div>
         {details.note}
         <button type="submit" className="btn btn-y gg-cta" disabled={details.busy}>Save Changes</button>
       </form>
       <div className="stack g16">
+        {!dobSet && (
+          <form className="card card-hot card-p stack g12" data-testid="dob-form" onSubmit={async (e: FormEvent) => { e.preventDefault(); if (await birth.save("/api/me/date-of-birth", { dateOfBirth: dob })) { setDobSet(true); window.setTimeout(() => window.location.reload(), 900); } }}>
+            <h2 className="h3">Add Your Date Of Birth</h2>
+            <p className="hint" style={{ margin: 0 }}>You need to be 18 or over to play, so we need this before you can enter. It can only be set once.</p>
+            <div className="field"><label htmlFor="dob">Date of birth</label><input className="inp" id="dob" type="date" autoComplete="bday" required max={latestDob} min="1900-01-02" value={dob} onChange={(e) => setDob(e.target.value)} /></div>
+            {birth.note}
+            <button type="submit" className="btn btn-y gg-cta" disabled={birth.busy || !dob}>Save Date Of Birth</button>
+          </form>
+        )}
         <form className="card card-p stack g12" onSubmit={(e: FormEvent) => { e.preventDefault(); address.save("/api/me/address", addr); }}>
           <h2 className="h3">Address</h2>
           <p className="hint" style={{ margin: 0 }}>{addressLocked ? "Contact us to change your address." : "Needed for prize delivery and withdrawals. It can only be set once."}</p>

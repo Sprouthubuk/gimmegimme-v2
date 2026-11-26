@@ -59,6 +59,7 @@ Route::middleware('throttle:api')->group(function () {
         Route::post('me/self-exclude', [AccountController::class, 'selfExclude']);
         Route::patch('me/profile', [AccountController::class, 'profile']);
         Route::patch('me/address', [AccountController::class, 'address']);
+        Route::patch('me/date-of-birth', [AccountController::class, 'dateOfBirth'])->middleware('throttle:10,1');
         Route::patch('me/preferences', [AccountController::class, 'preferences']);
         Route::post('me/password', [AuthController::class, 'password'])->middleware('throttle:login');
         Route::post('me/deposits', [AccountController::class, 'deposit'])->middleware('throttle:money');
