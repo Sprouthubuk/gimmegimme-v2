@@ -26,16 +26,19 @@ export function formatBalance(p: Pence): string {
  * Site rule: every prize with a cash value ("site_credit" or "cash") is paid into
  * the winnings balance by the server. Only "physical" prizes are sent out by hand.
  */
-export const isCredited = (prize: RevealPrize): boolean => prize.type !== "physical";
+export const isCredited = (prize: RevealPrize): boolean => prize.type !== "physical" && prize.type !== "hunt_symbol";
+
+/** A Mystery Hunt symbol: nothing paid yet, the finder picks a number on the Hunt Board. */
+export const isHuntSymbol = (prize: RevealPrize): boolean => prize.type === "hunt_symbol";
 
 /** Short label that fits on a coin, tile or wheel segment. */
 export function prizeShortLabel(prize: RevealPrize): string {
-  return prize.type === "physical" ? prize.name : formatPence(prize.valuePence);
+  return prize.type === "physical" || prize.type === "hunt_symbol" ? prize.name : formatPence(prize.valuePence);
 }
 
 /** Headline for the result sheet: "£10 credit", "£50 cash", "AirPods Pro". */
 export function prizeHeadline(prize: RevealPrize): string {
-  if (prize.type === "site_credit") return `${formatPence(prize.valuePence)} credit`;
+  if (prize.type === "site_credit" || prize.type === "ticket_credit") return `${formatPence(prize.valuePence)} credit`;
   if (prize.type === "cash") return `${formatPence(prize.valuePence)} cash`;
   return prize.name;
 }

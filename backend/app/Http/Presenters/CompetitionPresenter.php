@@ -3,14 +3,17 @@
 namespace App\Http\Presenters;
 
 use App\Models\Competition;
+use App\Models\HuntClaim;
 use App\Models\User;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
 use App\Support\PrizeNames;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Sprouthub\Verity\Facades\Verity;
 use Sprouthub\Verity\Models\InstantPrize;
 use Sprouthub\Verity\Models\Winner;
+use Sprouthub\Verity\Support\HuntMap;
 
 /** CompetitionSummary / CompetitionDetail (frontend/src/lib/types.ts). Winning ticket numbers are listed, paged, by PublicController::winningNumbers. */
 final class CompetitionPresenter
@@ -124,6 +127,45 @@ final class CompetitionPresenter
             'minTickets' => (int) ($c->min_tickets ?: 1),
             // Bundles on sale now (live draws). Prices and tickets per bundle only, nothing about the pool.
             'bundles' => $this->bundles->forPlayers($c),
+            'hunt' => $c->isHunt() ? $this->hunt($c) : null,
+        ];
+    }
+
+    /**
+     * The Mystery Hunt board (docs/mystery-hunt.md): theme, numbers picked (masked name, prize), the hidden prize list,
+     * Verity's fingerprint, and the whole map only once Verity has revealed it. Never the map before.
+     */
+    public function hunt(Competition $c): array
+    {
+        $theme = $c->huntTheme;
+        $verity = $c->verity_ref ? Verity::hunt($c->verity_ref) : null;
+        $claims = HuntClaim::query()->with('user')->where('competition_id', $c->id)->get();
+        $picked = $claims->where('status', 'picked')->sortBy('number');
+        $hidden = $c->huntPrizes()->get();
+        $size = (int) ($verity?->size ?? $hidden->sum('quantity'));
+        $revealed = $verity !== null && $verity->revealed_seed !== null;
+        $names = $revealed ? collect($verity->prizes)->values() : collect();
+        $byNumber = $picked->keyBy('number');
+
+        return [
+            'themeName' => $theme?->name, 'symbolName' => $theme?->symbol_name, 'symbolPlural' => $theme?->symbol_plural,
+            'symbolImage' => $theme?->symbolImageUrl(), 'hashtag' => $theme?->hashtag, 'facebookUrl' => $theme?->facebook_url,
+            'intro' => $theme?->intro, 'boardColour' => $theme?->board_colour, 'accentColour' => $theme?->accent_colour,
+            'claimHours' => (int) $c->hunt_claim_hours,
+            'boardSize' => $size,
+            'found' => $claims->count(),
+            'notWon' => $claims->where('status', 'expired')->count(),
+            'picks' => $picked->map(fn (HuntClaim $h) => ['number' => (int) $h->number, 'name' => $h->user?->publicName() ?? 'Anonymous',
+                'prizeName' => (string) $h->prize_name, 'valuePence' => (int) $h->prize_value_pence, 'prizeType' => (string) $h->prize_type,
+                'pickedAt' => $h->picked_at?->toIso8601ZuluString()])->values()->all(),
+            'prizes' => $hidden->map(fn ($h) => ['name' => $h->name, 'valuePence' => (int) $h->value_pence, 'type' => $h->type, 'quantity' => (int) $h->quantity,
+                'won' => $picked->where('prize_name', $h->name)->where('prize_value_pence', (int) $h->value_pence)->count()])->values()->all(),
+            'fingerprint' => $verity?->commitment,
+            'sealedAt' => $verity?->committed_at?->toIso8601ZuluString(),
+            'revealed' => $revealed,
+            'map' => $revealed ? collect(HuntMap::map((string) $verity->revealed_seed, (string) $c->verity_ref, $size))
+                ->map(fn ($prize, $i) => ['number' => $i + 1, 'prizeName' => (string) ($names[$prize - 1]['name'] ?? ''), 'valuePence' => (int) ($names[$prize - 1]['value_pence'] ?? 0),
+                    'status' => $byNumber->has($i + 1) ? 'won' : 'not_won'])->values()->all() : null,
         ];
     }
 }

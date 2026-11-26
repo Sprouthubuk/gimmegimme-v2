@@ -1,6 +1,6 @@
 import type { ReactNode, Ref } from "react";
 import type { RevealTicket } from "../contract";
-import { formatBalance, formatPence, formatTicketNumber, isCredited, prizeHeadline } from "../money";
+import { formatBalance, formatPence, formatTicketNumber, isCredited, isHuntSymbol, prizeHeadline } from "../money";
 import { useSkin } from "../skins/SkinContext";
 import { Mascot } from "./Mascot";
 import { useFocusOnMount } from "./useFocusOnMount";
@@ -109,6 +109,9 @@ export function ClosingButtons({
   );
 }
 
+/** A Mystery Hunt symbol was found: what to do next (the prize is the one behind the number they pick). */
+const HUNT_LINE = "Pick your number on the Hunt Board: we've emailed you how to claim.";
+
 const liveDrawLine = (title: string, endPrizeName?: string) => <> It's still in the live draw for {drawFor(title, endPrizeName)}.</>;
 
 /** Result of one ticket. */
@@ -128,7 +131,7 @@ export function ResultSheet({
         <>
           <div className="rg-kicker">{prize.name === "Minimum prize" ? `You won ${prize.valuePence < 100 ? `${prize.valuePence}p` : formatPence(prize.valuePence)}!` : winKicker}</div>
           <div className={`rg-prize-big ${prize.name === "Minimum prize" ? "is-minimum" : ""} ${prizeHeadline(prize).length > 14 ? "is-long" : ""}`}>{prizeHeadline(prize)}</div>
-          <p className="rg-sheet-sub">{isCredited(prize) ? "added to your wallet!" : "We'll be in touch to arrange delivery."}</p>
+          <p className="rg-sheet-sub">{isHuntSymbol(prize) ? HUNT_LINE : isCredited(prize) ? "added to your wallet!" : "We'll be in touch to arrange delivery."}</p>
           <WalletChange wallet={actions.wallet} />
         </>
       ) : (
@@ -158,7 +161,8 @@ export function BatchResultSheet({
   const winners = tickets.filter((t) => t.prize);
   const total = winners.reduce((s, t) => s + t.prize!.valuePence, 0);
   const anyCredited = winners.some((t) => isCredited(t.prize!));
-  const anyPhysical = winners.some((t) => !isCredited(t.prize!));
+  const anyPhysical = winners.some((t) => t.prize!.type === "physical");
+  const anyHunt = winners.some((t) => isHuntSymbol(t.prize!));
   const title = tickets[0]?.competitionTitle ?? "";
   const count = `${tickets.length.toLocaleString("en-GB")} ${tickets.length === 1 ? unit[0] : unit[1]}`;
   return (
@@ -167,7 +171,7 @@ export function BatchResultSheet({
         <>
           <div className="rg-kicker">{copy.winKicker ?? "WINNER!"}</div>
           <div className={`rg-prize-big ${prizeHeadline(winners[0].prize!).length > 14 ? "is-long" : ""}`}>{prizeHeadline(winners[0].prize!)}</div>
-          <p className="rg-sheet-sub">{anyCredited ? "added to your wallet!" : "We'll be in touch to arrange delivery."}</p>
+          <p className="rg-sheet-sub">{isHuntSymbol(winners[0].prize!) ? HUNT_LINE : anyCredited ? "added to your wallet!" : "We'll be in touch to arrange delivery."}</p>
           <WalletChange wallet={actions.wallet} />
         </>
       ) : winners.length > 1 ? (
@@ -176,6 +180,7 @@ export function BatchResultSheet({
           <div className="rg-prize-big">{formatPence(total)}</div>
           <p className="rg-sheet-sub">
             {anyPhysical ? "in prizes. We'll be in touch about delivery." : "added to your wallet!"}
+            {anyHunt && <> {HUNT_LINE}</>}
           </p>
           <WalletChange wallet={actions.wallet} />
         </>

@@ -18,7 +18,8 @@ export type Pence = number;
  * instantly by the server. Only "physical" needs manual fulfilment
  * (delivery) and is not counted in RevealOutcome.creditedPence.
  */
-export type PrizeType = "cash" | "site_credit" | "physical";
+/** ticket_credit goes to bonus (tickets only); hunt_symbol is a Mystery Hunt symbol: the finder picks a number on the Hunt Board. */
+export type PrizeType = "cash" | "site_credit" | "ticket_credit" | "physical" | "hunt_symbol";
 
 export interface RevealPrize {
   /** Display name, e.g. "£6.66 Site Credit" or "£2,000 Cash". */

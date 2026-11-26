@@ -70,6 +70,12 @@ Shown prize names (owner, 23 Nov 2026): a prize can be shown on the site under a
 committed to (`prize_display_names`, `App\Support\PrizeNames`). Every `prizeName` / prize `name` in the API is the shown
 name; `?prize=` on `/winning-numbers` takes the shown name. `CompetitionDetail.renamedPrizes[]` (`{from, to}`, `from`
 being Verity's name) lets a player match the page to the fair-play record, which keeps Verity's names.
+Mystery Hunts (owner, 26 Nov 2026; docs/mystery-hunt.md): `CompetitionDetail.hunt` is `HuntBoard` or `null`. It carries the
+theme (`symbolName`, `hashtag`, `facebookUrl`, colours, `intro`), `claimHours`, `boardSize`, `found`, `notWon`, `picks[]`
+(`{number, name, prizeName, valuePence, prizeType, pickedAt}`, the name masked like /winners), `prizes[]` (the hidden prizes,
+`{name, valuePence, type, quantity, won}`), Verity's `fingerprint` and `sealedAt`, `revealed`, and `map[]`
+(`{number, prizeName, valuePence, status: won | not_won}`) only once Verity has revealed the hunt (null before). Instant prize
+`type` can also be `ticket_credit` (to bonus, expires) or `hunt_symbol` (worth £0; the finder picks a number).
 That is safe only because Verity gives each buyer random unsold numbers at payment (it refuses
 in-order numbering with instant wins); never publish with `ticket_allocation` other than `random`.
 The seed that made the list stays sealed until the competition ends.

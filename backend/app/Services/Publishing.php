@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AdminAction;
 use App\Models\Competition;
+use App\Models\CompetitionPrize;
 use App\Models\User;
 use App\Support\GameIds;
 use Illuminate\Support\Facades\DB;
@@ -44,8 +45,13 @@ final class Publishing
             if ($prizes->sum('quantity') > $c->max_tickets) {
                 $p[] = 'There are more prizes than tickets.';
             }
-            if ($prizes->contains(fn ($x) => $x->quantity < 1 || $x->value_pence < 0 || ! in_array($x->type, ['cash', 'site_credit', 'physical'], true))) {
+            if ($prizes->contains(fn ($x) => $x->quantity < 1 || $x->value_pence < 0 || ! in_array($x->type, CompetitionPrize::TYPES_FOR[$c->isHunt() ? 'hunt' : 'instant'], true))) {
                 $p[] = 'Every prize needs a quantity and a type.';
+            }
+            if ($c->isHunt()) {
+                array_push($p, ...app(Hunts::class)->problems($c));
+            } elseif ($prizes->contains(fn ($x) => $x->type === 'hunt_symbol')) {
+                $p[] = 'A hunt symbol prize needs a Mystery Hunt theme.';
             }
             if (! in_array($c->game, GameIds::games(), true)) {
                 $p[] = 'Choose a reveal game.';
@@ -99,6 +105,9 @@ final class Publishing
                 $terms['publish_at'] = $c->opens_at;
             }
             $v = Verity::publish($terms, $endPrizes, $instant);
+            if ($c->isHunt()) {
+                app(Hunts::class)->seal($c, $v, $admin); // before any ticket can exist, in the same transaction
+            }
             $c->forceFill(['verity_ref' => $v->ref, 'published_at' => now()])->saveQuietly();
             AdminAction::record($admin, 'competition.published', $c->id, null, ['verity_ref' => $v->ref]);
 

@@ -57,7 +57,7 @@ export interface CompetitionSummary {
 export interface PrizeTier {
   name: string;
   valuePence: Pence;
-  type: "cash" | "site_credit" | "physical";
+  type: "cash" | "site_credit" | "ticket_credit" | "physical" | "hunt_symbol";
   quantity: number;
   won: number;
   /** Prizes added after launch (prize boost): when they were added. Null for the original prizes. */
@@ -108,6 +108,40 @@ export interface CompetitionDetail extends CompetitionSummary {
   boostRecord: BoostRecord[];
   /** Prizes the site shows under a different name from Verity's record (`from` is Verity's name). Empty when none. */
   renamedPrizes: { from: string; to: string }[];
+  /** A Mystery Hunt board (docs/mystery-hunt.md), or null when the competition isn't a hunt. */
+  hunt: HuntBoard | null;
+}
+
+/**
+ * A Mystery Hunt: each symbol found in the instant wins lets its finder pick a number 1 … boardSize. Verity sealed
+ * which prize is behind each number before any ticket; `map` is null until the hunt ends and Verity reveals it.
+ */
+export interface HuntBoard {
+  themeName: string | null;
+  symbolName: string | null;
+  symbolPlural: string | null;
+  symbolImage: string | null;
+  hashtag: string | null;
+  facebookUrl: string | null;
+  intro: string | null;
+  boardColour: string | null;
+  accentColour: string | null;
+  /** Hours a finder has to pick a number; unclaimed symbols aren't won. */
+  claimHours: number;
+  boardSize: number;
+  /** Symbols found so far, and how many of those weren't claimed in time. */
+  found: number;
+  notWon: number;
+  /** Numbers opened so far: masked name ("Liam O."), and the prize behind each. */
+  picks: { number: number; name: string; prizeName: string; valuePence: Pence; prizeType: "cash" | "ticket_credit"; pickedAt: string | null }[];
+  /** The prizes hidden behind the numbers, and how many of each have been won. */
+  prizes: { name: string; valuePence: Pence; type: "cash" | "ticket_credit"; quantity: number; won: number }[];
+  /** Verity's fingerprint of the sealed map (SHA-256 of the hunt seed), and when it was sealed. */
+  fingerprint: string | null;
+  sealedAt: string | null;
+  revealed: boolean;
+  /** The whole map, once revealed: every number, its prize and whether it was won. */
+  map: { number: number; prizeName: string; valuePence: Pence; status: "won" | "not_won" }[] | null;
 }
 
 export interface SiteInfo {
@@ -394,7 +428,7 @@ export interface WinningNumberRow {
   ticket: number;
   prizeName: string;
   valuePence: Pence;
-  type: "cash" | "site_credit" | "physical";
+  type: "cash" | "site_credit" | "ticket_credit" | "physical" | "hunt_symbol";
   won: boolean;
   /** "Amy B." (or "Postal entrant" / "Anonymous") once won; null until then, and for a paid win its player hasn't played yet (up to an hour). */
   winnerName: string | null;

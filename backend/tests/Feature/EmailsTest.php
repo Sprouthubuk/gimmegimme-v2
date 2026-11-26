@@ -20,6 +20,11 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use App\Models\HuntClaim;
+use App\Models\HuntTheme;
+use App\Notifications\HuntPrizeRevealed;
+use App\Notifications\HuntReminder;
+use App\Notifications\HuntSymbolFound;
 use Tests\TestCase;
 
 /** Every email the site sends: Gimme Gimme design, our own wording, Title Case subjects, safe text. */
@@ -37,6 +42,14 @@ class EmailsTest extends TestCase
         }
 
         return [$m, $html];
+    }
+
+    private static function huntClaim(array $attrs = []): HuntClaim
+    {
+        $c = (new Competition(['title' => 'The Christmas Bauble Hunt', 'type' => 'instant', 'slug' => 'bauble-hunt']))
+            ->setRelation('huntTheme', new HuntTheme(['symbol_name' => 'Mystery Bauble', 'hashtag' => '#BaubleHunt', 'facebook_url' => 'https://www.facebook.com/groups/gimme']));
+
+        return (new HuntClaim)->forceFill($attrs + ['ticket_number' => 4821, 'status' => 'found', 'found_at' => now(), 'deadline_at' => now()->addDays(2)])->setRelation('competition', $c);
     }
 
     private function assertBranded(string $html): void
@@ -151,6 +164,9 @@ class EmailsTest extends TestCase
             new IdCheckResult((new IdCheck)->forceFill(['status' => 'rejected', 'note' => 'The photo was too blurry to read.'])),
             new PostalEntryEntered($c, [1234]),
             new ReferralRewarded(new Referral, true),
+            new HuntSymbolFound($hunt = self::huntClaim()),
+            new HuntReminder($hunt),
+            new HuntPrizeRevealed(self::huntClaim(['status' => 'picked', 'number' => 7, 'prize_name' => '£10 Bauble Credit', 'prize_type' => 'ticket_credit', 'prize_value_pence' => 1000])),
         ];
         foreach ($emails as $n) {
             [$m, $html] = $this->render($n, $u);
@@ -158,6 +174,12 @@ class EmailsTest extends TestCase
             $this->assertBranded($html);
             $this->assertStringContainsString('Sam', $html);
         }
+        [, $html] = $this->render($emails[8], $u);
+        $this->assertStringContainsString('#BaubleHunt', $html);
+        $this->assertStringContainsString('https://www.facebook.com/groups/gimme', $html);
+        $this->assertStringContainsString('(UK time)', $html);
+        [, $html] = $this->render($emails[10], $u);
+        $this->assertStringContainsString('£10.00', $html);
         [, $html] = $this->render($emails[2], $u);
         $this->assertStringContainsString('GG-W-1042', $html);
         [, $html] = $this->render(new WithdrawalUpdate((new Withdrawal)->forceFill(['amount_pence' => 2500, 'status' => 'paid', 'note' => ''])), $u);

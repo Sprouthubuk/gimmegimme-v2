@@ -84,6 +84,9 @@ class AdminTest extends TestCase
             $pages = $resource::getPages();
             $record = $resource::getEloquentQuery()->first();
             foreach (array_keys($pages) as $name) {
+                if ($name === 'hunt') {
+                    continue; // the Hunt Board opens only for a hunt: MysteryHuntTest opens it
+                }
                 $needsRecord = in_array($name, ['edit', 'view'], true);
                 if ($needsRecord && ! $record) {
                     continue;

@@ -12,3 +12,4 @@ Scheduler::command('competitions:publish-draw-results')->everyMinute()->withoutO
 Scheduler::command('orders:sweep')->everyFiveMinutes()->withoutOverlapping();
 Scheduler::command('players:housekeeping')->everyFifteenMinutes()->withoutOverlapping();
 Scheduler::command('gimme:meta-events')->everyMinute()->withoutOverlapping();
+Scheduler::command('hunts:tick')->everyFiveMinutes()->withoutOverlapping();

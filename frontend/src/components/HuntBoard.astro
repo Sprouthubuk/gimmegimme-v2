@@ -1,0 +1,92 @@
+---
+// The Mystery Hunt board (docs/mystery-hunt.md): every number 1 … N, the ones already opened with the finder's masked
+// name and prize, how to claim, and Verity's fingerprint. The whole map shows only once Verity has revealed it.
+import type { HuntBoard } from "../lib/types";
+import { formatPence, formatCount } from "../lib/money";
+import { ukDateTime } from "../lib/time";
+
+interface Props { hunt: HuntBoard; verifyUrl: string | null }
+const { hunt, verifyUrl } = Astro.props;
+const symbol = hunt.symbolName ?? "Mystery Symbol";
+const plural = hunt.symbolPlural ?? `${symbol}s`;
+const picked = new Map(hunt.picks.map((p) => [p.number, p]));
+const mapped = new Map((hunt.map ?? []).map((m) => [m.number, m]));
+const numbers = Array.from({ length: hunt.boardSize }, (_, i) => i + 1);
+const open = hunt.found - hunt.picks.length - hunt.notWon;
+const left = Math.max(0, hunt.boardSize - hunt.found);
+const prize = (type: string, v: number) => `${formatPence(v, { short: false })}${type === "ticket_credit" ? " credit" : ""}`;
+const style = `--hb-bg:${hunt.boardColour ?? "#0B3D2E"};--hb-ac:${hunt.accentColour ?? "#FFD23F"}`;
+---
+<section class="sec" id="hunt-board" style="padding-top:8px" data-testid="hunt-board"><div class="wrap stack g16">
+  <div class="stack g8 gg-reveal">
+    <div class="eyebrow">Mystery Hunt</div>
+    <h2 class="h2">The Hunt <span class="ny">Board</span></h2>
+    {hunt.intro && <p class="p" style="margin:0">{hunt.intro}</p>}
+  </div>
+
+  <div class="hb" style={style}>
+    <div class="hb-stats">
+      <span><b class="d">{formatCount(hunt.found)}</b><small>of {formatCount(hunt.boardSize)} {plural} found</small></span>
+      <span><b class="d">{formatCount(hunt.picks.length)}</b><small>Numbers opened</small></span>
+      <span><b class="d">{formatCount(left)}</b><small>Still to find</small></span>
+    </div>
+    <ol class="hb-grid" aria-label={`Hunt board, numbers 1 to ${hunt.boardSize}`}>
+      {numbers.map((n) => {
+        const p = picked.get(n);
+        const m = mapped.get(n);
+        if (p) return (
+          <li class="hb-n won"><b>{n}</b><span class="hb-p">{prize(p.prizeType, p.valuePence)}</span><span class="hb-w">{p.name}</span></li>
+        );
+        if (m) return (
+          <li class="hb-n shown"><b>{n}</b><span class="hb-p">{formatPence(m.valuePence, { short: false })}</span><span class="hb-w">Not won</span></li>
+        );
+        return (
+          <li class="hb-n"><b>{n}</b>{hunt.symbolImage ? <img src={hunt.symbolImage} alt="" width="28" height="28" loading="lazy" /> : <span class="hb-q" aria-hidden="true">?</span>}<span class="sr-only">Available</span></li>
+        );
+      })}
+    </ol>
+  </div>
+
+  <div class="card card-p stack g12 gg-reveal" data-testid="hunt-how">
+    <h3 class="h3">Found A {symbol}?</h3>
+    <ol class="p hb-steps">
+      <li class="txt">Pick a number on the board that nobody has opened yet.</li>
+      <li class="txt">{hunt.facebookUrl
+        ? <>Post it in our <a href={hunt.facebookUrl} rel="noopener" target="_blank">Facebook group</a>{hunt.hashtag ? <>{" "}with <b>{hunt.hashtag}</b></> : ""} and your ticket number. Not on Facebook? <a href="/contact">Message us</a> or reply to your email instead.</>
+        : <><a href="/contact">Message us</a> or reply to your email with your ticket number and your number.</>}</li>
+      <li class="txt">We open it and pay what’s behind it straight away: cash to winnings, credit to your ticket credit.</li>
+    </ol>
+    <p class="hint" style="margin:0;font-size:13px">You have {hunt.claimHours} hours from finding a {symbol} to claim it. A {symbol} not claimed in time isn’t won.{open > 0 ? ` ${formatCount(open)} waiting for a number now.` : ""}</p>
+  </div>
+
+  <div class="stack g8">
+    <h3 class="h3">Prizes Behind The Numbers</h3>
+    <ul class="hb-prizes" data-testid="hunt-prizes">
+      {hunt.prizes.map((p) => <li><span>{p.quantity > 1 ? `${p.quantity} × ` : ""}{p.name}</span><span class="hint">{p.won > 0 ? `${p.won} won` : "Still hidden"}</span></li>)}
+    </ul>
+    <p class="hint" style="margin:0;font-size:13px">
+      {hunt.revealed
+        ? <>The hunt has ended and Verity has revealed the whole map: every number above shows its prize. Check it against the fingerprint on the <a href={verifyUrl ?? "#"}>fair-play record</a>.</>
+        : <>Which prize is behind each number was sealed by our draw engine, Verity, {hunt.sealedAt ? `on ${ukDateTime(hunt.sealedAt)}, ` : ""}before a single ticket was sold. Nobody can see the map, us included, until the hunt ends; then it’s published for anyone to check.</>}
+    </p>
+    {hunt.fingerprint && <div class="hint" style="word-break:break-all;font-size:12px">Map fingerprint {hunt.fingerprint}</div>}
+  </div>
+</div></section>
+
+<style>
+  .hb{background:var(--hb-bg);border:2px solid var(--hb-ac);border-radius:18px;padding:14px;display:grid;gap:14px}
+  .hb-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+  .hb-stats b{display:block;font-size:24px;color:var(--hb-ac)}
+  .hb-stats small{font-size:12px;opacity:.85}
+  .hb-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+  .hb-n{min-height:64px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;align-content:center;gap:2px;padding:6px 4px;text-align:center}
+  .hb-n b{font-size:18px}
+  .hb-q{font-size:20px;font-weight:900;color:var(--hb-ac)}
+  .hb-n.won{background:var(--hb-ac);color:#14110a;border-color:var(--hb-ac)}
+  .hb-n.shown{opacity:.7}
+  .hb-p{font-size:12px;font-weight:800;line-height:1.15}
+  .hb-w{font-size:11px;line-height:1.15;word-break:break-word}
+  .hb-steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+  .hb-prizes{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+  .hb-prizes li{display:flex;justify-content:space-between;gap:12px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.05)}
+</style>

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\ArchiveCompetition;
 use App\Models\BundleTier;
 use App\Models\Competition;
+use App\Models\HuntTheme;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
@@ -62,6 +63,24 @@ class DemoSeeder extends Seeder
             [['£50 Cash', 5000, 2, 'cash'], ['20p Site Credit', 20, 1000, 'site_credit']]);
         $make(['slug' => 'lush-snow-fairy-wonderland', 'title' => 'Lush Snow Fairy Wonderland', 'type' => 'draw', 'image' => 'competitions/lush.webp', 'price_pence' => 49,
             'end_prize_name' => 'Lush Snow Fairy Gift Set', 'end_prize_value_pence' => 6000, 'cash_alternative_pence' => 5000, 'max_tickets' => 999, 'max_per_person' => 999, 'bundles_enabled' => true, 'max_bundle_share_pct' => 10, 'prize_cost_pence' => 4000]);
+
+        // A Mystery Hunt (docs/mystery-hunt.md): 12 baubles in the instant wins, a prize behind each number on the board.
+        if (! Competition::query()->where('slug', 'christmas-bauble-hunt')->exists()) {
+            $theme = HuntTheme::query()->firstOrCreate(['name' => 'Christmas Baubles'], ['symbol_name' => 'Mystery Bauble', 'symbol_plural' => 'Mystery Baubles',
+                'hashtag' => '#BaubleHunt', 'facebook_url' => 'https://www.facebook.com/groups/gimmegimmeprizes',
+                'intro' => 'Twelve Mystery Baubles are hidden in the instant wins. Find one and pick a number on the board: there’s a prize behind every one.']);
+            $hunt = Competition::query()->create(['slug' => 'christmas-bauble-hunt', 'title' => 'The Christmas Bauble Hunt', 'type' => 'instant', 'game' => 'scratch_card', 'skin' => 'christmas',
+                'image' => 'competitions/scrooge.webp', 'price_pence' => 20, 'max_tickets' => 7500, 'max_per_person' => 7500, 'closes_at' => now()->addDays(10),
+                'end_prize_name' => '£100 Cash', 'end_prize_value_pence' => 10000, 'end_prize_type' => 'site_credit', 'hunt_theme_id' => $theme->id, 'hunt_claim_hours' => 48]);
+            foreach ([['Mystery Bauble', 0, 12, 'hunt_symbol'], ['£25 Cash', 2500, 1, 'cash'], ['Ticket Money Back', 20, 120, 'ticket_credit']] as $i => [$name, $value, $qty, $type]) {
+                $hunt->prizes()->create(['name' => $name, 'value_pence' => $value, 'quantity' => $qty, 'type' => $type, 'sort' => $i]);
+            }
+            foreach ([['£50 Bauble Cash', 'cash', 5000, 1], ['£20 Bauble Cash', 'cash', 2000, 1], ['£10 Bauble Cash', 'cash', 1000, 1], ['£10 Bauble Credit', 'ticket_credit', 1000, 1],
+                ['£5 Bauble Credit', 'ticket_credit', 500, 3], ['£3 Bauble Credit', 'ticket_credit', 300, 3], ['£2 Bauble Credit', 'ticket_credit', 200, 2]] as $i => [$name, $type, $value, $qty]) {
+                $hunt->huntPrizes()->create(['name' => $name, 'type' => $type, 'value_pence' => $value, 'quantity' => $qty, 'sort' => $i]);
+            }
+            app(Publishing::class)->publish($hunt, $admin);
+        }
 
         // A prize boost on Cash Bang (Verity adds the prizes, spec §17), so the pages and the reveal show added prizes.
         $bang = Competition::query()->where('slug', 'cash-bang')->first();
