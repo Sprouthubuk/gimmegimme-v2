@@ -31,7 +31,7 @@ final class GimmeBoxPacker
         $maxSold = Settings::bounded('gimme_box_max_sold_pct', 0, 100);
         $boost = Settings::bounded('gimme_box_slow_boost_pct', 100, 1000) / 100;
         $out = [];
-        $draws = Competition::query()->published()->with(['bundleTiers', 'prizes'])->whereIn('type', ['draw', 'instant'])->where('gimme_box_enabled', true)
+        $draws = Competition::query()->published()->with(['bundleTiers', 'prizes'])->whereIn('type', ['draw', 'instant'])->where('gimme_box_enabled', true)->where('is_free', false)
             ->where('gimme_box_weight', '>', 0)->where('closes_at', '>', now()->addHour())->orderBy('id')->get();
         foreach ($draws as $c) {
             if ($this->state->status($c) !== 'live' || $this->state->soldPercent($c) > $maxSold) {

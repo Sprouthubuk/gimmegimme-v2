@@ -33,7 +33,7 @@ describe("Meta tracking", () => {
   });
 
   it("a sale is kept for Meta only when the visitor accepted cookies, with the same id the Pixel sends", async () => {
-    const c = (await new Browser(site.origin).api("/api/competitions")).body.data.find((x: { type: string }) => x.type === "draw");
+    const c = (await new Browser(site.origin).api("/api/competitions")).body.data.find((x: { type: string; isFree?: boolean }) => x.type === "draw" && !x.isFree);
     const buy = async (b: Browser) => {
       const r = await b.api("/api/checkout", { lines: [{ competitionId: c.id, quantity: 2 }], payWith: "wallet", useWallet: true, requestId: uuid() });
       expect(r.status).toBe(201);

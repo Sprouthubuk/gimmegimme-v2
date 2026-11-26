@@ -63,6 +63,7 @@ final class Pricing
             $max = $this->state->canBuy($c, $owner);
             $status = $this->state->status($c);
             $closed = match (true) {
+                $c->isFree() => 'This one’s free: claim your ticket on its page.',
                 $status === 'sold_out' => 'Sold out.',
                 $status !== 'live' => 'This competition is closed.',
                 $max === 0 && $this->state->left($c) - $this->state->reserved($c) <= 0 => 'The last tickets are being paid for right now. Try again in a few minutes.',

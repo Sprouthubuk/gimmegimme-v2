@@ -10,7 +10,8 @@ afterAll(async () => { await site?.stop(); });
 const PUBLIC_PAGES: [string, RegExp][] = [
   ["/", /Instant Wins/],
   ["/competitions", /All Competitions/],
-  ["/competitions?type=draw", /Live Draws 3/],
+  ["/competitions?type=draw", /Live Draws 4/],
+  ["/competitions/free-festive-fiver", /Join Free To Claim/],
   ["/competitions?q=bush", /Bush Bucks/],
   ["/competitions/bush-bucks-jungle-trial", /Instant Wins/],
   ["/competitions/lush-snow-fairy-wonderland", /Drawn Live/],

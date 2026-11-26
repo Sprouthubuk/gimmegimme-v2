@@ -31,7 +31,15 @@ final class Publishing
         if ($c->opens_at && $c->closes_at && $c->opens_at->gte($c->closes_at)) {
             $p[] = 'It must open before it closes.';
         }
-        if ($c->price_pence < 1 || $c->max_tickets < 1 || $c->max_per_person < 1 || $c->max_per_person > $c->max_tickets) {
+        if ($c->isFree()) {
+            // Free to enter (docs/free-entry.md): £0 and one ticket each, fixed at publish like any price.
+            if ((int) $c->price_pence !== 0 || (int) $c->max_per_person !== FreeEntry::TICKETS || $c->max_tickets < 1) {
+                $p[] = 'A free competition is £0 a ticket and 1 ticket per person.';
+            }
+            if ($c->isHunt() || $c->gimme_box_enabled || $c->bundles_enabled) {
+                $p[] = 'A free competition can’t be a Mystery Hunt, have bundles or be in the Gimme Box.';
+            }
+        } elseif ($c->price_pence < 1 || $c->max_tickets < 1 || $c->max_per_person < 1 || $c->max_per_person > $c->max_tickets) {
             $p[] = 'Price, tickets and tickets per person must be set, with tickets per person no more than the tickets.';
         }
         if (! $c->image) {

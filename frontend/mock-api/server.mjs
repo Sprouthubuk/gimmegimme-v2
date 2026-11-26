@@ -25,7 +25,7 @@ const LABELS = { claw_machine: "Claw Machine", slots: "Slots", scratch_card: "Sc
 const LADDER = [["King of the Jungle", 75000, 1], ["Golden Grub", 22222, 1], ["Croc Cash", 11111, 3], ["Snake Stash", 5555, 6], ["Spider Silver", 2222, 15], ["Cockroach Coins", 1111, 40], ["Beetle Bonus", 555, 100], ["Witchetty Win", 222, 250], ["Bug Bite", 111, 600], ["Creepy Crawly Cash", 50, 1500]];
 
 function comp(id, slug, title, type, game, skin, img, price, top, sold, subtitle, extra = {}) {
-  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, maxTickets: 50000, ticketsSold: sold * 500, ticketsLeft: 50000 - sold * 500, maxPerPerson: null, prizeCount: type === "instant" ? 2516 : null, boost: null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, ...extra };
+  return { id, slug, title, type, status: "live", game, gameLabel: game ? LABELS[game] : null, skin, image: `${SELF}/media/${img}.webp`, imageSmall: `${SELF}/media/${img}.webp`, imageSrcset: null, pricePence: price, topPrizePence: top, subtitle, soldPercent: sold, maxTickets: 50000, ticketsSold: sold * 500, ticketsLeft: 50000 - sold * 500, maxPerPerson: null, prizeCount: type === "instant" ? 2516 : null, boost: null, endPrize: null, opensAt: null, closesAt: type === "draw" ? drawAt : closes, drawAt: type === "draw" ? drawAt : null, featured: false, tags: [], featuredBundle: null, isFree: false, ...extra };
 }
 const COMPS = [
   comp("c-bush", "bush-bucks-jungle-trial", "Bush Bucks – Jungle Trial", "instant", "claw_machine", "classic", "bush-lg", 25, 75000, 2, "2,516 wins", { featured: true }),
@@ -38,6 +38,7 @@ const COMPS = [
   comp("c-dasher", "dashers-dosh-drop", "Dasher’s Dosh Drop", "instant", "spin_wheel", "christmas", "dasher", 25, 44444, 7, "Instant wins"),
   comp("c-bingo", "jingle-bell-bingo-bonanza", "Jingle Bell Bingo Bonanza", "instant", "bingo_card", "christmas", "bingo", 10, 33333, 7, "Instant wins"),
   comp("c-cracker", "chris-crackers-cash-bang", "Chris Cracker’s Cash Bang", "instant", "balloon_pop", "christmas", "cracker", 5, 22222, 8, "Instant wins"),
+  comp("c-freebie", "free-festive-fiver", "Free Festive Fiver", "draw", null, "classic", "dasher", 0, 500, 12, "Free to enter", { isFree: true, maxPerPerson: 1, maxTickets: 5000, ticketsSold: 600, ticketsLeft: 4400 }),
   comp("c-bauble", "christmas-bauble-hunt", "The Christmas Bauble Hunt", "instant", "scratch_card", "christmas", "scrooge", 20, 5000, 12, "212 instant wins", { maxTickets: 7500, ticketsSold: 900, ticketsLeft: 6600, prizeCount: 212, endPrize: { name: "£100 Cash", valuePence: 10000, count: 1 }, hunt: {
     themeName: "Christmas Baubles", symbolName: "Mystery Bauble", symbolPlural: "Mystery Baubles", symbolImage: null, hashtag: "#BaubleHunt", facebookUrl: "https://www.facebook.com/groups/gimmegimmeprizes",
     intro: "Twelve Mystery Baubles are hidden in the instant wins. Find one and pick a number on the board: there’s a prize behind every one.", boardColour: "#0B3D2E", accentColour: "#FFD23F",
@@ -168,7 +169,7 @@ function price(lines, u, promoCode) {
     }
     const max = (c.type === "draw" ? 100 : 2000) - (u ? u.tickets.filter((t) => t.competitionId === c.id).length : 0);
     const q = Math.max(1, Math.floor(Number(l.quantity) || 1));
-    out.push({ ...base, quantity: q, bundleId: null, bundleLabel: null, paidQuantity: q, freeQuantity: 0, linePence: q * c.pricePence, problem: q > max ? "Not that many tickets are left. Please choose fewer." : null, upgrade: nextUp(q, q) });
+    out.push({ ...base, quantity: q, bundleId: null, bundleLabel: null, paidQuantity: q, freeQuantity: 0, linePence: q * c.pricePence, problem: c.isFree ? "This one’s free: claim your ticket on its page." : q > max ? "Not that many tickets are left. Please choose fewer." : null, upgrade: nextUp(q, q) });
   }
   // Gimme Box bonus: the box's extra tickets, while the line still holds what the box packed.
   for (const l of out) {
@@ -189,7 +190,7 @@ function price(lines, u, promoCode) {
 // Gimme Box: packs live draws with bundles first, then singles, never over the budget.
 const boxes = new Map();
 function packBox(budget, mode, seed) {
-  const live = COMPS.filter((c) => c.type === "draw" && c.status === "live");
+  const live = COMPS.filter((c) => c.type === "draw" && c.status === "live" && !c.isFree);
   // Instant wins join a box too (paid singles only, no bonus), after at least one live draw.
   const draws = [...live, ...COMPS.filter((c) => c.type === "instant" && c.status === "live").slice(0, 1)];
   const rnd = (() => { let x = seed || 1; return () => (x = (x * 16807) % 2147483647) / 2147483647; })();
@@ -468,6 +469,19 @@ route("POST", "/api/checkout", authed(async (req, res, { user }) => {
   spendWallet(user, walletPart);
   if (cardPart === 0) { issue(user, o); return send(res, 201, { order: { number, status: "paid" }, next: "play", redirectUrl: null }); }
   send(res, 201, { order: { number, status: "pending_payment" }, next: "redirect", redirectUrl: `${SELF}/mock-pay/${number}` });
+}));
+route("POST", "/api/competitions/:slug/free-entry", authed((req, res, { user, params }) => {
+  const c = COMPS.find((x) => x.slug === params.slug);
+  if (!c) return fail(res, 404, "Not found");
+  if (!c.isFree) return fail(res, 422, "This competition isn’t free to enter.");
+  const block = playBlock(user);
+  if (block) return fail(res, 403, "You can't play right now.", undefined);
+  if (user.tickets.some((t) => t.competitionId === c.id)) return fail(res, 422, "You’ve already got your free ticket for this one.");
+  const number = `GG-${++orderSeq}`;
+  const o = { number, user: user.email, status: "pending_payment", lines: [{ competitionId: c.id, quantity: 1, paidQuantity: 0, freeQuantity: 1, bundleLabel: null }], totalPence: 0, cardPence: 0, walletPence: 0 };
+  orders.set(number, o);
+  issue(user, o);
+  send(res, 201, { order: { number, status: "paid" } });
 }));
 route("GET", "/api/orders/:number", authed((req, res, { user, params }) => { const o = orders.get(params.number); return o && o.user === user.email ? send(res, 200, orderJson(o, user)) : fail(res, 404, "Not found"); }));
 route("POST", "/api/orders/:number/return", authed(async (req, res, { user, params }) => {

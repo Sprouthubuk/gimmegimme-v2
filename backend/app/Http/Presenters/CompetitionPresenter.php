@@ -61,6 +61,7 @@ final class CompetitionPresenter
             'skin' => $c->skin ?? 'classic',
             ...$c->pictureFields(),
             'pricePence' => $c->price_pence,
+            'isFree' => $c->isFree(),
             'topPrizePence' => $top ?: null,
             'subtitle' => $c->subtitle ?? ($c->isInstant() ? number_format($prizeCount).' instant wins' : null),
             'soldPercent' => $this->state->soldPercent($c),

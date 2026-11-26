@@ -26,6 +26,8 @@ export interface CompetitionSummary {
   /** "url 400w, url 800w, url 1200w" for srcset, or null when there are no copies. */
   imageSrcset: string | null;
   pricePence: Pence;
+  /** Free to enter (docs/free-entry.md): £0, one ticket each, claimed on the page with POST /competitions/{slug}/free-entry. */
+  isFree: boolean;
   /** Instant wins: the biggest prize value. Draws: the prize value. */
   topPrizePence: Pence | null;
   /** Shown under the price, e.g. "£50 cash alternative" or "2,516 wins". */

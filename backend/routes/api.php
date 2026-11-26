@@ -66,6 +66,7 @@ Route::middleware('throttle:api')->group(function () {
         Route::post('me/id-check', [AccountController::class, 'idCheck'])->middleware('throttle:money');
 
         Route::post('checkout', [OrderController::class, 'checkout'])->middleware('throttle:money');
+        Route::post('competitions/{slug}/free-entry', [OrderController::class, 'freeEntry'])->middleware('throttle:money');
         Route::get('orders/{number}', [OrderController::class, 'show']);
         Route::post('orders/{number}/return', [OrderController::class, 'return']);
         Route::post('orders/{number}/play', [OrderController::class, 'play']);
