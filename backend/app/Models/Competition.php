@@ -6,6 +6,7 @@ use App\Support\GameIds;
 use App\Support\PictureSizes;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Sprouthub\Verity\Models\Competition as VerityCompetition;
@@ -17,7 +18,7 @@ class Competition extends Model
     protected $guarded = ['id', 'verity_ref', 'published_at', 'result_published_at', 'result_published_how'];
 
     /** Once published, these are Verity's terms and never change. */
-    public const LOCKED_WHEN_PUBLISHED = ['type', 'price_pence', 'max_tickets', 'max_per_person', 'min_tickets', 'closes_at', 'end_prize_count', 'end_prize_type'];
+    public const LOCKED_WHEN_PUBLISHED = ['type', 'price_pence', 'max_tickets', 'max_per_person', 'min_tickets', 'closes_at', 'end_prize_count', 'end_prize_type', 'hunt_theme_id'];
 
     /** How an end prize is paid: to the winner's winnings automatically, or handled by hand. */
     public const END_PRIZE_TYPES = ['site_credit' => 'Site credit (paid to winnings automatically)', 'physical' => 'Handled by hand (cars, holidays, cash by transfer…)'];
@@ -81,6 +82,22 @@ class Competition extends Model
     public function prizes(): HasMany
     {
         return $this->hasMany(CompetitionPrize::class)->orderBy('sort')->orderByDesc('value_pence');
+    }
+
+    public function huntTheme(): BelongsTo
+    {
+        return $this->belongsTo(HuntTheme::class);
+    }
+
+    public function huntPrizes(): HasMany
+    {
+        return $this->hasMany(HuntPrize::class)->orderBy('sort')->orderByDesc('value_pence');
+    }
+
+    /** A Mystery Hunt: an instant-win game with a theme and a hunt symbol prize (docs/mystery-hunt.md). */
+    public function isHunt(): bool
+    {
+        return $this->isInstant() && $this->hunt_theme_id !== null;
     }
 
     public function verity(): ?VerityCompetition

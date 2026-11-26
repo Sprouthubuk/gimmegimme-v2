@@ -124,7 +124,7 @@ a{color:#FF5CC0}a:hover{color:#FF9AD8}
  .cc .sl{font-size:12px}
  .cc .go{height:48px;font-size:17px}
 }
-.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:2px 16px 6px;margin:0 -16px}
+.rail{position:relative;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:2px 16px 6px;margin:0 -16px}
 .rail::-webkit-scrollbar{display:none}
 .rail>*{flex:0 0 80%;scroll-snap-align:start}
 .cd{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}

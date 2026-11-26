@@ -56,6 +56,14 @@ Read before every task. If a request conflicts with this, stop and ask.
   (`App\Services\PrizeBoosts`, lists in `resources/boosts/`, one Verity addition per competition per batch reason).
   They are ordinary Verity instant prizes on numbers nobody held, so Fulfilment pays them as usual; never add prizes
   any other way.
+- Mystery Hunts (owner, 26 Nov 2026; docs/mystery-hunt.md): an instant-win game with a theme (`hunt_themes`) and one instant
+  prize of type `hunt_symbol` (£0). The prizes behind the board's numbers are `hunt_prizes`; at publish `App\Services\Hunts::seal`
+  has Verity seal which is behind each number (`Verity::createHunt`, verity-v3.3.0, spec §18) before any ticket. Nobody, admins
+  included, can see the map until Verity reveals it (`hunts:tick`, after the close plus one claim window, with no find still open).
+  A symbol win is a `hunt_claim`, never a payment; only the Hunt Board (Admin → Competitions → Hunt Board → Open a Number) picks
+  a number, through `Hunts::pick`, which asks Verity for that one prize and pays it once (reference `hunt-claim:{id}`: cash to
+  winnings, ticket credit to bonus with the bonus expiry). A find not picked within `hunt_claim_hours` (48) isn't won. Never
+  choose, move or pay a hunt prize any other way, and never show `map` before `revealed`.
 - Prize names on the site (owner, 23 Nov 2026): no "Jackpot" or "Bonus", and no two prizes in a game with the same name.
   Verity's record keeps the names it committed to; a different shown name lives in `prize_display_names` and every
   place a player sees a prize name goes through `App\Support\PrizeNames` (page, winning numbers, entry lists, winners,

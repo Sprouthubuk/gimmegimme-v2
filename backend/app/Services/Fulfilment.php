@@ -107,6 +107,21 @@ final class Fulfilment
 
             return;
         }
+        // A Mystery Hunt symbol: worth nothing on its own; the player picks a number on the Hunt Board (docs/mystery-hunt.md).
+        if ($type === 'hunt_symbol') {
+            app(Hunts::class)->found($w, $userId);
+
+            return;
+        }
+        // Ticket credit: spent on tickets only, so it goes to bonus, with the usual bonus expiry.
+        if ($type === 'ticket_credit') {
+            if ($w->prize_value_pence > 0) {
+                $this->wallet->credit($userId, 'bonus', (int) $w->prize_value_pence, 'Instant win · '.PrizeNames::forWinner($w), 'verity-winner:'.$w->id,
+                    expiresAt: now()->addDays(Settings::bonusExpiryDays()));
+            }
+
+            return;
+        }
         if ($w->prize_value_pence > 0) {
             $this->wallet->credit($userId, 'winnings', (int) $w->prize_value_pence, 'Instant win · '.PrizeNames::forWinner($w), 'verity-winner:'.$w->id);
             BigWinAlert::check($w, $userId);

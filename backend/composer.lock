@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e0e80af71d49910682594d48549ccdf7",
+    "content-hash": "df8c13530c945dd9ab91bccc4c66d8fa",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -6083,16 +6083,16 @@
         },
         {
             "name": "sprouthub/verity-engine",
-            "version": "v3.2.0",
+            "version": "v3.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Sprouthubuk/verity-engine",
-                "reference": "4bca346de98fe42d1e7c9006c459e0ba19678454"
+                "reference": "1cfc8666435d1da993bf8a958fe0fdac4b1cb55b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Sprouthubuk/verity-engine/zipball/4bca346de98fe42d1e7c9006c459e0ba19678454",
-                "reference": "4bca346de98fe42d1e7c9006c459e0ba19678454",
+                "url": "https://api.github.com/repos/Sprouthubuk/verity-engine/zipball/1cfc8666435d1da993bf8a958fe0fdac4b1cb55b",
+                "reference": "1cfc8666435d1da993bf8a958fe0fdac4b1cb55b",
                 "shasum": ""
             },
             "require": {

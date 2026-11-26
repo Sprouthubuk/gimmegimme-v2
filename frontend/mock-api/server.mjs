@@ -38,6 +38,14 @@ const COMPS = [
   comp("c-dasher", "dashers-dosh-drop", "Dasher’s Dosh Drop", "instant", "spin_wheel", "christmas", "dasher", 25, 44444, 7, "Instant wins"),
   comp("c-bingo", "jingle-bell-bingo-bonanza", "Jingle Bell Bingo Bonanza", "instant", "bingo_card", "christmas", "bingo", 10, 33333, 7, "Instant wins"),
   comp("c-cracker", "chris-crackers-cash-bang", "Chris Cracker’s Cash Bang", "instant", "balloon_pop", "christmas", "cracker", 5, 22222, 8, "Instant wins"),
+  comp("c-bauble", "christmas-bauble-hunt", "The Christmas Bauble Hunt", "instant", "scratch_card", "christmas", "scrooge", 20, 5000, 12, "212 instant wins", { maxTickets: 7500, ticketsSold: 900, ticketsLeft: 6600, prizeCount: 212, endPrize: { name: "£100 Cash", valuePence: 10000, count: 1 }, hunt: {
+    themeName: "Christmas Baubles", symbolName: "Mystery Bauble", symbolPlural: "Mystery Baubles", symbolImage: null, hashtag: "#BaubleHunt", facebookUrl: "https://www.facebook.com/groups/gimmegimmeprizes",
+    intro: "Twelve Mystery Baubles are hidden in the instant wins. Find one and pick a number on the board: there’s a prize behind every one.", boardColour: "#0B3D2E", accentColour: "#FFD23F",
+    claimHours: 48, boardSize: 12, found: 3, notWon: 0,
+    picks: [{ number: 4, name: "Liam O.", prizeName: "£10 Bauble Credit", valuePence: 1000, prizeType: "ticket_credit", pickedAt: iso(now - 5 * 36e5) }, { number: 9, name: "Demi S.", prizeName: "£50 Bauble Cash", valuePence: 5000, prizeType: "cash", pickedAt: iso(now - 2 * 36e5) }],
+    prizes: [["£50 Bauble Cash", 5000, "cash", 1, 1], ["£20 Bauble Cash", 2000, "cash", 1, 0], ["£10 Bauble Cash", 1000, "cash", 1, 0], ["£10 Bauble Credit", 1000, "ticket_credit", 1, 1], ["£5 Bauble Credit", 500, "ticket_credit", 3, 0], ["£3 Bauble Credit", 300, "ticket_credit", 3, 0], ["£2 Bauble Credit", 200, "ticket_credit", 2, 0]]
+      .map(([name, valuePence, type, quantity, won]) => ({ name, valuePence, type, quantity, won })),
+    fingerprint: "4c1f7e2a9b0d3c5e8f6a1b2c3d4e5f60718293a4b5c6d7e8f9012a3b4c5d6e7f", sealedAt: iso(now - 3 * DAY), revealed: false, map: null } }),
   comp("c-scrooge", "scrooges-secret-stash", "Scrooge’s Secret Stash", "instant", "scratch_card", "christmas", "scrooge", 49, 33333, 2, "Instant wins"),
   comp("c-lush", "lush-snow-fairy-wonderland", "Lush Snow Fairy Wonderland Set", "draw", null, "classic", "lush", 59, 5000, 8, "£50 cash alternative", { cashAlternativePence: 5000, maxPerPerson: 100 }),
   comp("c-cash", "250-tax-free-cash", "£250 Tax-Free Cash", "draw", null, "classic", "cash", 99, 25000, 14, "Cash prize", { closesAt: iso(now + 20 * 36e5), drawAt: iso(now + 20 * 36e5) }), // ending soon: the red strip
@@ -81,6 +89,7 @@ function detail(c, user) {
       beaconRandomness: crypto.createHash("sha256").update("r" + c.id).digest("hex"), excludedCount: 3800, excludedHash: crypto.createHash("sha256").update("e" + c.id).digest("hex"),
       windowCount: 2, tableHash: crypto.createHash("sha256").update("t" + c.id).digest("hex"), prizeCount: c.boost.addedCount, valuePence: c.boost.addedPence }] : [],
     renamedPrizes: c.boost ? [{ from: "Gem Bonus", to: "Gem Fiver" }] : [],
+    hunt: c.hunt ?? null,
   };
 }
 

@@ -4,10 +4,13 @@ namespace App\Filament\Resources\Competitions;
 
 use App\Filament\Resources\Competitions\Pages\CreateCompetition;
 use App\Filament\Resources\Competitions\Pages\EditCompetition;
+use App\Filament\Resources\Competitions\Pages\HuntBoard;
 use App\Filament\Resources\Competitions\Pages\ListCompetitions;
 use App\Filament\Support\Money;
 use App\Models\BundleTier;
 use App\Models\Competition;
+use App\Models\CompetitionPrize;
+use App\Models\HuntPrize;
 use App\Services\Bundles;
 use App\Services\CompetitionState;
 use App\Services\DrawResults;
@@ -122,6 +125,23 @@ class CompetitionResource extends Resource
                         ->live(onBlur: true)->visible(fn (Get $get) => $get('type') === 'draw')
                         ->helperText('Referral voucher tickets and Gimme Box bonus tickets together never pass this. Free postal entries don’t count. Players never see the number.'),
                 ]),
+            Section::make('Mystery Hunt')->description('Optional. Add one instant prize of type “Hunt symbol” (worth £0) with as many as you want hidden. Each one found lets the player pick a number on the Hunt Board; Verity seals which prize is behind each number when you publish, and nobody can see the map until the hunt ends.')
+                ->visible(fn (Get $get) => $get('type') === 'instant')->columns(2)->collapsible()->components([
+                    Select::make('hunt_theme_id')->label('Hunt theme')->relationship('huntTheme', 'name')->live()->disabled($locked)
+                        ->helperText('Empty: not a hunt. Themes are under Competitions → Hunt Themes.'),
+                    TextInput::make('hunt_claim_hours')->label('Claim window (hours)')->integer()->minValue(1)->maxValue(336)->default(48)->required()
+                        ->visible(fn (Get $get) => (bool) $get('hunt_theme_id')),
+                    Repeater::make('huntPrizes')->relationship()->label('Prizes hidden behind the symbols')->visible(fn (Get $get) => (bool) $get('hunt_theme_id'))
+                        ->disabled($locked)->orderColumn('sort')->columnSpanFull()->columns(4)->defaultItems(1)
+                        ->components([
+                            TextInput::make('name')->required()->maxLength(120),
+                            Money::input('value_pence', 'Value')->required(),
+                            Select::make('type')->options(HuntPrize::TYPES)->default('cash')->required(),
+                            TextInput::make('quantity')->integer()->minValue(1)->required(),
+                        ])
+                        ->helperText('The quantities must add up to the number of hunt symbols. Cash goes to winnings; ticket credit to bonus (tickets only, expires).'),
+                    Text::make(fn (Get $get) => self::huntText($get))->columnSpanFull()->visible(fn (Get $get) => (bool) $get('hunt_theme_id')),
+                ]),
             Section::make('Prizes')->columns(2)->components([
                 TextInput::make('end_prize_name')->label(fn (Get $get) => $get('type') === 'instant' ? 'End prize (optional draw at the close)' : 'Prize')
                     ->required(fn (Get $get) => $get('type') === 'draw')->maxLength(120)->disabled($locked),
@@ -134,12 +154,38 @@ class CompetitionResource extends Resource
                     ->components([
                         TextInput::make('name')->required()->maxLength(120),
                         Money::input('value_pence', 'Value')->required(),
-                        Select::make('type')->options(['site_credit' => 'Site credit', 'cash' => 'Cash', 'physical' => 'Physical (sent by hand)'])->default('site_credit')->required(),
+                        Select::make('type')->options(fn (Get $get) => $get('../../hunt_theme_id')
+                            ? CompetitionPrize::TYPES : array_intersect_key(CompetitionPrize::TYPES, array_flip(CompetitionPrize::TYPES_FOR['instant'])))->default('site_credit')->required(),
                         TextInput::make('quantity')->integer()->minValue(1)->required(),
                     ])
                     ->helperText('Cash and site credit go to the winner’s winnings balance instantly. Which ticket wins each prize is decided by Verity at publish, from its committed seed.'),
             ]),
         ]);
+    }
+
+    /** The hunt's prize picture as the admin types: fund, cash against credit, odds and break-even (before card fees). */
+    public static function huntText(Get $get): string
+    {
+        $price = Money::toPence((string) ($get('price_pence') ?? '0'));
+        $tickets = (int) $get('max_tickets');
+        $instant = collect((array) $get('prizes'));
+        $hidden = collect((array) $get('huntPrizes'));
+        $pence = fn ($row) => Money::toPence((string) ($row['value_pence'] ?? '0')) * (int) ($row['quantity'] ?? 0);
+        $symbols = (int) $instant->where('type', 'hunt_symbol')->sum(fn ($r) => (int) ($r['quantity'] ?? 0));
+        $hiddenCount = (int) $hidden->sum(fn ($r) => (int) ($r['quantity'] ?? 0));
+        $wins = (int) $instant->sum(fn ($r) => (int) ($r['quantity'] ?? 0));
+        $cash = (int) $instant->whereIn('type', ['cash', 'site_credit'])->sum($pence) + (int) $hidden->where('type', 'cash')->sum($pence);
+        $credit = (int) $instant->where('type', 'ticket_credit')->sum($pence) + (int) $hidden->where('type', 'ticket_credit')->sum($pence);
+        $end = Money::toPence((string) ($get('end_prize_value_pence') ?? '0')) * max(1, (int) ($get('end_prize_count') ?: 1)) * ($get('end_prize_name') ? 1 : 0);
+        $fund = $cash + $credit + $end;
+        $text = 'Hunt: '.$symbols.' symbols, '.$hiddenCount.' hidden prizes'.($symbols !== $hiddenCount ? ' ⚠ they must match' : '')
+            .' · Prize fund '.Money::show($fund).' (cash '.Money::show($cash + $end).', credit '.Money::show($credit).')';
+        if ($price > 0 && $tickets > 0) {
+            $text .= ' · Sell-out '.Money::show($price * $tickets).($wins > 0 ? ' · 1 in '.number_format($tickets / $wins, 1).' wins instantly' : '')
+                .' · Break-even about '.number_format((int) ceil($fund / $price)).' tickets, before card fees';
+        }
+
+        return $text.'. Symbols nobody claims in time aren’t won, so this is the most that can be paid.';
     }
 
     /**
@@ -213,6 +259,7 @@ class CompetitionResource extends Resource
                 self::previewGameAction(),
                 self::liveDrawAction(),
                 self::publishResultAction(),
+                self::huntBoardAction(),
             ]);
     }
 
@@ -288,9 +335,18 @@ class CompetitionResource extends Resource
             });
     }
 
+    /** The Hunt Board: enter the number a player picked, open that one prize, pay it (Hunts::pick). */
+    public static function huntBoardAction(): Action
+    {
+        return Action::make('huntBoard')->label('Hunt Board')->icon(Heroicon::OutlinedMap)->color('warning')
+            ->visible(fn (Competition $record) => $record->verity_ref !== null && $record->isHunt())
+            ->url(fn (Competition $record) => HuntBoard::getUrl(['record' => $record]));
+    }
+
     public static function getPages(): array
     {
         return [
+            'hunt' => HuntBoard::route('/{record}/hunt'),
             'index' => ListCompetitions::route('/'),
             'create' => CreateCompetition::route('/create'),
             'edit' => EditCompetition::route('/{record}/edit'),

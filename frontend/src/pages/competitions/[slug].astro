@@ -4,6 +4,7 @@ import Layout from "../../layouts/Layout.astro";
 import CompCard from "../../components/CompCard.astro";
 import Countdown from "../../components/Countdown.astro";
 import HeroImage from "../../components/HeroImage.astro";
+import HuntBoard from "../../components/HuntBoard.astro";
 import Icon from "../../components/Icon.astro";
 import TicketPicker from "../../islands/TicketPicker";
 import type { CompetitionDetail, CompetitionSummary, WinningNumbersPage } from "../../lib/types";
@@ -96,7 +97,7 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
               <img src={c.imageSmall} alt="" loading="lazy" decoding="async" width="80" height="80" />
               <div class="iw-b">
                 <span class="row between g8" style="align-items:flex-start">
-                  <span style="min-width:0"><b class={`d iw-v ${done ? "" : glow[i % 3]}`}>{formatPence(p.valuePence, { short: false })}</b><span class="iw-n">{p.name}{p.addedAt && <span class="tag-added">Added {ukDayMonth(p.addedAt)}</span>}</span></span>
+                  <span style="min-width:0"><b class={`d iw-v ${done ? "" : glow[i % 3]}`}>{p.type === "hunt_symbol" ? "Pick A Number" : formatPence(p.valuePence, { short: false })}</b><span class="iw-n">{p.name}{p.addedAt && <span class="tag-added">Added {ukDayMonth(p.addedAt)}</span>}</span></span>
                   {done
                     ? <span class="iw-c"><b class="d">All Found</b><small>{formatCount(p.won)} won</small></span>
                     : <span class="iw-c"><b class="d nc">{formatCount(left)}</b><small>Left to win</small></span>}
@@ -128,6 +129,8 @@ const ticketCounts = (max: number, sold: number, left: number) => `Max ${max.toL
       )}
     </div></section>
   )}
+
+  {c.hunt && <HuntBoard hunt={c.hunt} verifyUrl={c.verifyUrl} />}
 
   {isDraw && (
     <section class="sec" style="padding-top:8px"><div class="wrap stack g12">

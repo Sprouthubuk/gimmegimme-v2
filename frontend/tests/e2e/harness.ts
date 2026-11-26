@@ -73,9 +73,14 @@ export async function startSite(backend: "mock" | "laravel" = "mock", opts: { fe
   } else {
     api = spawn(process.execPath, [path.join(ROOT, "mock-api/server.mjs")], { env, stdio: "pipe" });
   }
+  // Always read the API server's output: PHP's built-in server logs every request, and once an unread pipe fills
+  // (64 KB) its workers block writing the log and the whole site hangs part way through a long run.
+  api.stdout?.resume();
+  api.stderr?.resume();
   const astro: ChildProcess = spawn(process.execPath, [path.join(ROOT, "dist/server/entry.mjs")], { env, stdio: "pipe" });
   let astroErr = "";
-  astro.stderr?.on("data", (d) => { astroErr += d; });
+  astro.stdout?.resume();
+  astro.stderr?.on("data", (d) => { astroErr = (astroErr + d).slice(-20000); });
   await waitFor(`http://127.0.0.1:${apiPort}/api/site`);
   await waitFor(`http://127.0.0.1:${astroPort}/`).catch((e) => { throw new Error(`${e.message}\n${astroErr}`); });
 
