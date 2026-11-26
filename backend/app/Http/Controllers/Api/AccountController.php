@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Tracking\MetaEvents;
 use App\Exceptions\RefusedException;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
-use App\Models\OrderLine;
 use App\Models\IdCheck;
+use App\Models\OrderLine;
 use App\Models\Withdrawal;
 use App\Notifications\AdminAlert;
 use App\Notifications\WithdrawalUpdate;
 use App\Services\Orders;
 use App\Services\Settings;
 use App\Services\Wallet;
+use App\Tracking\MetaEvents;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AccountController extends Controller
 {
@@ -110,6 +111,25 @@ class AccountController extends Controller
         $r->user()->forceFill(['phone' => $d['phone'] ? trim($d['phone']) : null])->save();
 
         return response()->json($this->present()->me($r->user()));
+    }
+
+    /**
+     * A player with no date of birth on file (e.g. brought over from the old site) adds it once, 18 or over; after that
+     * only we change it (User::FILL_ONCE). Until then the play check refuses them ('no_date_of_birth').
+     */
+    public function dateOfBirth(Request $r): JsonResponse
+    {
+        $u = $r->user();
+        if ($u->date_of_birth !== null) {
+            throw new RefusedException('Contact us to change your date of birth.', 'fill_once');
+        }
+        $d = $r->validate(
+            ['dateOfBirth' => ['required', 'date_format:Y-m-d', 'before_or_equal:'.now()->subYears(18)->toDateString(), 'after:1900-01-01']],
+            ['dateOfBirth.before_or_equal' => 'You must be 18 or over to play.', 'dateOfBirth.*' => 'Enter your date of birth.'],
+        );
+        $u->forceFill(['date_of_birth' => $d['dateOfBirth']])->save();
+
+        return response()->json($this->present()->me($u->refresh()));
     }
 
     /** The address is filled once; after that only we change it. */
@@ -223,7 +243,7 @@ class AccountController extends Controller
         try {
             $user->notify($notification);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Player email not sent', ['user' => $user->id, 'mail' => class_basename($notification)]);
+            Log::warning('Player email not sent', ['user' => $user->id, 'mail' => class_basename($notification)]);
         }
     }
 }

@@ -39,7 +39,7 @@ export const BLOCK_TEXT: Record<string, string> = {
   on_hold: "Your account is on hold. Please contact us.",
   closed: "This account is closed.",
   under_18: "You must be 18 or over to enter.",
-  no_date_of_birth: "Add your date of birth in Settings before you enter.",
+  no_date_of_birth: "Add your date of birth in Account → Settings before you enter.",
   email_unverified: "Please confirm your email address before you enter — check your inbox.",
 };
 
