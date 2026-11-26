@@ -115,7 +115,7 @@ class ReferralsTest extends TestCase
     {
         $r = $this->referrer();
         $f = $this->join($r, 'bonus@example.com');
-        // £8 order: £4 bonus (its 50% most) + £4 deposit. Only £4 is real money.
+        // £8 order: £4 deposit + £4 bonus. Only £4 is real money.
         $this->topUp($f, 400, 'bonus');
         $this->topUp($f, 400);
         $o = $this->buy($f, 32);

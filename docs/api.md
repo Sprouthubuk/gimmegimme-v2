@@ -109,8 +109,8 @@ locks each competition row so two orders can't both take the last tickets.
    spend limits including card payments in progress). Refuse with
    `403` + `code`.
 2. Re-price on the server. A card part under `minCardPence` is `422`.
-3. Take the wallet part at once (append-only ledger; spend deposit → bonus → winnings; bonus ≤ 50%
-   of the basket). Not enough is `422`.
+3. Take the wallet part at once (append-only ledger; spend deposit → bonus → winnings; bonus can pay
+   for all of it). Not enough is `422`.
 4. Wallet covers it → mark paid, issue entries through Verity in the same transaction, return
    `next: "play"` (or `"attention"` if entries could not all be issued — never auto-refunded).
 5. Otherwise create a Cashflows payment job for the card part, store its reference on the order,
