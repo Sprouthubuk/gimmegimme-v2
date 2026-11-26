@@ -32,7 +32,7 @@ export interface PickerProps {
   playBlock: string | null;
 }
 
-const BLOCK_TEXT: Record<string, string> = {
+export const BLOCK_TEXT: Record<string, string> = {
   staff: "Staff accounts can't enter competitions.",
   self_excluded: "Your account is self-excluded, so you can't enter right now.",
   cool_off: "You're on a break, so you can't enter right now.",

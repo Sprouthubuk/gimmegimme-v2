@@ -70,6 +70,12 @@ Shown prize names (owner, 23 Nov 2026): a prize can be shown on the site under a
 committed to (`prize_display_names`, `App\Support\PrizeNames`). Every `prizeName` / prize `name` in the API is the shown
 name; `?prize=` on `/winning-numbers` takes the shown name. `CompetitionDetail.renamedPrizes[]` (`{from, to}`, `from`
 being Verity's name) lets a player match the page to the fair-play record, which keeps Verity's names.
+Free-to-enter competitions (owner, 26 Nov 2026; docs/free-entry.md): every summary carries `isFree`. A free competition is
+`pricePence` 0 and `maxPerPerson` 1; it is never priced in a basket (checkout refuses it). A signed-in player claims their ticket
+with `POST /api/competitions/{slug}/free-entry` (no body): the same play check as a purchase (403 with its reason, or 422
+`code` `sales_closed`), then `201 {order: {number, status: "paid"}}`; `422` `code` `already_entered` (has their ticket),
+`closed` (not open, or sold out) or `not_free`. The order page shows the ticket and plays any instant win.
+
 Mystery Hunts (owner, 26 Nov 2026; docs/mystery-hunt.md): `CompetitionDetail.hunt` is `HuntBoard` or `null`. It carries the
 theme (`symbolName`, `hashtag`, `facebookUrl`, colours, `intro`), `claimHours`, `boardSize`, `found`, `notWon`, `picks[]`
 (`{number, name, prizeName, valuePence, prizeType, pickedAt}`, the name masked like /winners), `prizes[]` (the hidden prizes,

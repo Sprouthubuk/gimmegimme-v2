@@ -43,7 +43,7 @@ const winnersLoop = loopOf(winners, 8);
         <p class="p gg-rise gg-d3">{featured.subtitle ?? featured.description.slice(0, 120)}{featured.topPrizePence ? <> · Top prize <b class="ny">{formatPence(featured.topPrizePence, { short: false })}</b>.</> : null}</p>
         {opensLater && <div class="eyebrow gg-rise gg-d3" style="margin-bottom:-8px">Opens in</div>}
         <Countdown until={opensLater ?? featured.closesAt} size="xl" class="gg-rise gg-d3" />
-        <div class="row g8 gg-rise gg-d5"><a class="btn btn-y btn-lg gg-cta" style="flex:1" href={`/competitions/${featured.slug}`}>{opensLater ? "See The Prizes" : `Play From ${formatPence(featured.pricePence)}`} <Icon name="arrow" size={18} stroke={3} /></a></div>
+        <div class="row g8 gg-rise gg-d5"><a class="btn btn-y btn-lg gg-cta" style="flex:1" href={`/competitions/${featured.slug}`}>{opensLater ? "See The Prizes" : featured.isFree ? "Enter Free" : `Play From ${formatPence(featured.pricePence)}`} <Icon name="arrow" size={18} stroke={3} /></a></div>
         <p class="hint gg-rise gg-d6" style="margin:0">18+ UK only · <a href="/free-entry">Free postal entry</a> · <a href="/legal/terms">T&amp;Cs</a></p>
       </div>
       <HeroImage src={featured.image} srcset={featured.imageSrcset} alt={featured.title} float class="hero-top">

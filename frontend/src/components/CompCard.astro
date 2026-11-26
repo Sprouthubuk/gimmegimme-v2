@@ -36,7 +36,7 @@ const whenLine: [string, string] = (live || c.endPrize) && (c.drawAt ?? c.closes
   </div>
   <div class="bd">
     <div class="pr">
-      <b class={`pp ${live ? "nc" : "np"}`}>{formatPence(c.pricePence)}</b>
+      <b class={`pp ${live ? "nc" : "np"}`}>{c.isFree ? "FREE" : formatPence(c.pricePence)}</b>
       {!live && c.prizeCount ? <span class="pl" title={`${formatCount(c.prizeCount)} instant ${c.prizeCount === 1 ? "win" : "wins"}`}><Icon name="bolt" size={11} stroke={3} />{formatCount(c.prizeCount)}<span class="sr-only"> instant {c.prizeCount === 1 ? "win" : "wins"}</span></span> : null}
     </div>
     <div class="tt">{c.title}</div>

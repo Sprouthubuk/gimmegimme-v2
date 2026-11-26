@@ -56,6 +56,10 @@ Read before every task. If a request conflicts with this, stop and ask.
   (`App\Services\PrizeBoosts`, lists in `resources/boosts/`, one Verity addition per competition per batch reason).
   They are ordinary Verity instant prizes on numbers nobody held, so Fulfilment pays them as usual; never add prizes
   any other way.
+- Free-to-enter competitions (owner, 26 Nov 2026; docs/free-entry.md): `competitions.is_free`, £0 and one ticket per person,
+  fixed at publish, for live draws and instant wins. The only way in is `App\Services\FreeEntry::claim` (`POST
+  /api/competitions/{slug}/free-entry`: the play check, the competition locked, then `Orders::issueFree` with source
+  `free_entry`). Never sell one through the basket (`Pricing` refuses it), bundle it, box it or make it a hunt.
 - Mystery Hunts (owner, 26 Nov 2026; docs/mystery-hunt.md): an instant-win game with a theme (`hunt_themes`) and one instant
   prize of type `hunt_symbol` (£0). The prizes behind the board's numbers are `hunt_prizes`; at publish `App\Services\Hunts::seal`
   has Verity seal which is behind each number (`Verity::createHunt`, verity-v3.3.0, spec §18) before any ticket. Nobody, admins

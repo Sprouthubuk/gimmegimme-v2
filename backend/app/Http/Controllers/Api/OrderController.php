@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Tracking\MetaEvents;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
+use App\Models\Competition;
 use App\Models\Order;
 use App\Models\User;
 use App\Payments\CashflowsGateway;
 use App\Payments\GatewayAnswer;
 use App\Payments\PaymentGateway;
+use App\Services\FreeEntry;
 use App\Services\Orders;
 use App\Services\Pricing;
 use App\Services\Reveal;
+use App\Tracking\MetaEvents;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -48,6 +50,15 @@ class OrderController extends Controller
             'next' => $res['next'],
             'redirectUrl' => $res['redirectUrl'],
         ], 201);
+    }
+
+    /** Claim the one free ticket for a free-to-enter competition (docs/free-entry.md). No Purchase event: nothing is paid. */
+    public function freeEntry(Request $r, string $slug, FreeEntry $free): JsonResponse
+    {
+        $c = Competition::query()->published()->where('slug', $slug)->firstOrFail();
+        $order = $free->claim($r->user(), $c);
+
+        return response()->json(['order' => ['number' => $order->number, 'status' => $order->status]], 201);
     }
 
     public function show(Request $r, string $number): JsonResponse

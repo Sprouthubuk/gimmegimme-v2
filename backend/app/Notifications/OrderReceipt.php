@@ -47,6 +47,8 @@ class OrderReceipt extends Notification
             $parts = [];
             if ($l->source === 'voucher') {
                 $parts[] = 'free from your voucher';
+            } elseif ($l->source === 'free_entry') {
+                $parts[] = 'free entry';
             } else {
                 if ($l->free_quantity > 0 || $l->bonus_quantity > 0) {
                     $parts[] = ((int) $l->paid_quantity).' paid';

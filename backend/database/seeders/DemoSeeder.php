@@ -64,6 +64,11 @@ class DemoSeeder extends Seeder
         $make(['slug' => 'lush-snow-fairy-wonderland', 'title' => 'Lush Snow Fairy Wonderland', 'type' => 'draw', 'image' => 'competitions/lush.webp', 'price_pence' => 49,
             'end_prize_name' => 'Lush Snow Fairy Gift Set', 'end_prize_value_pence' => 6000, 'cash_alternative_pence' => 5000, 'max_tickets' => 999, 'max_per_person' => 999, 'bundles_enabled' => true, 'max_bundle_share_pct' => 10, 'prize_cost_pence' => 4000]);
 
+        // Free to enter (docs/free-entry.md): £0, one ticket each.
+        $make(['slug' => 'free-festive-fiver', 'title' => 'Free Festive Fiver', 'type' => 'draw', 'image' => 'competitions/lush.webp', 'price_pence' => 0, 'is_free' => true,
+            'max_tickets' => 5000, 'max_per_person' => 1, 'gimme_box_enabled' => false, 'closes_at' => now()->addDays(5),
+            'end_prize_name' => '£5 Site Credit', 'end_prize_value_pence' => 500, 'end_prize_type' => 'site_credit']);
+
         // A Mystery Hunt (docs/mystery-hunt.md): 12 baubles in the instant wins, a prize behind each number on the board.
         if (! Competition::query()->where('slug', 'christmas-bauble-hunt')->exists()) {
             $theme = HuntTheme::query()->firstOrCreate(['name' => 'Christmas Baubles'], ['symbol_name' => 'Mystery Bauble', 'symbol_plural' => 'Mystery Baubles',

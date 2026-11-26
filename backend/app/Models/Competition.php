@@ -18,7 +18,7 @@ class Competition extends Model
     protected $guarded = ['id', 'verity_ref', 'published_at', 'result_published_at', 'result_published_how'];
 
     /** Once published, these are Verity's terms and never change. */
-    public const LOCKED_WHEN_PUBLISHED = ['type', 'price_pence', 'max_tickets', 'max_per_person', 'min_tickets', 'closes_at', 'end_prize_count', 'end_prize_type', 'hunt_theme_id'];
+    public const LOCKED_WHEN_PUBLISHED = ['type', 'price_pence', 'max_tickets', 'max_per_person', 'min_tickets', 'closes_at', 'end_prize_count', 'end_prize_type', 'hunt_theme_id', 'is_free'];
 
     /** How an end prize is paid: to the winner's winnings automatically, or handled by hand. */
     public const END_PRIZE_TYPES = ['site_credit' => 'Site credit (paid to winnings automatically)', 'physical' => 'Handled by hand (cars, holidays, cash by transfer…)'];
@@ -94,6 +94,12 @@ class Competition extends Model
         return $this->hasMany(HuntPrize::class)->orderBy('sort')->orderByDesc('value_pence');
     }
 
+    /** Free to enter (docs/free-entry.md): £0, one ticket each, claimed on the page, never sold in a basket. */
+    public function isFree(): bool
+    {
+        return (bool) $this->is_free;
+    }
+
     /** A Mystery Hunt: an instant-win game with a theme and a hunt symbol prize (docs/mystery-hunt.md). */
     public function isHunt(): bool
     {
@@ -166,6 +172,6 @@ class Competition extends Model
     /** Bundles apply to live draws that have them switched on. */
     public function offersBundles(): bool
     {
-        return $this->type === 'draw' && (bool) $this->bundles_enabled;
+        return $this->type === 'draw' && (bool) $this->bundles_enabled && ! $this->isFree();
     }
 }

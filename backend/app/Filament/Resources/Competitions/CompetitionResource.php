@@ -88,9 +88,21 @@ class CompetitionResource extends Resource
                 Textarea::make('how_to_play')->rows(3)->columnSpanFull(),
             ]),
             Section::make('Terms')->description('Fixed by Verity when the competition is published: they can’t change after that.')->columns(3)->components([
-                Money::input('price_pence', 'Ticket price')->required()->disabled($locked)->live(onBlur: true),
+                Toggle::make('is_free')->label('Free to enter')->columnSpanFull()->live()->disabled($locked)
+                    ->helperText('£0, one ticket per person. Signed-in players claim it on the competition page with the same checks as a purchase (18+, email confirmed, Safer Play). Works for live draws and instant wins.')
+                    ->afterStateUpdated(function (Set $set, $state) {
+                        if ($state) {
+                            $set('price_pence', '0.00');
+                            $set('max_per_person', 1);
+                            $set('min_tickets', 1);
+                            $set('bundles_enabled', false);
+                            $set('gimme_box_enabled', false);
+                            $set('hunt_theme_id', null);
+                        }
+                    }),
+                Money::input('price_pence', 'Ticket price')->required()->disabled($locked)->readOnly(fn (Get $get) => (bool) $get('is_free'))->live(onBlur: true),
                 TextInput::make('max_tickets')->label('Tickets')->integer()->minValue(1)->maxValue(10_000_000)->required()->disabled($locked)->live(onBlur: true),
-                TextInput::make('max_per_person')->label('Max tickets per person')->integer()->minValue(1)->disabled($locked)
+                TextInput::make('max_per_person')->label('Max tickets per person')->integer()->minValue(1)->disabled($locked)->readOnly(fn (Get $get) => (bool) $get('is_free'))
                     ->lte('max_tickets')->helperText('Shown on the competition page and enforced at checkout. Leave empty for no limit.'),
                 TextInput::make('min_tickets')->label('Minimum tickets per order')->integer()->minValue(1)->default(1)->required()->disabled($locked)
                     ->lte('max_tickets')->helperText('E.g. 100 on a 1p competition for a £1 minimum.'),
@@ -247,7 +259,7 @@ class CompetitionResource extends Resource
                 TextColumn::make('status')->badge()->state(fn (Competition $c) => $c->verity_ref === null ? 'draft' : app(CompetitionState::class)->status($c))
                     ->color(fn (string $state) => ['draft' => 'gray', 'live' => 'success', 'scheduled' => 'info', 'sold_out' => 'warning', 'closed' => 'warning', 'drawn' => 'info', 'ended' => 'gray'][$state] ?? 'gray'),
                 TextColumn::make('sold')->state(fn (Competition $c) => app(CompetitionState::class)->sold($c).' / '.number_format($c->max_tickets)),
-                TextColumn::make('price_pence')->label('Price')->formatStateUsing(fn ($state) => Money::show($state)),
+                TextColumn::make('price_pence')->label('Price')->formatStateUsing(fn ($state, Competition $record) => $record->isFree() ? 'Free' : Money::show($state)),
                 TextColumn::make('closes_at')->label('Closes')->dateTime('D j M Y, H:i', 'Europe/London')->sortable(),
                 TextColumn::make('verity_ref')->label('Verity')->placeholder('Not published')->copyable(),
             ])
