@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { api } from "../lib/api";
 import { addBundle, addToBasket } from "../lib/basket";
 import { trackAddToCart } from "../lib/consent";
@@ -128,6 +128,15 @@ export default function TicketPicker(p: PickerProps) {
     trackAddToCart(p.slug, chosenBundle ? chosenBundle.tickets : qty, total);
     setAdded(chosenBundle ? chosenBundle.label : `${formatCount(qty)} ${qty === 1 ? "ticket" : "tickets"}`);
   };
+  // "Enter Now" / "Buy & Play" go straight to checkout: tell Meta it's an Add to Cart too. With the Pixel running,
+  // wait a moment so the event leaves before the page changes; without it (no consent) the link just works.
+  const buyNow = (e: MouseEvent<HTMLAnchorElement>) => {
+    trackAddToCart(p.slug, tickets, total);
+    if (!window.fbq || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    const href = e.currentTarget.href;
+    setTimeout(() => { location.href = href; }, 150);
+  };
   const ticketWord = (n: number) => `${formatCount(n)} ${n === 1 ? "ticket" : "tickets"}`;
 
   return (
@@ -202,7 +211,7 @@ export default function TicketPicker(p: PickerProps) {
             <span className="btn btn-o btn-lg" aria-disabled="true">{sold.out ? "Sold Out" : (p.open && !p.salesOpen) || p.opensAt ? "Entries Open Soon" : "Unavailable"}</span>
           ) : (
             <>
-              <a className="btn btn-y btn-lg gg-cta" href={buyHref} data-testid="buy-now">{verb} · {formatMoney(total)}</a>
+              <a className="btn btn-y btn-lg gg-cta" href={buyHref} onClick={buyNow} data-testid="buy-now">{verb} · {formatMoney(total)}</a>
               <button type="button" className="btn btn-o" onClick={addToBasketNow}>Add To Basket</button>
             </>
           )}
@@ -222,7 +231,7 @@ export default function TicketPicker(p: PickerProps) {
 
       {!blocked && (
         <div className={`buybar${actionsOnScreen ? " buybar-away" : ""}`} data-testid="buy-bar" aria-hidden={actionsOnScreen || undefined}>
-          <a className="btn btn-y btn-block gg-cta" href={buyHref} tabIndex={actionsOnScreen ? -1 : undefined}>{ticketWord(tickets)} · {formatMoney(total)} <Svg name="arrow" size={16} stroke={3} /> {verb}</a>
+          <a className="btn btn-y btn-block gg-cta" href={buyHref} onClick={buyNow} tabIndex={actionsOnScreen ? -1 : undefined}>{ticketWord(tickets)} · {formatMoney(total)} <Svg name="arrow" size={16} stroke={3} /> {verb}</a>
         </div>
       )}
     </div>

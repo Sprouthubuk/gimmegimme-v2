@@ -137,6 +137,7 @@ Read before every task. If a request conflicts with this, stop and ask.
   events to the Conversions API (`App\Tracking\MetaEvents`, `gimme:meta-events` every minute, token in `META_CAPI_TOKEN`
   only). Browser and server share event ids (order number; `reg-{user id}`). Values are real money only, never bonus.
   Personal details leave only SHA-256 hashed (`MetaTrackingTest`); never log Meta's error message or the token.
+  Admin → Reports → Meta Tracking Report (`App\Support\MetaTrackingReport`) lines up site sales against what Meta was sent.
 - Smooth games on slow phones: never animate or move anything under a `filter` (drop-shadow, blur), and take a board's
   filter off while it moves (vault, claw, coin drop do). Keep fast-moving parts in their own layer (`will-change: transform`,
   or a separate SVG over the still picture) and `memo` static artwork in boards that re-render every frame.
