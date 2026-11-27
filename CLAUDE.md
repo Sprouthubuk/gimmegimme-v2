@@ -145,6 +145,8 @@ Read before every task. If a request conflicts with this, stop and ask.
   events to the Conversions API (`App\Tracking\MetaEvents`, `gimme:meta-events` every minute, token in `META_CAPI_TOKEN`
   only). Browser and server share event ids (order number; `reg-{user id}`). Values are real money only, never bonus.
   Personal details leave only SHA-256 hashed (`MetaTrackingTest`); never log Meta's error message or the token.
+  A visitor who has ALREADY accepted (`gg_consent=accepted`) and lands with `?fbclid=` gets `_fbc` = `fb.1.<ms>.<fbclid>` from
+  the Astro middleware before any script (`src/lib/fbc.ts`; kept if it already holds that fbclid); never for anyone else.
   Admin → Reports → Meta Tracking Report (`App\Support\MetaTrackingReport`) lines up site sales against what Meta was sent.
 - Smooth games on slow phones: never animate or move anything under a `filter` (drop-shadow, blur), and take a board's
   filter off while it moves (vault, claw, coin drop do). Keep fast-moving parts in their own layer (`will-change: transform`,

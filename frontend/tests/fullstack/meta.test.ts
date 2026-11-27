@@ -78,4 +78,27 @@ describe("Meta tracking", () => {
     const counts = JSON.parse(site.artisan!(["tinker", "--execute", "echo json_encode(App\\Support\\ConsentChoices::daily(1));"]).trim().split("\n").pop()!);
     expect(Object.values(counts)[0]).toEqual({ accepted: 1, rejected: 0 });
   });
+
+  it("from an ad, the server sets Meta's click id only for a visitor who already accepted, and the sale carries it", async () => {
+    const click = "IwAR2xYzAbCdEfGhIjKlMnOp_qrStUv-1234567890";
+    const setFbc = async (cookie: string) => {
+      const r = await fetch(`${site.origin}/competitions?utm_source=facebook&fbclid=${click}`, { headers: cookie ? { Cookie: cookie } : {}, redirect: "manual" });
+      return (r.headers.getSetCookie?.() ?? []).filter((c) => c.startsWith("_fbc="));
+    };
+    expect(await setFbc("")).toEqual([]); // not chosen yet: nothing
+    expect(await setFbc("gg_consent=rejected")).toEqual([]);
+    const set = await setFbc("gg_consent=accepted");
+    expect(set).toHaveLength(1);
+    expect(set[0]).toMatch(new RegExp(`^_fbc=fb\\.1\\.\\d{13}\\.${click};`));
+    expect(await setFbc(`gg_consent=accepted; _fbc=fb.1.1764000000000.${click}`)).toEqual([]); // already holds this click
+
+    // The cookie then goes with the sale to the Conversions API.
+    const c = (await new Browser(site.origin).api("/api/competitions")).body.data.find((x: { type: string; isFree?: boolean }) => x.type === "draw" && !x.isFree);
+    const b = await player(true);
+    b.jar.set("_fbc", set[0].split(";")[0].slice("_fbc=".length));
+    const r = await b.api("/api/checkout", { lines: [{ competitionId: c.id, quantity: 1 }], payWith: "wallet", useWallet: true, requestId: uuid() });
+    expect(r.status).toBe(201);
+    const kept = rows().find((x: { event_id: string }) => x.event_id === r.body.order.number);
+    expect(kept.context.fbc).toBe(b.jar.get("_fbc"));
+  });
 });
