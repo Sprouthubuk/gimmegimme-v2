@@ -1,5 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
 import { serverApi, ApiFailure, latestSetCookies } from "./lib/api";
+import { fbcCookie } from "./lib/fbc";
 import type { Me, SiteInfo } from "./lib/types";
 
 const FALLBACK_SITE: SiteInfo = {
@@ -76,6 +77,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Keep the visitor's session alive: pass on cookies Laravel set while rendering.
   // One line per cookie: each API call during the page view refreshes them, and only the newest counts.
   for (const c of latestSetCookies(setCookies)) res.headers.append("Set-Cookie", c);
+  // From an ad, with marketing cookies already accepted: Meta's click id, set before any script runs (src/lib/fbc.ts).
+  if (context.request.method === "GET" && context.url.searchParams.has("fbclid")) {
+    const env = (typeof process !== "undefined" ? process.env : {}) as Record<string, string | undefined>;
+    const site = env.PUBLIC_SITE_URL || import.meta.env.PUBLIC_SITE_URL || context.url.origin;
+    const fbc = fbcCookie(context.url, context.request.headers.get("cookie") ?? "", Date.now(), new URL(site).hostname);
+    if (fbc) res.headers.append("Set-Cookie", fbc);
+  }
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // Game demos may be framed by this site only (the admin's game previewer); every other page never.
