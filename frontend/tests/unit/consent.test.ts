@@ -43,7 +43,8 @@ describe("marketing cookies and the Meta Pixel", () => {
     c.trackPurchaseOnce("GG-ABCD1234", 250);
     const purchases = window.fbq!.queue.filter((q) => q[1] === "Purchase");
     expect(purchases).toHaveLength(1);
-    expect(purchases[0][2]).toEqual({ value: 2.5, currency: "GBP", content_type: "product" });
+    // order_id is the same order number the server's Conversions API sends (27 Nov 2026).
+    expect(purchases[0][2]).toEqual({ value: 2.5, currency: "GBP", content_type: "product", order_id: "GG-ABCD1234" });
     // The order number is the event id the server also uses, so Meta counts the sale once.
     expect(purchases[0][3]).toEqual({ eventID: "GG-ABCD1234" });
   });
@@ -56,7 +57,8 @@ describe("marketing cookies and the Meta Pixel", () => {
     c.trackPurchaseOnce("GG-ABCD9999", 1050, [{ slug: "cash-bang", quantity: 10 }, { slug: "cash-bang", quantity: 5 }, { slug: "lush", quantity: 2 }]);
     const purchases = window.fbq!.queue.filter((q) => q[1] === "Purchase");
     expect(purchases).toHaveLength(1);
-    expect(purchases[0][2]).toMatchObject({ value: 10.5, content_ids: ["cash-bang", "lush"], num_items: 17 });
+    expect(purchases[0][2]).toMatchObject({ value: 10.5, content_ids: ["cash-bang", "lush"], num_items: 17, order_id: "GG-ABCD9999" });
+    expect(purchases[0][3]).toEqual({ eventID: "GG-ABCD9999" });
   });
 
   it("tells the server about the choice with a cookie, and Reject removes Meta's cookies", async () => {
