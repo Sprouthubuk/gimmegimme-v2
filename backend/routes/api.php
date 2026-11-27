@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ConsentChoiceController;
 use App\Http\Controllers\Api\FakePayController;
 use App\Http\Controllers\Api\GimmeBoxController;
 use App\Http\Controllers\Api\HealthController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\ReferralController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 // The contract is docs/api.md. Everything here is under /api.
 
@@ -77,6 +79,10 @@ Route::middleware('throttle:api')->group(function () {
     });
 });
 
+// The cookie banner's choice, counted as a daily total (App\Support\ConsentChoices). Stateless on purpose:
+// no session, no CSRF cookie, nothing set on the visitor's device just to count.
+Route::post('consent-choice', ConsentChoiceController::class)->middleware('throttle:30,1')
+    ->withoutMiddleware([EnsureFrontendRequestsAreStateful::class]);
 Route::post('webhooks/cashflows', [OrderController::class, 'webhook'])->middleware('throttle:120,1');
 
 // The stand-in payment page, only when the fake gateway is in use (never in production).

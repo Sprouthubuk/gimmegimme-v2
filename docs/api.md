@@ -229,6 +229,7 @@ refund within `referral_clawback_days` takes back unused rewards. `/r/{code}` on
 | PATCH | `/api/me/profile` | `{ phone }` → `Me` (name, date of birth fill-once) |
 | PATCH | `/api/me/address` | `{ line1, line2, city, postcode }` → `Me` (fill-once) |
 | PATCH | `/api/me/date-of-birth` | `{ dateOfBirth: "YYYY-MM-DD" }` → `Me`; only when none is on file (fill-once, `422` `fill_once` after), 18 or over (`422` on `dateOfBirth`) |
+| POST | `/api/consent-choice` | `{ choice: "accepted" \| "rejected" }` → `204`; the cookie banner's choice, added to a daily total (no id, IP or cookie kept or set; no session, no CSRF); `422` for anything else; 30 a minute |
 | PATCH | `/api/me/preferences` | `{ email, sms, winNotifications }` → `Me` |
 | POST | `/api/me/password` | `{ currentPassword, password }` → `204` |
 | POST | `/api/me/deposits` | `{ amountPence }` → `{ redirectUrl, orderNumber }` (min £5, max setting, play check) |

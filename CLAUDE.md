@@ -137,6 +137,10 @@ Read before every task. If a request conflicts with this, stop and ask.
 - Title Case for every title. Mobile first (44px taps, 16px inputs, no sideways scroll at 320px).
 - Nothing third-party loads before a cookie choice. The only one is the Meta Pixel (`src/lib/consent.ts`, ID set in
   Admin → Settings), loaded after "Accept" in the cookie banner; its addresses are the only extra ones in the CSP.
+  The banner (`src/components/CookieBanner.astro`, 27 Nov 2026) is in the page from the first paint until a choice, one
+  sentence, Reject and Accept identical (same size and style, nothing pre-selected), always above the bottom menu and buy
+  bar. Choices are counted as daily totals only (`POST /api/consent-choice`, `App\Support\ConsentChoices`, stateless:
+  no id, IP, session or cookie), shown in Admin → Meta Tracking Report; `tests/visual/cookie-banner.test.ts` checks it.
 - Meta tracking: the banner's choice is copied to a `gg_consent` cookie; only with it does the server keep and send
   events to the Conversions API (`App\Tracking\MetaEvents`, `gimme:meta-events` every minute, token in `META_CAPI_TOKEN`
   only). Browser and server share event ids (order number; `reg-{user id}`). Values are real money only, never bonus.

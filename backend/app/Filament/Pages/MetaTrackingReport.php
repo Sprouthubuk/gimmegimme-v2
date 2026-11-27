@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Support\Money;
+use App\Support\ConsentChoices;
 use App\Support\MetaTrackingReport as Report;
 use App\Tracking\MetaEvents;
 use BackedEnum;
@@ -31,6 +32,12 @@ class MetaTrackingReport extends Page
     public function rows(): array
     {
         return Report::daily(self::DAYS);
+    }
+
+    /** Cookie banner choices per UK day, totals only (App\Support\ConsentChoices). */
+    public function choices(): array
+    {
+        return ConsentChoices::daily(self::DAYS);
     }
 
     public function errors(): array
