@@ -135,4 +135,11 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+     * How long anonymous public API answers (competition list, a competition page for a signed-out visitor) are
+     * reused, in seconds. Saves Laravel and the database from repeating the same work for every visitor and for
+     * Facebook's link-preview robot. 0 switches it off (the tests do).
+     */
+    'public_cache_seconds' => (int) env('PUBLIC_API_CACHE_SECONDS', 10),
+
 ];

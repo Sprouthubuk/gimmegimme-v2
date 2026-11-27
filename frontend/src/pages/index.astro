@@ -11,9 +11,9 @@ import { formatPence, formatCount } from "../lib/money";
 import { ago, ukDateTime } from "../lib/time";
 
 const { api, site } = Astro.locals;
-// The independent calls run side by side once the visitor has a session (see api.hasSession).
+// The independent calls run side by side (see api.parallelSafe).
 const winnersCall = () => api.get<{ data: InstantWinnerRow[] }>("/api/winners/instant?limit=12");
-const early = api.hasSession() ? winnersCall() : null;
+const early = api.parallelSafe() ? winnersCall() : null;
 early?.catch(() => undefined); // still rejects where it is awaited; this only stops an early failure crashing Node
 const { data: comps } = await api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
 const instant = comps.filter((c) => c.type === "instant");

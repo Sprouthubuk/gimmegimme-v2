@@ -35,6 +35,7 @@
         <env name="VERITY_BEACON" value="local"/>
         <env name="VERITY_OWNER_PEPPER" value="test-pepper-0123456789abcdef"/>
         <env name="CASHFLOWS_DRIVER" value="fake"/>
+        <env name="PUBLIC_API_CACHE_SECONDS" value="0"/>
         <env name="APP_URL" value="https://gimme.test"/>
         <env name="FRONTEND_URL" value="https://gimme.test"/>
         <env name="SANCTUM_STATEFUL_DOMAINS" value="gimme.test"/>

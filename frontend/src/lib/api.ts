@@ -7,6 +7,13 @@
 // the XSRF token Laravel sets, so cookie sessions work without CORS.
 import type { ApiError } from "./types";
 
+/** How long a page waits for the API before showing the busy page (nginx gives up on the page at 30s). */
+const API_TIMEOUT_MS = 10_000;
+export const BUSY = "We're very busy right now. Please try again in a moment.";
+
+/** True when the API was too busy or slow to answer (the page shows the busy page, not an error). */
+export const isBusy = (e: unknown) => e instanceof ApiFailure && (e.status === 503 || e.status === 502 || e.status === 504);
+
 export class ApiFailure extends Error {
   status: number;
   body: ApiError | null;
@@ -38,21 +45,34 @@ export function serverApi(request: Request, setCookies: string[] = []) {
   // use the same session as earlier ones (a first-time visitor gets one session, not one per call).
   const jar = parseCookieHeader(request.headers.get("cookie") ?? "");
   const cookieHeader = () => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
+  const hasSessionCookie = () => [...jar.keys()].some((k) => k.endsWith("_session"));
   async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     const cookie = cookieHeader();
-    const res = await fetch(`${internalBase()}${path}`, {
-      ...init,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Cookie: cookie,
-        // Sanctum treats a request as first-party when it comes from the site.
-        Referer: `${siteOrigin()}/`,
-        Origin: siteOrigin(),
-        "X-Forwarded-For": request.headers.get("x-forwarded-for") ?? "",
-        ...(init.headers ?? {}),
-      },
-    });
+    // A visitor with no session (a first visit, Facebook's link-preview robot) only reads public pages: their
+    // GETs go without Origin/Referer, so Sanctum treats them as stateless and Laravel doesn't start (and
+    // write) a session for every page view. They get one when they first sign in or join (the browser
+    // fetches /sanctum/csrf-cookie before any form). Signed-in visitors and every write work as before.
+    const method = (init.method ?? "GET").toUpperCase();
+    const firstParty = method !== "GET" || hasSessionCookie();
+    let res: Response;
+    try {
+      res = await fetch(`${internalBase()}${path}`, {
+        ...init,
+        // A page never hangs on a slow API: after this long it shows the busy page instead of a blank 504.
+        signal: AbortSignal.timeout(API_TIMEOUT_MS),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Cookie: cookie,
+          // Sanctum treats a request as first-party when it comes from the site.
+          ...(firstParty ? { Referer: `${siteOrigin()}/`, Origin: siteOrigin() } : {}),
+          "X-Forwarded-For": request.headers.get("x-forwarded-for") ?? "",
+          ...(init.headers ?? {}),
+        },
+      });
+    } catch {
+      throw new ApiFailure(503, { message: BUSY });
+    }
     // Keep the session alive: pass Laravel's cookies back to the browser.
     if (typeof res.headers.getSetCookie === "function") {
       for (const sc of res.headers.getSetCookie()) {
@@ -62,9 +82,15 @@ export function serverApi(request: Request, setCookies: string[] = []) {
         if (eq > 0) jar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
       }
     }
-    const text = await res.text();
-    const body = text ? JSON.parse(text) : null;
-    if (!res.ok) throw new ApiFailure(res.status, body);
+    let body: unknown = null;
+    try {
+      const text = await res.text();
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      // Not JSON (nginx's own "504 Gateway Time-out" page when PHP is busy): a busy answer, not a crash.
+      throw new ApiFailure(res.status >= 500 ? res.status : 502, { message: BUSY });
+    }
+    if (!res.ok) throw new ApiFailure(res.status, body as ApiError | null);
     return body as T;
   }
   // The XSRF token that goes with the session in the jar (the newest one Laravel handed out).
@@ -78,7 +104,9 @@ export function serverApi(request: Request, setCookies: string[] = []) {
   return {
     /** True once this page view has a Laravel session cookie. Calls can then run side by side without
      *  each one starting its own session (a first-time visitor's first call is made on its own). */
-    hasSession: () => [...jar.keys()].some((k) => k.endsWith("_session")),
+    hasSession: () => hasSessionCookie(),
+    /** Calls may run side by side: the visitor has a session, or (no session) none will be started. */
+    parallelSafe: () => true,
     get: <T>(path: string) => call<T>(path),
     /** A write on the visitor's behalf: carries their XSRF token, like the browser would. */
     post: <T>(path: string, json: unknown = {}) => call<T>(path, { method: "POST", body: JSON.stringify(json), headers: { "X-XSRF-TOKEN": xsrf() } }),

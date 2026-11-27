@@ -115,6 +115,10 @@ Read before every task. If a request conflicts with this, stop and ask.
 - The old site's public record (competitions, winners, entry lists) is a read-only archive at `/previous`
   (`archive_*` tables, `gimme:import-archive` from `resources/archive/*.csv` on every deploy; docs/old-site-archive.md).
   Masked names only; never a Verity record, never linked to `/verify`, never mixed into the live lists.
+- Busy evenings (504s, 26 Nov 2026): the competition list and a signed-out visitor's competition page are reused for
+  `PUBLIC_API_CACHE_SECONDS` (10) from the file cache (`App\Support\PublicCache`; never anything that depends on the player).
+  Astro's `serverApi` sends a signed-out visitor's GETs without Origin/Referer (no Laravel session per page view), gives up after
+  10s, and a busy API shows `src/pages/500.astro` (503, tries again) instead of a blank error; nginx shows `public/busy.html`.
 - Admin is Filament at `/admin` (`app/Filament`); admins and staff can't play.
 - Admin reports are read only and share one set of sums, `App\Support\Reports` (player page `Users/Pages/ViewUser`, players list
   balance columns, Wins / Money / Competition reports, dashboard `MoneyStats`, `BigWins`, `TopBuyers`); wins are read from Verity's

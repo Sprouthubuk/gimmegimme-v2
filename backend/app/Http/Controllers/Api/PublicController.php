@@ -17,6 +17,7 @@ use App\Services\GimmeBoxPacker;
 use App\Services\Settings;
 use App\Support\PresenterKey;
 use App\Support\PrizeNames;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -81,20 +82,35 @@ class PublicController extends Controller
 
     public function competitions(Request $r): JsonResponse
     {
-        $list = Competition::query()->published()->with(['prizes', 'bundleTiers'])->where('closes_at', '>', now()->subDays(1))
+        $type = in_array($r->query('type'), ['instant', 'draw'], true) ? $r->query('type') : 'all';
+
+        // The same for everyone, so reused for a few seconds (App\Support\PublicCache).
+        return response()->json(['data' => PublicCache::remember('competitions:'.$type, fn () => $this->competitionList($r))]);
+    }
+
+    private function competitionList(Request $r): array
+    {
+        return Competition::query()->published()->with(['prizes', 'bundleTiers'])->where('closes_at', '>', now()->subDays(1))
             ->when(in_array($r->query('type'), ['instant', 'draw'], true), fn ($q) => $q->where('type', $r->query('type')))
             ->orderByDesc('featured')->orderBy('closes_at')->limit(200)->get()
             ->filter(fn (Competition $c) => in_array($this->state()->status($c), ['live', 'sold_out'], true))
-            ->map(fn (Competition $c) => $this->present()->summary($c))->values();
-
-        return response()->json(['data' => $list]);
+            ->map(fn (Competition $c) => $this->present()->summary($c))->values()->all();
     }
 
     public function competition(Request $r, string $slug): JsonResponse
     {
-        $c = Competition::query()->published()->with(['prizes', 'bundleTiers'])->where('slug', $slug)->firstOrFail();
+        $user = $r->user();
+        $load = function () use ($slug, $user) {
+            $c = Competition::query()->published()->with(['prizes', 'bundleTiers'])->where('slug', $slug)->first();
 
-        return response()->json($this->present()->detail($c, $r->user()));
+            return $c ? $this->present()->detail($c, $user) : null;
+        };
+        // A signed-out visitor sees the same page as every other: reused for a few seconds. A player's own
+        // tickets, limits and play checks are always worked out fresh.
+        $detail = $user ? $load() : PublicCache::remember('competition:'.sha1($slug), $load);
+        abort_if($detail === null, 404);
+
+        return response()->json($detail);
     }
 
     public function instantWinners(Request $r): JsonResponse

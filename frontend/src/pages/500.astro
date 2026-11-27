@@ -1,0 +1,21 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { isBusy } from "../lib/api";
+
+// Shown instead of a blank error when a page can't be made. Usually the site is busy (the API didn't answer in
+// time), so it says so and tries the page again by itself.
+const { error } = Astro.props as { error?: unknown };
+const busy = isBusy(error);
+Astro.response.status = busy ? 503 : 500;
+if (busy) Astro.response.headers.set("Retry-After", "10");
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Layout title={busy ? "We're Busy Right Now" : "Something Went Wrong"} noindex>
+  <section class="sec"><div class="narrow stack g16" style="text-align:center;align-items:center">
+    <div class="d np gg-flicker" style="font-size:72px;line-height:1">{busy ? "Busy!" : "Oops"}</div>
+    <h1 class="h2">{busy ? <>We're Busy <span class="nc">Right Now</span></> : <>Something Went <span class="nc">Wrong</span></>}</h1>
+    <p class="p">{busy ? "The page is taking longer than usual. We'll try it again for you in a few seconds." : "Please try again in a moment."}</p>
+    <a class="btn btn-y btn-lg gg-cta" href="" data-testid="try-again">Try Again</a>
+  </div></section>
+  {busy && <script is:inline>setTimeout(function () { location.reload(); }, 8000);</script>}
+</Layout>

@@ -16,7 +16,7 @@ import { breadcrumbLd, competitionDescription, competitionTitle, pageTitle } fro
 const { api, site, me } = Astro.locals;
 const slug = Astro.params.slug!;
 const othersCall = () => api.get<{ data: CompetitionSummary[] }>("/api/competitions?status=live");
-const early = api.hasSession() ? othersCall() : null;
+const early = api.parallelSafe() ? othersCall() : null;
 early?.catch(() => undefined); // still rejects where it is awaited; this only stops an early failure crashing Node
 const c = await api.maybe<CompetitionDetail>(`/api/competitions/${encodeURIComponent(slug)}`);
 if (!c) return Astro.rewrite("/404");
