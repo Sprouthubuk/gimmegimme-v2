@@ -153,7 +153,8 @@ games (`frontend/packages/games`) read this response through `fromRevealOutcome`
 
 `POST /api/webhooks/cashflows` — `{ paymentJobReference }`. Nothing in the message is trusted: the
 order is found **only** by the stored job reference, then confirmed through the same path as `/return`
-(which asks Cashflows itself).
+(which asks Cashflows itself). The webhook answers `{ ok: true }` at once and does that in a queued job
+(`App\Jobs\ConfirmGatewayPayment`): Cashflows gives up on a slow answer and emails a failed-notification warning.
 
 Return addresses given to Cashflows: success `/order/{n}` (deposits: `/account/wallet?deposit={n}`,
 which calls `/return` server-side), failed `/payment/failed?order={n}`, cancelled

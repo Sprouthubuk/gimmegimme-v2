@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\AccountPresenter;
+use App\Jobs\ConfirmGatewayPayment;
 use App\Models\Competition;
 use App\Models\Order;
 use App\Models\User;
@@ -87,7 +88,7 @@ class OrderController extends Controller
      * Cashflows' notification. Never trusted: the order is found only by the job reference stored at
      * checkout, and confirmed only after asking Cashflows about that job.
      */
-    public function webhook(Request $r, Orders $orders, PaymentGateway $gateway): JsonResponse
+    public function webhook(Request $r, PaymentGateway $gateway): JsonResponse
     {
         // Nothing here is trusted either way, but a signature that is sent must be right.
         if ($r->hasHeader('Hash') && $gateway instanceof CashflowsGateway && ! $gateway->signatureValid($r->getContent(), (string) $r->header('Hash'))) {
@@ -105,7 +106,11 @@ class OrderController extends Controller
 
             return response()->json(['ok' => true]);
         }
-        $orders->syncWithGateway($o);
+        // Answer Cashflows at once; asking it about the payment and issuing tickets happen in the background
+        // (Cashflows gives up on a slow answer and emails a failed-notification warning).
+        if (! in_array($o->status, ['paid', 'refunded'], true)) {
+            ConfirmGatewayPayment::dispatch($o->id);
+        }
 
         return response()->json(['ok' => true]);
     }

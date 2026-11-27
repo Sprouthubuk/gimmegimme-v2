@@ -23,7 +23,8 @@ Read before every task. If a request conflicts with this, stop and ask.
   bucket holds credit an admin adds and bonus brought over from the old site, until it expires.
 - Wallet part is taken at checkout before any ticket is issued; given back if the card fails.
 - Card payments are confirmed only by asking Cashflows about the job reference stored on the order,
-  matching job, order number and amount. The webhook finds orders only by that stored reference.
+  matching job, order number and amount. The webhook finds orders only by that stored reference,
+  answers at once and confirms in the queued `ConfirmGatewayPayment` job (never slow work in the webhook itself).
 - Tickets and instant-win results come only from Verity, inside the payment-confirm transaction.
   Winning ticket numbers and entry lists are public from publish (`/winning-numbers`, `/entry-lists`):
   safe only with random ticket numbers, so publishing always uses `ticket_allocation` `random`.
