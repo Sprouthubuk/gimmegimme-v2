@@ -54,4 +54,28 @@ describe("Meta tracking", () => {
     const order = (await b.api(`/api/orders/${number}`)).body;
     expect(order.trackValuePence).toBe(order.totalPence);
   });
+  it("the cookie banner is in the page from the start with two equal buttons, and goes once a choice is made", async () => {
+    const fresh = await new Browser(site.origin).page("/competitions");
+    const banner = fresh.html.match(/<div[^>]*id="cookie-banner"[^>]*>[\s\S]*?<\/div>\s*<\/div>/)?.[0] ?? "";
+    expect(banner).not.toMatch(/<div[^>]*id="cookie-banner"[^>]*\shidden/);
+    const buttons = [...banner.matchAll(/<button[^>]*class="([^"]*)"[^>]*data-choice="(\w+)"[^>]*>([^<]*)</g)].map((m) => ({ cls: m[1], choice: m[2], text: m[3].trim() }));
+    expect(buttons.map((b) => b.choice).sort()).toEqual(["accepted", "rejected"]);
+    expect(new Set(buttons.map((b) => b.cls)).size).toBe(1); // same size and style: neither is picked for you
+    expect(banner).not.toMatch(/checked/);
+
+    for (const choice of ["accepted", "rejected"]) {
+      const b = new Browser(site.origin);
+      b.jar.set("gg_consent", choice);
+      const { html } = await b.page("/competitions");
+      expect(html).toMatch(/<div[^>]*id="cookie-banner"[^>]*\shidden/);
+    }
+  });
+
+  it("a banner choice is counted as a daily total, with nothing set on the visitor's device", async () => {
+    const r = await fetch(`${site.origin}/api/consent-choice`, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", Origin: site.origin, Referer: `${site.origin}/` }, body: JSON.stringify({ choice: "accepted" }) });
+    expect(r.status).toBe(204);
+    expect(r.headers.getSetCookie?.() ?? []).toEqual([]);
+    const counts = JSON.parse(site.artisan!(["tinker", "--execute", "echo json_encode(App\\Support\\ConsentChoices::daily(1));"]).trim().split("\n").pop()!);
+    expect(Object.values(counts)[0]).toEqual({ accepted: 1, rejected: 0 });
+  });
 });

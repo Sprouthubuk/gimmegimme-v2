@@ -1,6 +1,7 @@
 @php($rows = $this->rows())
 @php($errors = $this->errors())
 @php($setup = $this->setup())
+@php($choices = $this->choices())
 <x-filament-panels::page>
     <x-filament::section heading="How to read this">
         <ul style="margin:0;padding-left:18px;line-height:1.7;opacity:.85">
@@ -35,6 +36,23 @@
                         <td>{{ $this->money($r['sentValue']) }}</td>
                         <td>{{ number_format($r['waiting']) }}</td>
                         <td style="{{ $r['notSent'] ? 'color:#dc2626;font-weight:700' : '' }}">{{ number_format($r['notSent']) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </x-filament::section>
+
+    <x-filament::section heading="Cookie Banner Choices">
+        <p style="margin:0 0 10px;opacity:.85">How many visitors pressed Accept or Reject each day (UK time). Totals only: no names, ids, IPs or cookies are kept. Visitors who leave without choosing aren't counted, and Meta can't see them or anyone who rejects.</p>
+        <table style="width:100%;font-size:14px;border-collapse:collapse">
+            <thead><tr style="text-align:left;opacity:.6"><th style="padding:6px 0">Day</th><th>Accepted</th><th>Rejected</th><th>Accept rate</th></tr></thead>
+            <tbody>
+                @foreach ($choices as $day => $c)
+                    <tr style="border-top:1px solid rgba(127,127,127,.2)">
+                        <td style="padding:6px 0">{{ \Illuminate\Support\Carbon::parse($day)->format('D j M') }}</td>
+                        <td>{{ number_format($c['accepted']) }}</td>
+                        <td>{{ number_format($c['rejected']) }}</td>
+                        <td>{{ $this->pct($c['accepted'], $c['accepted'] + $c['rejected']) }}</td>
                     </tr>
                 @endforeach
             </tbody>

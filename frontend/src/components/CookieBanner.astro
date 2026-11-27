@@ -7,13 +7,16 @@ const me = Astro.locals.me;
 const sha = (v: string) => createHash("sha256").update(v).digest("hex");
 const em = me ? sha(me.email.trim().toLowerCase()) : undefined;
 const xid = me ? sha(String(me.id)) : undefined;
+// Shown straight away (in the page itself, not after a script) unless this browser has already chosen.
+const chosen = ["accepted", "rejected"].includes(Astro.cookies.get("gg_consent")?.value ?? "");
 ---
 {pixelId && (
-  <div class="ck" id="cookie-banner" data-pixel={pixelId} data-em={em} data-xid={xid} role="dialog" aria-live="polite" aria-label="Cookie choice" hidden>
-    <p class="ck-t"><b>Cookies</b> We use Meta's marketing cookies, and tell Meta when you sign up or buy, to see which of our adverts work. They stay off unless you accept. <a href="/legal/cookies">Cookie policy</a></p>
+  <div class="ck" id="cookie-banner" data-pixel={pixelId} data-em={em} data-xid={xid} role="dialog" aria-live="polite" aria-label="Cookie choice" hidden={chosen || undefined}>
+    <p class="ck-t">We'd like to use Meta's advertising cookies, and tell Meta when you join or buy, to see which of our ads work, but only if you accept. <a href="/legal/cookies">Cookie policy</a></p>
+    {/* Reject and Accept look and work the same: same size, same style, neither picked for you. */}
     <div class="ck-b">
       <button type="button" class="ck-btn" data-choice="rejected">Reject</button>
-      <button type="button" class="ck-btn is-on" data-choice="accepted">Accept</button>
+      <button type="button" class="ck-btn" data-choice="accepted">Accept</button>
     </div>
   </div>
 )}
@@ -22,15 +25,48 @@ const xid = me ? sha(String(me.id)) : undefined;
   syncConsentCookie();
   const banner = document.getElementById("cookie-banner");
   const id = banner?.dataset.pixel ?? "";
+  // Sits above whatever is fixed to the bottom of the screen (the menu, a competition's buy bar), never under it.
+  const lift = () => {
+    if (!banner || banner.hidden) return;
+    let h = 0;
+    document.querySelectorAll<HTMLElement>(".bn, .buybar").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      // Only a bar actually sitting on the bottom edge counts (not one sliding away or parked off-screen).
+      if (r.height && getComputedStyle(el).display !== "none" && r.top >= 0 && r.top < innerHeight && r.bottom >= innerHeight - 4) h = Math.max(h, innerHeight - r.top);
+    });
+    banner.style.bottom = h ? `${Math.round(h + 12)}px` : "";
+  };
+  // Totals only: which button was pressed, nothing about who. Sets nothing on the device.
+  const count = (choice: string) => {
+    const body = JSON.stringify({ choice });
+    try {
+      if (navigator.sendBeacon?.("/api/consent-choice", new Blob([body], { type: "application/json" }))) return;
+    } catch {
+      // fall through
+    }
+    fetch("/api/consent-choice", { method: "POST", body, keepalive: true, credentials: "omit", headers: { "Content-Type": "application/json", Accept: "application/json" } }).catch(() => {});
+  };
   if (banner && id) {
-    if (readConsent() === null) banner.hidden = false;
-    else startPixel(id);
+    if (readConsent() === null) {
+      banner.hidden = false;
+      lift();
+      addEventListener("resize", lift);
+      addEventListener("load", lift);
+      // The buy bar slides in as the page scrolls: follow it.
+      let queued = false;
+      addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; lift(); }); } }, { passive: true });
+      new MutationObserver(lift).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["class", "hidden", "style"] });
+    } else {
+      banner.hidden = true;
+      startPixel(id);
+    }
     banner.querySelectorAll<HTMLButtonElement>("[data-choice]").forEach((b) =>
       b.addEventListener("click", () => {
         const choice = b.dataset.choice as "accepted" | "rejected";
         const had = readConsent();
         saveConsent(choice);
         banner.hidden = true;
+        count(choice);
         // Withdrawing stops the Pixel straight away: reload without it.
         if (had === "accepted" && choice === "rejected") location.reload();
         else startPixel(id);
@@ -40,6 +76,7 @@ const xid = me ? sha(String(me.id)) : undefined;
       el.addEventListener("click", (e) => {
         e.preventDefault();
         banner.hidden = false;
+        lift();
         banner.querySelector<HTMLButtonElement>("[data-choice='rejected']")?.focus();
       }),
     );
@@ -49,13 +86,12 @@ const xid = me ? sha(String(me.id)) : undefined;
   }
 </script>
 <style>
-  .ck { font-family: Nunito, system-ui, sans-serif; position: fixed; left: 12px; right: 12px; bottom: 96px; z-index: 60; max-width: 520px; margin: 0 auto; padding: 14px; border-radius: 18px; background: #0e0914; border: 1px solid rgba(255, 45, 170, 0.55); box-shadow: 0 0 40px rgba(255, 45, 170, 0.18), 0 18px 40px rgba(0, 0, 0, 0.55); color: #fff; }
+  .ck { font-family: Nunito, system-ui, sans-serif; position: fixed; left: 12px; right: 12px; bottom: 96px; z-index: 70; max-width: 520px; margin: 0 auto; padding: 14px; border-radius: 18px; background: #0e0914; border: 1px solid rgba(255, 45, 170, 0.55); box-shadow: 0 0 40px rgba(255, 45, 170, 0.18), 0 18px 40px rgba(0, 0, 0, 0.55); color: #fff; }
   .ck[hidden] { display: none; }
   .ck-t { margin: 0 0 12px; font-size: 14px; line-height: 1.5; font-weight: 600; color: #d8d0e2; }
-  .ck-t b { color: #fff; margin-right: 4px; font-family: "Lilita One", sans-serif; font-weight: 400; font-size: 16px; }
   .ck-t a { color: #ff5cc0; }
   .ck-b { display: flex; gap: 10px; }
-  .ck-btn { flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.3); background: #120c18; color: #fff; font: 800 15px Nunito, system-ui, sans-serif; cursor: pointer; }
-  .ck-btn.is-on { background: #fff23a; border-color: #fff23a; color: #07050b; }
+  .ck-btn { flex: 1 1 0; min-height: 48px; border-radius: 999px; border: 2px solid #fff; background: #1b1424; color: #fff; font: 800 16px Nunito, system-ui, sans-serif; cursor: pointer; }
+  .ck-btn:focus-visible { outline: 3px solid #ff5cc0; outline-offset: 2px; }
   @media (min-width: 900px) { .ck { bottom: 20px; } }
 </style>
