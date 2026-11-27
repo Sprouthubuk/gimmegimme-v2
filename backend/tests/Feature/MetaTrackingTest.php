@@ -6,7 +6,9 @@ use App\Models\MetaEvent;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\MetaTrackingReport;
 use App\Tracking\MetaEvents;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Illuminate\Http\Client\Request as SentRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -213,11 +215,34 @@ class MetaTrackingTest extends TestCase
 
     public function test_the_hashes_follow_metas_normalising_rules(): void
     {
-        $u = $this->player(['first_name' => " Zoë-Ann ", 'phone' => '+44 (0)7700 900123', 'postcode' => 'sw1a 1aa']);
+        $u = $this->player(['first_name' => ' Zoë-Ann ', 'phone' => '+44 (0)7700 900123', 'postcode' => 'sw1a 1aa']);
         $d = MetaEvents::userData($u);
         $this->assertSame([hash('sha256', 'zoëann')], $d['fn']);
         $this->assertSame([hash('sha256', 'sw1a1')], $d['zp']);
         $this->assertSame([hash('sha256', 'gb')], $d['country']);
         $this->assertSame([hash('sha256', '447700900123')], $d['ph']);
+    }
+
+    public function test_the_admin_report_lines_up_site_sales_against_what_meta_was_told(): void
+    {
+        $a = $this->player();
+        $b = $this->player();
+        $this->topUp($a, 5000);
+        $this->topUp($b, 5000);
+        $this->buy($b, false, 'wallet');  // rejected cookies: never sent
+        $this->buy($a, true, 'wallet');   // accepted: sent
+        $this->artisan('gimme:meta-events');
+
+        $today = MetaTrackingReport::daily(2)[now('Europe/London')->format('Y-m-d')];
+        $this->assertSame(2, $today['orders']);
+        $this->assertSame(1, $today['consented']);
+        $this->assertSame(1, $today['sent']);
+        $this->assertSame($today['value'] / 2, $today['sentValue']);
+        $this->assertSame(0, $today['notSent']);
+
+        $admin = $this->admin();
+        $admin->saveAppAuthenticationSecret(app(AppAuthentication::class)->generateSecret());
+        $this->actingAs($admin->refresh(), 'web')->get('/admin/meta-tracking-report')->assertOk()
+            ->assertSee('Accepted cookies')->assertSee('Sent to Meta')->assertSee('£2.50');
     }
 }
