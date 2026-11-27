@@ -142,7 +142,8 @@ export function trackPurchaseOnce(orderNumber: string, valuePence: number, items
   if (valuePence <= 0) return;
   once(`gg-px-purchase:${orderNumber}`, () =>
     track("Purchase", {
-      value: metaValue(valuePence), currency: "GBP", content_type: "product",
+      // order_id: the same order number the server's Conversions API sends; the event id below stays the order number too.
+      value: metaValue(valuePence), currency: "GBP", content_type: "product", order_id: orderNumber,
       ...(items?.length ? { content_ids: [...new Set(items.map((i) => i.slug))], contents: items.map((i) => ({ id: i.slug, quantity: i.quantity })), num_items: items.reduce((s, i) => s + i.quantity, 0) } : {}),
     }, orderNumber));
 }
