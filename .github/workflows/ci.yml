@@ -1,24 +1,38 @@
 name: CI
+
+# Runs once per change: on the pull request (every push to it), and once more when it's merged into
+# feat/foundation (the branch PRs merge into and Forge deploys). A branch push without a PR runs nothing.
+# Changes that can't affect the tests (docs, deploy notes, Markdown) don't run it at all.
 on:
   pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "deploy/**"]
   push:
-    branches-ignore: [main]
+    branches: [feat/foundation]
+    paths-ignore: ["**/*.md", "docs/**", "deploy/**"]
+  workflow_dispatch:
+
+# A newer push to the same PR or branch cancels the run still going for the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults: { run: { working-directory: frontend } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
-      - run: npm ci
+      - run: npm ci --no-audit --no-fund
       - run: npx astro check
       - run: npm run build
       - run: npm test
 
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults: { run: { working-directory: backend } }
     services:
       mysql:
@@ -30,7 +44,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with: { php-version: "8.3", extensions: "gmp, intl, bcmath, pdo_mysql, pdo_sqlite", coverage: none }
-      - run: composer install --no-interaction --prefer-dist
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+      - run: composer install --no-interaction --prefer-dist --no-progress
         env:
           # A GitHub token that can read Sprouthubuk/verity-engine: {"github-oauth":{"github.com":"<token>"}}
           COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
@@ -46,22 +66,30 @@ jobs:
   fullstack:
     needs: [frontend, backend]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with: { php-version: "8.3", extensions: "gmp, intl, bcmath, pdo_sqlite", coverage: none }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
-      - run: composer install --no-interaction --prefer-dist && cp .env.example .env && php artisan key:generate
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+      - run: composer install --no-interaction --prefer-dist --no-progress && cp .env.example .env && php artisan key:generate
         working-directory: backend
         env:
           COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
-      - run: npm ci && npm run build && npm run test:fullstack
+      - run: npm ci --no-audit --no-fund && npm run build && npm run test:fullstack
         working-directory: frontend
       # Every page at 320/390/820/1440px: console errors, sideways scroll, broken pictures, words run together.
       - run: npm run test:visual
         working-directory: frontend
         env: { CHROME_PATH: /usr/bin/google-chrome, SHOTS_DIR: "${{ runner.temp }}/shots" }
+      # Screenshots of every page, to look at after a run: kept 3 days (was 14).
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: screenshots, path: "${{ runner.temp }}/shots", retention-days: 14 }
+        with: { name: screenshots, path: "${{ runner.temp }}/shots", retention-days: 3 }
