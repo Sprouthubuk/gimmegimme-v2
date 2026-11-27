@@ -104,7 +104,11 @@ class LiveDrawTest extends TestCase
             $this->assertSame([$i + 1, (int) $verity[$i]->entry->number, 'Liam O.', '£5 Cash'], [$w['place'], $w['ticketNumber'], $w['name'], $w['prizeName']]);
         }
         // A changed key, another competition's key or a player's key doesn't.
-        $this->assertSame([], $this->getJson('/api/competitions/cash-flash/live-draw?key='.substr($key, 0, -1).'0')->json('winners'));
+        // (Changing the last character always changes it: replacing it with a fixed "0" left the key valid
+        // whenever the signature already ended in 0, so this failed about one run in sixteen.)
+        $changed = substr($key, 0, -1).(str_ends_with($key, '0') ? '1' : '0');
+        $this->assertNotSame($key, $changed);
+        $this->assertSame([], $this->getJson('/api/competitions/cash-flash/live-draw?key='.$changed)->json('winners'));
         $other = $this->competition('draw', ['slug' => 'other-draw']);
         $this->assertSame([], $this->getJson('/api/competitions/cash-flash/live-draw?key='.PresenterKey::make($other, $this->admin()))->json('winners'));
         $this->assertSame([], $this->getJson('/api/competitions/cash-flash/live-draw?key='.PresenterKey::make($c, $u))->json('winners'));
